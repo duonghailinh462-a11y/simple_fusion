@@ -61,6 +61,7 @@ from TargetTrack import TargetBuffer
 from Fusion import CrossCameraFusion
 from FrameSynchronizer import FrameLossPrevention
 from RadarVisionFusion import RadarVisionFusionProcessor, RadarDataLoader, OutputObject
+from CameraManager import CameraManager
 
 # 创建共享布尔值用于停止运行线程
 cancel_flag = multiprocessing.Value('b', False)
@@ -119,7 +120,7 @@ def batch_convert_track_results(tracked_objects: List, result: dict, camera_id: 
     
     # 添加调试信息
     if current_frame % 100 == 0 and len(tracked_objects) > 0:
-        print(f"🔍 C{camera_id} Frame {current_frame}: {len(tracked_objects)} tracked objects, box_to_class={len(box_to_class) if box_to_class else 0}")
+        logger.debug(f"C{camera_id} Frame {current_frame}: {len(tracked_objects)} tracked objects")
     
     for track in tracked_objects:
         # 高效转换tlwh到tlbr
@@ -228,8 +229,8 @@ def create_sdk_worker_process(camera_id: int, video_path: str, result_queue: mul
     from SDKinfer_ffmpeg import yolov5_SDK, infer_process_attr
     
     try:
-        print(f"🔧 Camera{camera_id} 子进程启动，准备初始化SDK...")
-        print(f"   视频源: {video_path[:80] if len(video_path) > 80 else video_path}")
+        logger.info(f"Camera{camera_id} 子进程启动")
+        logger.info(f"Camera{camera_id} 视频源: {video_path[:80] if len(video_path) > 80 else video_path}")
         
         attr = infer_process_attr()
         attr.url = video_path
@@ -238,21 +239,19 @@ def create_sdk_worker_process(camera_id: int, video_path: str, result_queue: mul
         attr.plugin_path = "/usr/local/lynxi/sdk/sdk-samples/plugin/obj/libYolov5Plugin.so"
         attr.model_path = "/root/yolov5-7.0_lyngor1.17.0/best_yolov5s_onnx/Net_0/"
         
-        print(f"🔧 Camera{camera_id} 初始化yolov5_SDK (V13_PyAV)...")
-        print(f"   ⚠️  如果出现 'av.open' 错误，说明无法打开视频源")
-        print(f"   请检查: 1) RTSP URL是否正确 2) 网络连接 3) 视频文件是否存在")
+        logger.info(f"Camera{camera_id} 初始化yolov5_SDK (V13_PyAV)")
+        logger.info(f"Camera{camera_id} 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件")
         
         # 🔧 改进：移除传递 timestamp_provider
         # 注意：SDK初始化可能会在这里失败，如果RTSP连接不可用
         worker = yolov5_SDK(attr, result_queue) 
-        print(f"✅ Camera{camera_id} yolov5_SDK初始化成功")
-        worker.run(cancel_flag) # 运行在子进程中
-        print(f"✅ Camera{camera_id} 子进程正常退出")
+        logger.info(f"Camera{camera_id} yolov5_SDK初始化成功")
+        worker.run(cancel_flag)
+        logger.info(f"Camera{camera_id} 子进程正常退出")
         
     except Exception as e:
         error_msg = str(e)
-        print(f"\n❌ Camera{camera_id} SDK进程启动或运行失败")
-        print(f"   错误信息: {error_msg}")
+        logger.error(f"Camera{camera_id} SDK进程失败: {error_msg}")
         import traceback
         traceback.print_exc()
         # 确保进程能退出
@@ -277,18 +276,18 @@ if __name__ == "__main__":
             if enabled_cameras and len(enabled_cameras) >= 3:
                 for i, camera in enumerate(enabled_cameras[:3], 1):
                     video_paths[i] = camera['rtsp_url']
-                    print(f"📷 摄像头 {i}: {camera['name']} - {camera['rtsp_url']}")
-                print("✅ 使用RTSP流作为输入")
+                    logger.info(f"摄像头{i}: {camera['name']} - {camera['rtsp_url']}")
+                logger.info("使用RTSP流作为输入")
             else:
-                print("⚠️  配置文件中摄像头数量不足，回退到本地视频文件")
+                logger.warning("配置文件中摄像头数量不足，回退到本地视频文件")
                 raise Exception("配置不足")
         except Exception as e:
-            print(f"⚠️  读取RTSP配置失败: {e}, 使用本地视频文件")
+            logger.warning(f"读取RTSP配置失败: {e}, 使用本地视频文件")
             RTSP_MQTT_AVAILABLE = False
     
     # 回退到本地视频文件
     if not RTSP_MQTT_AVAILABLE or not video_paths:
-        print("使用本地视频文件")
+        logger.info("使用本地视频文件")
         # 设置默认的本地视频文件路径 - 使用实际存在的视频文件
         video_paths = {
             1: "/root/yolov5-7.0_lyngor1.17.0/videos/test_121.mp4",
@@ -299,11 +298,11 @@ if __name__ == "__main__":
         # 检查视频文件是否存在
         for cam_id, video_path in video_paths.items():
             if not os.path.exists(video_path):
-                print(f"❌ Camera{cam_id} 视频文件不存在: {video_path}")
-                print(f"   请确保视频文件存在或提供正确的RTSP源配置")
+                logger.error(f"Camera{cam_id} 视频文件不存在: {video_path}")
+                logger.error("请确保视频文件存在或提供正确的RTSP源配置")
                 sys.exit(1)
             else:
-                print(f"📷 Camera{cam_id}: {video_path}")
+                logger.info(f"Camera{cam_id}: {video_path}")
     
     detect_areas = {
         1: [np.array([[0, 720], [226, 324], [576, 77], [714, 77], [1278, 390], [1280, 720]], dtype=np.int32),
@@ -315,11 +314,14 @@ if __name__ == "__main__":
     
     # 2. 初始化核心组件
     fusion_system = CrossCameraFusion()
-    queues = {i: multiprocessing.Queue(maxsize=10) for i in [1, 2, 3]}
     perf_monitor = PerformanceMonitor()
     
+    # 2.0 初始化摄像头管理器
+    camera_manager = CameraManager(video_paths, cancel_flag)
+    queues = camera_manager.create_queues(maxsize=10)
+    
     # 2.1 初始化雷达融合模块
-    print("\n🔧 初始化雷达融合模块...")
+    logger.info("初始化雷达融合模块")
     radar_fusion_enabled = False
     radar_fusion_processor = None
     radar_data_loader = None
@@ -354,16 +356,15 @@ if __name__ == "__main__":
                     radar_fusion_processor.add_radar_data(ts, radar_objs)
                 
                 radar_fusion_enabled = True
-                print(f"✅ 雷达融合模块初始化成功")
-                print(f"   雷达数据帧数: {len(radar_data_loader.get_all_timestamps())}")
+                logger.info(f"雷达融合模块初始化成功, 雷达数据帧数: {len(radar_data_loader.get_all_timestamps())}")
             else:
-                print("⚠️  雷达数据加载失败，将不使用雷达融合")
+                logger.warning("雷达数据加载失败，将不使用雷达融合")
         else:
-            print(f"⚠️  雷达数据文件不存在: {radar_data_path}")
-            print("   将不使用雷达融合功能")
+            logger.warning(f"雷达数据文件不存在: {radar_data_path}")
+            logger.warning("将不使用雷达融合功能")
     except Exception as e:
-        print(f"⚠️  雷达融合模块初始化失败: {e}")
-        print("   将不使用雷达融合功能")
+        logger.warning(f"雷达融合模块初始化失败: {e}")
+        logger.warning("将不使用雷达融合功能")
         radar_fusion_enabled = False
     
     # DEBUG: 跟踪器输入统计
@@ -377,9 +378,9 @@ if __name__ == "__main__":
         try:
             mqtt_publisher = MqttPublisher("config/mqtt_config.ini")
             mqtt_publisher.connect()
-            print("✅ MQTT发布器已连接")
+            logger.info("MQTT发布器已连接")
         except Exception as e:
-            print(f"⚠️  MQTT连接失败: {e}, 将使用JSON文件保存")
+            logger.warning(f"MQTT连接失败: {e}, 将使用JSON文件保存")
             mqtt_publisher = None
     
     class TrackerArgs: # 新ByteTracker 所需参数
@@ -390,128 +391,26 @@ if __name__ == "__main__":
             self.mot20 = False         # MOT20数据集标志
     
     tracker_args = TrackerArgs()
-    trackers = {i: BYTETracker(tracker_args, frame_rate=Config.FPS) for i in [1, 2, 3]} # 局部跟踪器运行在主进程
-    print("✅ 已启用优化版ByteTracker - 交替跟踪模式") 
+    trackers = {i: BYTETracker(tracker_args, frame_rate=Config.FPS) for i in [1, 2, 3]}
+    logger.info("已启用优化版ByteTracker - 交替跟踪模式") 
 
-    # 🔧 新增：RTSP连接测试函数
-    def test_rtsp_connection(rtsp_url: str, timeout: int = 5) -> bool:
-        """测试RTSP连接是否可用"""
-        try:
-            import cv2
-            # 尝试使用 PyAV (SDKinfer_ffmpeg.py 的依赖) 来测试，更一致
-            try:
-                import av
-                av.logging.set_level(av.logging.ERROR)
-                container = av.open(rtsp_url, 'r', options={'rtsp_transport': 'tcp', 'stimeout': str(timeout * 1000000)}, timeout=timeout)
-                container.decode(video=0)
-                container.close()
-                return True
-            except ImportError:
-                # 回退到 OpenCV
-                cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
-                cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                # 设置超时
-                start_time = time.time()
-                ret = False
-                while time.time() - start_time < timeout:
-                    ret, frame = cap.read()
-                    if ret:
-                        break
-                    time.sleep(0.1)
-                cap.release()
-                return ret
-        except Exception as e:
-            return False
-    
-    # 🔧 新增：在SDK初始化前测试RTSP连接
-    print("\n🔍 测试RTSP连接 (使用PyAV/OpenCV)...")
-    rtsp_connection_status = {}
-    for cam_id in [1, 2, 3]:
-        video_path = video_paths[cam_id]
-        # 只测试RTSP URL，不测试本地文件
-        if video_path.startswith('rtsp://'):
-            print(f"  测试 Camera{cam_id}: {video_path[:60]}...")
-            is_connected = test_rtsp_connection(video_path, timeout=5)
-            rtsp_connection_status[cam_id] = is_connected
-            if is_connected:
-                print(f"  ✅ Camera{cam_id} RTSP连接成功")
-            else:
-                print(f"  ❌ Camera{cam_id} RTSP连接失败 - 无法连接到: {video_path}")
-        else:
-            # 本地视频文件，跳过测试
-            rtsp_connection_status[cam_id] = True
-            print(f"  ✅ Camera{cam_id} 使用本地视频文件: {video_path}")
     # 3. 创建并启动 SDK 推理进程 (生产者)
-    processes = []
-    print("\n🚀 启动SDK版多摄像头融合系统")
-    
-    # 🔧 新增：检查RTSP连接状态，给出警告
-    failed_cameras = [cam_id for cam_id, status in rtsp_connection_status.items() if not status]
-    if failed_cameras:
-        print(f"⚠️  警告: {len(failed_cameras)}个摄像头RTSP连接测试失败: {failed_cameras}")
-        time.sleep(2)  # 给用户时间阅读警告
-    
-    for camera_id in [1, 2, 3]:
-        video_path = video_paths[camera_id]
-        if not rtsp_connection_status.get(camera_id, True):
-            print(f"⚠️  Camera{camera_id} RTSP连接测试失败，但仍尝试启动SDK...")
-        
-        # 🔧 修改：移除 timestamp_providers 参数
-        process = multiprocessing.Process(
-            target=create_sdk_worker_process,
-            args=(camera_id, video_path, queues[camera_id]),
-            daemon=True
-        )
-        processes.append(process)
-        process.start()
-        print(f"🔄 启动Camera{camera_id} SDK推理进程...")
-        
-    print("✅ 所有SDK推理进程已启动")
+    # 使用 CameraManager 处理RTSP连接测试和进程启动
+    camera_manager.test_all_rtsp_connections()
+    camera_manager.start_all_cameras(create_sdk_worker_process)
+    processes = camera_manager.get_processes()
 
     # 3.5. 启动预热阶段：等待所有摄像头队列都有数据
-    print("\n⏱️  进入预热阶段，等待所有摄像头推送第一帧数据...")
-    PREHEAT_TIMEOUT = 30  # 30秒超时
-    start_time = time.time()
-    ready_cameras = {i: False for i in [1, 2, 3]}
-    last_report_time = time.time()
-    
-    while time.time() - start_time < PREHEAT_TIMEOUT:
-        all_ready = True
-        for cam_id in [1, 2, 3]:
-            if not ready_cameras[cam_id] and not queues[cam_id].empty():
-                ready_cameras[cam_id] = True
-                print(f"✅ 摄像头 C{cam_id} 已就绪！")
-        
-        if all(ready_cameras.values()):
-            print("🎉 所有摄像头均已就绪，预热完成！")
-            break
-        
-        # 每5秒打印一次状态
-        current_time = time.time()
-        if current_time - last_report_time >= 5:
-            elapsed = int(current_time - start_time)
-            queue_sizes = {i: queues[i].qsize() for i in [1, 2, 3]}
-            process_status = {i: (p.is_alive() and "✓运行中" or "✗已停止") for i, p in enumerate(processes)}
-            print(f"⏳ 预热进度 ({elapsed}s/{PREHEAT_TIMEOUT}s): 队列 {queue_sizes}, 进程状态 {[process_status.get(i) for i in range(3)]}")
-            print(f"   准备就绪: C1={ready_cameras[1]}, C2={ready_cameras[2]}, C3={ready_cameras[3]}")
-            last_report_time = current_time
-        
-        time.sleep(0.5)
-    else:
-        print("❌ 预热超时！")
-        for cam_id, is_ready in ready_cameras.items():
-            if not is_ready:
-                print(f"  - 摄像头 C{cam_id} 未能在 {PREHEAT_TIMEOUT} 秒内推送数据。")
-        print("程序将继续运行，但可能会出现同步问题。")
+    preheat_success = camera_manager.wait_for_preheat(timeout=30)
 
 
     # 4. 主循环：时间戳融合逻辑 (消费者)
     current_frame = 0
     
     # 🔧 新增：设置摄像头起始时间戳（绝对时间格式）
-    print("\n🔧 配置摄像头时间戳...")
+    logger.info("配置摄像头时间戳")
     FFmpegTimeStampProvider.set_all_camera_start_datetimes(Config.CAMERA_START_DATETIMES)
-    print("✅ 摄像头时间戳配置完成")
+    logger.info("摄像头时间戳配置完成")
     
     # 初始化FFmpeg时间戳帧同步器
     frame_synchronizer = FFmpegTimestampFrameSynchronizer(
@@ -523,9 +422,9 @@ if __name__ == "__main__":
     
     frame_loss_prevention = FrameLossPrevention()
     
-    print("\n--- 融合主循环启动 ---")
-    print(f"🎯 同步模式：{sync_mode}")
-    print("="*60)
+    logger.info("融合主循环启动")
+    logger.info(f"同步模式: {sync_mode}")
+    logger.info("="*60)
 
     try:
         last_sync_report = time.time()
@@ -553,7 +452,7 @@ if __name__ == "__main__":
                     except multiprocessing.queues.Empty:
                         break # 队列为空，退出内层循环
                     except Exception as e:
-                        print(f"❌ C{camera_id} 队列读取异常: {e}")
+                        logger.error(f"C{camera_id} 队列读取异常: {e}")
                         break
             
             queue_processing_time = perf_monitor.end_timer('queue_processing')
@@ -574,40 +473,34 @@ if __name__ == "__main__":
                     warmup_complete = getattr(frame_synchronizer, 'warmup_complete', False)
                     warmup_status = "✅完成" if warmup_complete else "⏳进行中"
                     
-                    print(f"⏱️  等待同步... (连续{no_sync_count}个周期)")
-                    print(f"   队列大小: C1={queue_sizes[1]}, C2={queue_sizes[2]}, C3={queue_sizes[3]}")
-                    print(f"   缓冲区: {buffer_status}")
-                    print(f"   Warmup状态: {warmup_status}")
+                    logger.debug(f"等待同步 (连续{no_sync_count}个周期)")
+                    logger.debug(f"队列: C1={queue_sizes[1]}, C2={queue_sizes[2]}, C3={queue_sizes[3]}")
+                    logger.debug(f"缓冲区: {buffer_status}")
+                    logger.debug(f"Warmup: {warmup_status}")
                     
-                    # 检查进程状态
                     alive_count = sum(1 for p in processes if p.is_alive())
-                    print(f"   SDK进程: {alive_count}/3 运行中")
+                    logger.debug(f"SDK进程: {alive_count}/3 运行中")
                 
                 # 🔧 改进：更长的超时时间，因为Warmup阶段可能需要更多时间
-                if no_sync_count > 500:  # 提高到500个周期（约2.5秒）
-                    print(f"\n❌ 警告：已连续{no_sync_count}个周期无法同步")
-                    print(f"   详细诊断信息:")
-                    # 🔧 修复：使用正确的属性名warmup_complete
+                if no_sync_count > 500:
+                    logger.warning(f"已连续{no_sync_count}个周期无法同步")
                     warmup_complete = getattr(frame_synchronizer, 'warmup_complete', False)
-                    print(f"   1. Warmup状态: {'✅完成' if warmup_complete else '❌未完成'}")
+                    logger.warning(f"Warmup状态: {'完成' if warmup_complete else '未完成'}")
                     if not warmup_complete:
-                        print(f"      等待所有摄像头对齐起跑线...")
+                        logger.warning("等待所有摄像头对齐起跑线")
                     buffer_status = frame_synchronizer.get_buffer_status()
-                    print(f"   2. 缓冲区状态: {buffer_status}")
+                    logger.warning(f"缓冲区: {buffer_status}")
                     queue_sizes = {i: queues[i].qsize() for i in [1, 2, 3]}
-                    print(f"   3. 队列大小: {queue_sizes}")
+                    logger.warning(f"队列: {queue_sizes}")
                     alive_count = sum(1 for p in processes if p.is_alive())
-                    print(f"   4. SDK进程状态: {alive_count}/3 运行中")
+                    logger.warning(f"SDK进程: {alive_count}/3 运行中")
 
-                    
-                    # 检查是否有进程已停止
                     if alive_count < 3:
-                        print("   检测到SDK进程已停止，主循环退出。")
+                        logger.error("SDK进程已停止，主循环退出")
                         break
                 
-                # 如果所有进程都停止了，也退出
                 if all(not p.is_alive() for p in processes):
-                    print("❌ 所有SDK子进程已停止，主循环退出。")
+                    logger.error("所有SDK子进程已停止，主循环退出")
                     break
 
                 time.sleep(0.005) 
@@ -653,9 +546,9 @@ if __name__ == "__main__":
                 perf_monitor.end_timer('tracker_input_preparation')
                 
                 # 限制最大跟踪目标数量，避免匈牙利算法性能问题
-                if len(tracker_input_tensor) > 50:  # 限制最多50个目标
+                if len(tracker_input_tensor) > 50:
                     tracker_input_tensor = tracker_input_tensor[:50]
-                    print(f"⚠️  C{camera_id} 目标数量过多({len(filtered_nms_detections)})，限制为50个")
+                    logger.warning(f"C{camera_id} 目标数量过多({len(filtered_nms_detections)})，限制为50个")
 
                 # 5. 局部跟踪 (BYTETracker)
                 perf_monitor.start_timer(f'tracker_update_{camera_id}')
@@ -674,7 +567,7 @@ if __name__ == "__main__":
                 # 打印跟踪前的调试信息
                 # 🔧 优化：DEBUG输出从每100帧改为每500帧
                 if current_frame % 500 == 0:
-                    print(f"  📊 C{camera_id} F{current_frame} 跟踪前: 原始检测={len(raw_detections)}, NMS后={len(nms_detections)}, 过滤后={len(filtered_nms_detections)}, 跟踪器输入={debug_input_count}")
+                    logger.debug(f"C{camera_id} F{current_frame} 跟踪前: 原始={len(raw_detections)}, NMS={len(nms_detections)}, 过滤={len(filtered_nms_detections)}, 输入={debug_input_count}")
                 
                 tracked_objects = trackers[camera_id].update(tracker_input_tensor, img_info, img_size)
                 tracker_time = perf_monitor.end_timer(f'tracker_update_{camera_id}')
@@ -802,7 +695,7 @@ if __name__ == "__main__":
                     # 统计信息
                     matched_count = sum(1 for v in updated_vision_objects if v.radar_id is not None)
                     if current_frame % 100 == 0 and matched_count > 0:
-                        print(f"🔗 Frame {current_frame}: 雷达匹配 {matched_count}/{len(updated_vision_objects)} 个目标")
+                        logger.info(f"Frame {current_frame}: 雷达匹配 {matched_count}/{len(updated_vision_objects)} 个目标")
                 
                 perf_monitor.end_timer('radar_fusion_processing')
             
@@ -826,8 +719,7 @@ if __name__ == "__main__":
                         # 📊 性能监控：记录MQTT发送失败
                         perf_monitor.add_counter('mqtt_failures')
                 except Exception as e:
-                    print(f"❌ MQTT发送异常: {e}")
-                    # 📊 性能监控：记录MQTT异常
+                    logger.error(f"MQTT发送异常: {e}")
                     perf_monitor.add_counter('mqtt_failures')
                 finally:
                     perf_monitor.end_timer('mqtt_publish')
@@ -846,106 +738,100 @@ if __name__ == "__main__":
             if current_frame > 0 and current_frame % 300 == 0:
                 missing_report = frame_loss_prevention.get_missing_frames_report()
                 if missing_report:
-                    print(f"\n📊 ----- 丢帧报告 (截至Frame {current_frame}) -----")
+                    logger.info(f"丢帧报告 (截至Frame {current_frame})")
                     for cam_id, report in missing_report.items():
-                        print(f"  C{cam_id}: 丢帧{report['missing_count']}个({report['loss_rate']:.2f}%), 重复{report['duplicate_count']}个")
-                    print("-" * 45)
+                        logger.info(f"C{cam_id}: 丢帧{report['missing_count']}个({report['loss_rate']:.2f}%), 重复{report['duplicate_count']}个")
         
-        print("\n🎯 所有处理完成 (或达到最大帧数)")
+        logger.info("所有处理完成")
         
         # 5. 保存融合结果（正常退出时）
         try:
             json_count = len(fusion_system.json_output_data) if fusion_system.json_output_data else 0
-            print(f"💾 准备保存 {json_count} 帧的JSON数据...")
+            logger.info(f"准备保存 {json_count} 帧的JSON数据")
             if json_count > 0:
                 fusion_system.save_json_data("output_fusion_refactored.json")
             else:
-                print("⚠️  警告: JSON数据列表为空")
+                logger.warning("JSON数据列表为空")
         except Exception as e:
-            print(f"❌ 保存JSON数据失败: {e}")
+            logger.error(f"保存JSON数据失败: {e}")
             import traceback
             traceback.print_exc()
         
         # 6. 输出最终同步统计
-        print("\n" + "="*60)
-        print("📊 最终同步统计报告:")
+        logger.info("="*60)
+        logger.info("最终同步统计报告")
         final_stats = frame_loss_prevention.get_statistics()
         
         total_processed = sum(stat['total_processed'] for stat in final_stats.values())
         synchronized_frames_count = fusion_system.frame_count
 
-        print(f"📈 处理概况:")
-        print(f"  总接收帧数 (各摄像头合计): {total_processed}帧")
-        print(f"  成功同步并处理的帧组: {synchronized_frames_count} 组")
+        logger.info("处理概况:")
+        logger.info(f"总接收帧数: {total_processed}帧")
+        logger.info(f"成功同步并处理的帧组: {synchronized_frames_count}组")
         
         if total_processed > 0 and len(final_stats) > 0:
             avg_processed_per_cam = total_processed / len(final_stats)
             sync_rate = (synchronized_frames_count / max(avg_processed_per_cam, 1)) * 100
-            print(f"  同步成功率 (估算): {sync_rate:.2f}%")
+            logger.info(f"同步成功率: {sync_rate:.2f}%")
         
         buffer_status = frame_synchronizer.get_buffer_status()
         remaining_frames = sum(status['count'] for status in buffer_status.values())
         if remaining_frames > 0:
-            print(f"⚠️  处理结束时缓冲区剩余: {remaining_frames}帧未处理")
+            logger.warning(f"处理结束时缓冲区剩余: {remaining_frames}帧未处理")
             
-        print("="*60)
+        logger.info("="*60)
         
         # 输出最终跟踪器优化统计
-        print("\n📊 最终ByteTracker优化统计:")
-        print("\n🔍 DEBUG - 跟踪器输入统计:")
+        logger.info("最终ByteTracker优化统计")
+        logger.info("DEBUG - 跟踪器输入统计:")
         for cam_id in [1, 2, 3]:
             stats = tracker_input_stats[cam_id]
             avg_dets = stats['total_dets'] / max(stats['total'], 1)
-            print(f"  C{cam_id}: 调用{stats['total']}次, 空输入{stats['empty']}次, 非空{stats['non_empty']}次, 总检测数{stats['total_dets']}, 平均{avg_dets:.1f}个/帧")
-        print()
+            logger.info(f"C{cam_id}: 调用{stats['total']}次, 空输入{stats['empty']}次, 非空{stats['non_empty']}次, 总检测数{stats['total_dets']}, 平均{avg_dets:.1f}个/帧")
         
         for cam_id, tracker in trackers.items():
             stats = tracker.get_performance_stats()
             perf_improvement = stats.get('performance_improvement', 1.0)
             avg_tracking_time = stats.get('avg_tracking_time', 0.0)
             avg_prediction_time = stats.get('avg_prediction_time', 0.0)
-            print(f"  C{cam_id}:")
-            print(f"    总帧数: {stats['total_frames']}")
-            print(f"    跟踪帧: {stats['tracking_frames']} ({stats['tracking_frames']/max(stats['total_frames'],1)*100:.1f}%)")
-            print(f"    预测帧: {stats['prediction_only_frames']} ({stats['prediction_only_frames']/max(stats['total_frames'],1)*100:.1f}%)")
-            print(f"    性能提升: {perf_improvement:.2f}x")
-            print(f"    平均跟踪耗时: {avg_tracking_time:.3f}s")
-            print(f"    平均预测耗时: {avg_prediction_time:.3f}s")
-        print("="*60)
+            logger.info(f"C{cam_id}:")
+            logger.info(f"  总帧数: {stats['total_frames']}")
+            logger.info(f"  跟踪帧: {stats['tracking_frames']} ({stats['tracking_frames']/max(stats['total_frames'],1)*100:.1f}%)")
+            logger.info(f"  预测帧: {stats['prediction_only_frames']} ({stats['prediction_only_frames']/max(stats['total_frames'],1)*100:.1f}%)")
+            logger.info(f"  性能提升: {perf_improvement:.2f}x")
+            logger.info(f"  平均跟踪耗时: {avg_tracking_time:.3f}s")
+            logger.info(f"  平均预测耗时: {avg_prediction_time:.3f}s")
+        logger.info("="*60)
         
     except Exception as e:
-        print(f"❌ 主程序执行出错: {e}")
+        logger.error(f"主程序执行出错: {e}")
         import traceback
         traceback.print_exc()
     finally:
         # 🔧 修复：在finally块中保存JSON，确保即使异常退出也能保存数据
-        print("\n💾 正在保存JSON数据...")
+        logger.info("正在保存JSON数据")
         try:
             json_count = len(fusion_system.json_output_data) if fusion_system.json_output_data else 0
-            print(f"   准备保存 {json_count} 帧的JSON数据")
+            logger.info(f"准备保存 {json_count} 帧的JSON数据")
             if json_count > 0:
                 fusion_system.save_json_data("output_fusion_refactored.json")
             else:
-                print("⚠️  警告: JSON数据列表为空，没有数据可保存")
-                print(f"   可能原因: 1) 程序异常退出 2) 没有检测到目标 3) 数据未正确添加")
+                logger.warning("JSON数据列表为空，没有数据可保存")
+                logger.warning("可能原因: 1) 程序异常退出 2) 没有检测到目标 3) 数据未正确添加")
         except Exception as e:
-            print(f"❌ 在finally块中保存JSON失败: {e}")
+            logger.error(f"在finally块中保存JSON失败: {e}")
             import traceback
             traceback.print_exc()
         
         # 7. 清理资源
-        cancel_flag.value = True # 确保所有进程停止
-        for process in processes:
-            if process.is_alive():
-                process.terminate()
-                process.join()
+        camera_manager.stop_all_cameras()
 
         # 断开MQTT连接
         if mqtt_publisher:
             try:
                 mqtt_publisher.disconnect()
-                print("✅ MQTT连接已断开")
+                logger.info("MQTT连接已断开")
             except:
                 pass
                 
-        print("🧹 资源清理完成")
+        logger.info("资源清理完成")

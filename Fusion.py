@@ -541,8 +541,8 @@ class CrossCameraFusion:
         self.c2_targets_processed_direction = active_processed_set
 
         if len(final_c2_buffer) < len(self.c2_buffer_from_c3):
-            print(f"--- [CLEANUP] 帧 {self.frame_count}: 清理 C3->C2 缓冲区, "
-                  f"移除了 {len(self.c2_buffer_from_c3) - len(final_c2_buffer)} 个过期的 C2 条目。")
+            removed_count = len(self.c2_buffer_from_c3) - len(final_c2_buffer)
+            logger.debug(f"清理C3->C2缓冲区: 移除{removed_count}个过期条目")
         self.c2_buffer_from_c3 = deque(final_c2_buffer)
         # ⬆️ ⬆️ ⬆️ 结束 ⬆️ ⬆️ ⬆️
 
@@ -563,6 +563,6 @@ class CrossCameraFusion:
             
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(self.json_output_data, f, ensure_ascii=False, indent=2)
-            print(f"✅ JSON数据已保存: {output_file}, 共{len(self.json_output_data)}帧")
+            logger.info(f"JSON数据已保存: {output_file}, 共{len(self.json_output_data)}帧")
         except Exception as e:
-            print(f"❌ 保存JSON文件出错: {e}")
+            logger.error(f"保存JSON文件出错: {e}")
