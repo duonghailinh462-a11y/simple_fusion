@@ -191,20 +191,25 @@ class LocalTrackBuffer:
             del self.last_update_frame[camera_id][local_id]
 
 def analyze_trajectory_for_global_assignment(pixel_track_history: List[Tuple[int, int]], 
-                                            min_trajectory_length: int = 3,
-                                            pixel_bottom_threshold: float = 700,
-                                            pixel_top_threshold: float = 1080) -> bool:
+                                            camera_id: int,
+                                            min_trajectory_length: int = 3) -> bool:
     """
     分析轨迹是否值得分配global_id
-    基于像素Y值判断是否在底部区域
+    基于是否在雷视融合区域内进行判断
+    
+    Args:
+        pixel_track_history: 像素轨迹历史
+        camera_id: 摄像头ID
+        min_trajectory_length: 最小轨迹长度
+    
+    Returns:
+        是否应该分配global_id
     """
+    from Basic import GeometryUtils
+    
     if len(pixel_track_history) < min_trajectory_length:
         return False
     
+    # 检查起始点是否在融合区域内
     start_pos = pixel_track_history[0]
-    start_y = start_pos[1]
-    
-    if pixel_bottom_threshold <= start_y <= pixel_top_threshold:
-        return True
-    
-    return False
+    return GeometryUtils.is_in_radar_vision_fusion_area(start_pos, camera_id)

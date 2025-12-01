@@ -357,6 +357,13 @@ class RadarVisionFusionProcessor:
 # ==========================================
 class RadarDataLoader:
     """加载和管理雷达数据"""
+    
+    # 雷达IP到摄像头ID的映射
+    RADAR_IP_TO_CAMERA = {
+        '44.30.142.85': 2,  # C2
+        '44.30.142.88': 1,  # C1
+        '44.30.142.87': 3,  # C3
+    }
 
     def __init__(self, radar_file_path):
         """
@@ -367,6 +374,12 @@ class RadarDataLoader:
         """
         self.radar_file_path = radar_file_path
         self.radar_data = {}  # 时间戳 -> 雷达目标列表
+        self.radar_data_by_camera = {}  # (camera_id, timestamp) -> 雷达目标列表
+        self.camera_timestamps = {1: set(), 2: set(), 3: set()}  # 每个摄像头的时间戳集合
+
+    def _get_camera_id_from_ip(self, source_ip):
+        """根据source_ip获取摄像头ID"""
+        return self.RADAR_IP_TO_CAMERA.get(source_ip, None)
 
     def load(self):
         """加载雷达数据"""
@@ -375,6 +388,13 @@ class RadarDataLoader:
                 for line in f:
                     try:
                         obj = json.loads(line)
+                        source_ip = obj.get('source_ip', '')
+                        camera_id = self._get_camera_id_from_ip(source_ip)
+                        
+                        if camera_id is None:
+                            print(f"  警告: 未知的雷达IP: {source_ip}")
+                            continue
+                        
                         ts = parse_time(obj.get('time', ''))
                         if ts == 0:
                             continue
@@ -392,13 +412,22 @@ class RadarDataLoader:
                                 locus.append(radar_obj)
 
                         if locus:
+                            # 存储到全局数据（向后兼容）
                             self.radar_data[ts] = locus
+                            
+                            # 存储到按摄像头分类的数据
+                            key = (camera_id, ts)
+                            self.radar_data_by_camera[key] = locus
+                            self.camera_timestamps[camera_id].add(ts)
 
                     except Exception as e:
                         print(f"  警告: 解析雷达数据行失败: {e}")
                         continue
 
             print(f"✅ 加载雷达数据完成: {len(self.radar_data)} 帧")
+            print(f"   C1: {len(self.camera_timestamps[1])} 帧")
+            print(f"   C2: {len(self.camera_timestamps[2])} 帧")
+            print(f"   C3: {len(self.camera_timestamps[3])} 帧")
             return True
 
         except Exception as e:
@@ -406,12 +435,21 @@ class RadarDataLoader:
             return False
 
     def get_radar_data(self, timestamp):
-        """获取指定时间戳的雷达数据"""
+        """获取指定时间戳的雷达数据（全局，向后兼容）"""
         return self.radar_data.get(timestamp, [])
+    
+    def get_radar_data_by_camera(self, camera_id, timestamp):
+        """获取指定摄像头和时间戳的雷达数据"""
+        key = (camera_id, timestamp)
+        return self.radar_data_by_camera.get(key, [])
 
     def get_all_timestamps(self):
-        """获取所有雷达时间戳"""
+        """获取所有雷达时间戳（全局，向后兼容）"""
         return sorted(self.radar_data.keys())
+    
+    def get_camera_timestamps(self, camera_id):
+        """获取指定摄像头的所有时间戳"""
+        return sorted(self.camera_timestamps.get(camera_id, set()))
 
 
 # ==========================================

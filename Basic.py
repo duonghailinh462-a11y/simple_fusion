@@ -152,6 +152,9 @@ class FusionConfig:
     C2_EXIT_REGION_C3: np.ndarray = None
     C2_EXIT_REGION_C1: np.ndarray = None
     
+    # 雷视融合区域 (像素坐标) - 用于标记可进行雷视融合的区域
+    RADAR_VISION_FUSION_AREAS: Dict[int, np.ndarray] = None
+    
     def __post_init__(self):
         if self.C2_EXIT_REGION_C3 is None:
             self.C2_EXIT_REGION_C3 = np.array(
@@ -161,6 +164,12 @@ class FusionConfig:
             self.C2_EXIT_REGION_C1 = np.array(
                 [[1022, 654], [1011, 642], [871, 735], [884, 757]], dtype=np.int32
             )
+        if self.RADAR_VISION_FUSION_AREAS is None:
+            self.RADAR_VISION_FUSION_AREAS = {
+                1: np.array([[110, 429], [0, 536], [0, 720], [1280, 720], [1280, 458]], dtype=np.int32),
+                2: np.array([[0, 720], [1280, 720], [1280, 418], [109, 432]], dtype=np.int32),
+                3: np.array([[328, 472], [186, 720], [1033, 720], [985, 468]], dtype=np.int32),
+            }
 
 @dataclass
 class TimestampConfig:
@@ -227,6 +236,8 @@ class Config:
     def C2_EXIT_REGION_C3(self): return self.fusion.C2_EXIT_REGION_C3
     @property
     def C2_EXIT_REGION_C1(self): return self.fusion.C2_EXIT_REGION_C1
+    @property
+    def RADAR_VISION_FUSION_AREAS(self): return self.fusion.RADAR_VISION_FUSION_AREAS
     @property
     def CAMERA_START_DATETIMES(self): return self.timestamp.CAMERA_START_DATETIMES
 
@@ -328,6 +339,17 @@ class GeometryUtils:
     @staticmethod
     def is_in_public_area(bev_point: Tuple[float, float]) -> bool:
         return cv2.pointPolygonTest(PUBLIC_AREA_BEV, bev_point, False) >= 0
+    
+    @staticmethod
+    def is_in_radar_vision_fusion_area(pixel_point: Tuple[int, int], camera_id: int) -> bool:
+        """检查像素点是否在该摄像头的雷视融合区域内"""
+        # 获取Config实例的融合区域配置
+        config = Config()
+        fusion_areas = config.RADAR_VISION_FUSION_AREAS
+        if not fusion_areas or camera_id not in fusion_areas:
+            return False
+        fusion_area = fusion_areas[camera_id]
+        return cv2.pointPolygonTest(fusion_area, pixel_point, False) >= 0
 
 class DetectionUtils:
     @staticmethod

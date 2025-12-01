@@ -205,6 +205,14 @@ def batch_convert_track_results(tracked_objects: List, result: dict, camera_id: 
                         min_distance = distance
                         class_name = orig_det['class']
         
+        # 计算目标底部中心点（用于融合区域判断）
+        center_x = int((tlbr[0] + tlbr[2]) / 2)
+        center_y = int(tlbr[3])
+        pixel_point = (center_x, center_y)
+        
+        # 检查是否在雷视融合区域内
+        in_fusion_area = GeometryUtils.is_in_radar_vision_fusion_area(pixel_point, camera_id)
+        
         detection = {
             'box': tlbr,
             'confidence': track.score,
@@ -215,7 +223,8 @@ def batch_convert_track_results(tracked_objects: List, result: dict, camera_id: 
             'timestamp': result.get('timestamp', time.time()),
             'frame_number': result.get('frame_number', current_frame),
             'camera_id': camera_id,
-            'sync_id': result.get('sync_id', f"C{camera_id}_F{current_frame}")
+            'sync_id': result.get('sync_id', f"C{camera_id}_F{current_frame}"),
+            'in_fusion_area': in_fusion_area  # 新增：标记是否在融合区域内
         }
         tracked_detections.append(detection)
     
@@ -323,40 +332,35 @@ if __name__ == "__main__":
     # 2.1 初始化雷达融合模块
     logger.info("初始化雷达融合模块")
     radar_fusion_enabled = False
-    radar_fusion_processor = None
     radar_data_loader = None
+    radar_fusion_processors = {}  # 按摄像头存储融合处理器
     
     # 雷达数据文件路径 (可配置)
-    radar_data_path = 'c:/Users/zhenghuiwen1/Desktop/project_simple/radar_vision/radar_data_85_aligned.jsonl'
-    
-    # 融合区域配置 (可选，如果需要区域过滤)
-    # 这里使用一个通用的融合区域，或者可以为每个摄像头配置不同的区域
-    fusion_area_geo = [
-        [113.583894894, 23.530394880],
-        [113.584462681, 23.530850485],
-        [113.584032327, 23.530886446],
-        [113.583922645, 23.530898319]
-    ]
-    
+    radar_data_path = 'e:/从化数据/save/5f拉流/radar_data.jsonl'
+        
     try:
         if os.path.exists(radar_data_path):
             # 初始化雷达数据加载器
             radar_data_loader = RadarDataLoader(radar_data_path)
             if radar_data_loader.load():
-                # 初始化雷达融合处理器
-                radar_fusion_processor = RadarVisionFusionProcessor(
-                    fusion_area_geo=fusion_area_geo,
-                    lat_offset=-0.00000165,
-                    lon_offset=0.0000450
-                )
-                
-                # 将所有雷达数据添加到处理器
-                for ts in radar_data_loader.get_all_timestamps():
-                    radar_objs = radar_data_loader.get_radar_data(ts)
-                    radar_fusion_processor.add_radar_data(ts, radar_objs)
+                # 为每个摄像头初始化独立的融合处理器
+                for camera_id in [1, 2, 3]:
+                    radar_fusion_processors[camera_id] = RadarVisionFusionProcessor(
+                        fusion_area_geo=None,  # 使用融合区域判断已在GlobalID分配时完成
+                        lat_offset=-0.00000165,
+                        lon_offset=0.0000450
+                    )
+                    
+                    # 将该摄像头的雷达数据添加到对应的处理器
+                    camera_timestamps = radar_data_loader.get_camera_timestamps(camera_id)
+                    for ts in camera_timestamps:
+                        radar_objs = radar_data_loader.get_radar_data_by_camera(camera_id, ts)
+                        radar_fusion_processors[camera_id].add_radar_data(ts, radar_objs)
+                    
+                    logger.info(f"C{camera_id} 雷达融合处理器初始化成功, 雷达数据帧数: {len(camera_timestamps)}")
                 
                 radar_fusion_enabled = True
-                logger.info(f"雷达融合模块初始化成功, 雷达数据帧数: {len(radar_data_loader.get_all_timestamps())}")
+                logger.info(f"雷达融合模块初始化成功")
             else:
                 logger.warning("雷达数据加载失败，将不使用雷达融合")
         else:
@@ -535,7 +539,7 @@ if __name__ == "__main__":
                 nms_detections = DetectionUtils.non_max_suppression(det_for_nms)
                 perf_monitor.end_timer('nms_processing')
                 
-                # 3. 区域过滤 (先过滤后跟踪，与main_combined保持一致) ✅ FIX
+                # 3. 区域过滤 (先过滤后跟踪)
                 perf_monitor.start_timer('area_filtering')
                 filtered_nms_detections = filter_by_detect_areas(nms_detections, detect_areas[camera_id])
                 perf_monitor.end_timer('area_filtering')
@@ -621,81 +625,90 @@ if __name__ == "__main__":
             fusion_system.update_global_state(all_global_targets, all_local_targets)
             matching_time = perf_monitor.end_timer('matching_processing')
 
-            # D. 雷达融合处理 (异步)
+            # D. 雷达融合处理 (按摄像头同步融合)
             radar_id_map = {}
-            if radar_fusion_enabled and radar_fusion_processor:
+            if radar_fusion_enabled and radar_fusion_processors:
                 perf_monitor.start_timer('radar_fusion_processing')
                 
-                # 将所有目标转换为 OutputObject 格式
-                vision_objects = []
-                
-                # 处理全局目标
-                for global_target in all_global_targets:
-                    if not global_target.bev_trajectory:
-                        continue
-                    current_bev = global_target.bev_trajectory[-1]
-                    if current_bev[0] == 0.0 and current_bev[1] == 0.0:
+                # 按摄像头进行雷达融合
+                for camera_id in [1, 2, 3]:
+                    if camera_id not in radar_fusion_processors:
                         continue
                     
-                    geo_result = GeometryUtils.bev_to_geo(current_bev[0], current_bev[1])
-                    if not geo_result:
-                        continue
+                    # 收集该摄像头的所有目标
+                    vision_objects = []
                     
-                    lng, lat = geo_result
-                    confidence = global_target.confidence_history[-1] if global_target.confidence_history else 0.0
-                    
-                    vision_obj = OutputObject(
-                        timestamp="",  # 将在后面填充
-                        cameraid=global_target.camera_id,
-                        type_name=global_target.class_name,
-                        confidence=confidence,
-                        track_id=global_target.global_id,
-                        lon=lng,
-                        lat=lat
-                    )
-                    vision_objects.append(vision_obj)
-                
-                # 处理本地目标 (已匹配的)
-                for local_target in all_local_targets:
-                    if not local_target.matched_global_id:
-                        continue
-                    
-                    if local_target.current_bev_pos[0] == 0.0 and local_target.current_bev_pos[1] == 0.0:
-                        continue
-                    
-                    geo_result = GeometryUtils.bev_to_geo(local_target.current_bev_pos[0], local_target.current_bev_pos[1])
-                    if not geo_result:
-                        continue
-                    
-                    lng, lat = geo_result
-                    
-                    # 检查是否已经添加过这个 global_id
-                    if not any(v.track_id == local_target.matched_global_id for v in vision_objects):
+                    # 处理全局目标
+                    for global_target in all_global_targets:
+                        if global_target.camera_id != camera_id:
+                            continue
+                        if not global_target.bev_trajectory:
+                            continue
+                        current_bev = global_target.bev_trajectory[-1]
+                        if current_bev[0] == 0.0 and current_bev[1] == 0.0:
+                            continue
+                        
+                        geo_result = GeometryUtils.bev_to_geo(current_bev[0], current_bev[1])
+                        if not geo_result:
+                            continue
+                        
+                        lng, lat = geo_result
+                        confidence = global_target.confidence_history[-1] if global_target.confidence_history else 0.0
+                        
                         vision_obj = OutputObject(
                             timestamp="",
-                            cameraid=local_target.camera_id,
-                            type_name=local_target.class_name,
-                            confidence=local_target.confidence,
-                            track_id=local_target.matched_global_id,
+                            cameraid=global_target.camera_id,
+                            type_name=global_target.class_name,
+                            confidence=confidence,
+                            track_id=global_target.global_id,
                             lon=lng,
                             lat=lat
                         )
                         vision_objects.append(vision_obj)
-                
-                # 执行雷达融合
-                if vision_objects:
-                    vision_timestamp = ts  # 使用当前帧的时间戳
-                    updated_vision_objects = radar_fusion_processor.process_frame(vision_timestamp, vision_objects)
                     
-                    # 构建 radar_id_map
-                    for vision_obj in updated_vision_objects:
-                        if vision_obj.radar_id is not None:
-                            radar_id_map[vision_obj.track_id] = vision_obj.radar_id
+                    # 处理本地目标 (已匹配的)
+                    for local_target in all_local_targets:
+                        if local_target.camera_id != camera_id:
+                            continue
+                        if not local_target.matched_global_id:
+                            continue
+                        
+                        if local_target.current_bev_pos[0] == 0.0 and local_target.current_bev_pos[1] == 0.0:
+                            continue
+                        
+                        geo_result = GeometryUtils.bev_to_geo(local_target.current_bev_pos[0], local_target.current_bev_pos[1])
+                        if not geo_result:
+                            continue
+                        
+                        lng, lat = geo_result
+                        
+                        # 检查是否已经添加过这个 global_id
+                        if not any(v.track_id == local_target.matched_global_id for v in vision_objects):
+                            vision_obj = OutputObject(
+                                timestamp="",
+                                cameraid=local_target.camera_id,
+                                type_name=local_target.class_name,
+                                confidence=local_target.confidence,
+                                track_id=local_target.matched_global_id,
+                                lon=lng,
+                                lat=lat
+                            )
+                            vision_objects.append(vision_obj)
                     
-                    # 统计信息
-                    matched_count = sum(1 for v in updated_vision_objects if v.radar_id is not None)
-                    if current_frame % 100 == 0 and matched_count > 0:
-                        logger.info(f"Frame {current_frame}: 雷达匹配 {matched_count}/{len(updated_vision_objects)} 个目标")
+                    # 执行该摄像头的雷达融合
+                    if vision_objects:
+                        vision_timestamp = ts  # 使用当前帧的时间戳
+                        updated_vision_objects = radar_fusion_processors[camera_id].process_frame(vision_timestamp, vision_objects)
+                        
+                        # 构建 radar_id_map
+                        for vision_obj in updated_vision_objects:
+                            if vision_obj.radar_id is not None:
+                                radar_id_map[vision_obj.track_id] = vision_obj.radar_id
+                        
+                        # 统计信息
+                        matched_count = sum(1 for v in updated_vision_objects if v.radar_id is not None)
+                        if current_frame % 100 == 0 and matched_count > 0:
+                            logger.info(f"Frame {current_frame} C{camera_id}: 雷达匹配 {matched_count}/{len(updated_vision_objects)} 个目标")
                 
                 perf_monitor.end_timer('radar_fusion_processing')
             
@@ -725,13 +738,8 @@ if __name__ == "__main__":
                     perf_monitor.end_timer('mqtt_publish')
             
             # 🔧 修复：无论MQTT是否成功，都保存JSON数据（用于调试和备份）
-            fusion_system.json_output_data.append(json_data)
-            
-            json_mqtt_time = perf_monitor.end_timer('json_mqtt_processing')
-            
-            # 打印处理信息
-            #print(f"✅ 同步融合: Frame {current_frame} | 目标数: {len(all_frame_detections)} | MQTT: {'成功' if mqtt_sent else '失败/未配置'}")
-            
+            fusion_system.json_output_data.append(json_data)          
+            json_mqtt_time = perf_monitor.end_timer('json_mqtt_processing')       
             fusion_system.next_frame()
 
             # D. 定期报告丢帧情况

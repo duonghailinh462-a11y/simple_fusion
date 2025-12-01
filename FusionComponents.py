@@ -115,7 +115,13 @@ class TargetManager:
         if perf_monitor:
             perf_monitor.add_counter('bev_conversions')
         
-        is_in_fusion_area = GeometryUtils.is_in_public_area(bev_result)
+        # 使用detection中的in_fusion_area标记（如果存在），否则从像素坐标判断
+        if 'in_fusion_area' in detection:
+            is_in_fusion_area = detection['in_fusion_area']
+        else:
+            # 备选方案：从像素坐标判断
+            is_in_fusion_area = GeometryUtils.is_in_radar_vision_fusion_area((center_x, center_y), camera_id)
+        
         fusion_entry_frame = frame_count if is_in_fusion_area else -1
         
         return LocalTarget(

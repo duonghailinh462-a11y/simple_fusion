@@ -161,13 +161,10 @@ class CrossCameraFusion:
             # ⬇️ ⬇️ ⬇️ [重构] GlobalID 分配逻辑 ⬇️ ⬇️ ⬇️
             pixel_track_history = self.local_track_buffer.get_pixel_track_history(camera_id, track_id) # [cite: 201-203]
 
-            # 前提：只有 C1 和 C3 (非 C2) 才能分配 GlobalID
             should_assign_gid = (
                 camera_id != 2 and 
-                analyze_trajectory_for_global_assignment(pixel_track_history, # [cite: 235-236]
-                                                       min_trajectory_length=3,
-                                                       pixel_bottom_threshold=500,
-                                                       pixel_top_threshold=720)
+                analyze_trajectory_for_global_assignment(pixel_track_history, camera_id, # [cite: 235-236]
+                                                       min_trajectory_length=3)
             )
 
             if should_assign_gid:
