@@ -6,6 +6,7 @@ import multiprocessing
 import copy
 import json
 import logging
+from datetime import datetime, timedelta
 from collections import defaultdict, deque
 from statistics import mean, median
 sys.path.append('/usr/local/lynxi/sdk/sdk-samples/python')
@@ -34,9 +35,9 @@ class yolov5_SDK(infer_process):
     精简版的 SDK 推理进程。只负责推理和将原始检测结果放入队列。
     不包含任何跟踪、BEV、融合逻辑。
     
-    🔧 改进：集成FFmpeg时间戳提供器
+    🔧 改进：使用初始视频时间 + frame_id/fps 计算时间戳
     """
-    def __init__(self, attr, result_queue, timestamp_provider=None):
+    def __init__(self, attr, result_queue, start_datetime_str=None, fps=25.0):
         super().__init__(attr)
         self.class_num = self.model_desc.outputTensorAttrArray[0].dims[3] - 5
         self.anchor_size = self.model_desc.outputTensorAttrArray[0].dims[1]
@@ -45,13 +46,20 @@ class yolov5_SDK(infer_process):
         self.result_queue = result_queue
         self.frame_count = 0
         
-        # 🔧 新增：FFmpeg时间戳提供器
-        self.timestamp_provider = timestamp_provider
-          
-        # 🔧 新增：时间戳记录机制
-        self.frame_timestamps = deque(maxlen=100)  # 保留最近100帧的时间戳
-        self.start_time = time.time()  # 记录起始时间
-        self.last_frame_timestamp = self.start_time
+        # 🔧 时间戳计算参数
+        self.fps = fps
+        self.start_datetime = None
+        if start_datetime_str:
+            try:
+                # 解析起始时间字符串
+                if '.' in start_datetime_str:
+                    self.start_datetime = datetime.strptime(start_datetime_str, "%Y-%m-%d %H:%M:%S.%f")
+                else:
+                    self.start_datetime = datetime.strptime(start_datetime_str, "%Y-%m-%d %H:%M:%S")
+                logger.info(f"Camera{attr.chan_id + 1} 时间戳初始化: 起始时间={self.start_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}, FPS={fps}")
+            except Exception as e:
+                logger.warning(f"Camera{attr.chan_id + 1} 时间戳解析失败: {e}, 将使用系统时间")
+                self.start_datetime = None
         
         # 🔧 新增：动态延迟机制参数
         self.camera_id = attr.chan_id + 1
@@ -119,40 +127,36 @@ class yolov5_SDK(infer_process):
                 logger.warning(f"Camera{self.attr.chan_id + 1} 复制box数据错误: {type(e).__name__}")
             return None
 
-    def get_current_frame_timestamp(self) -> float:
-        """🔧 获取当前帧的时间戳（降级方案）
+    def calculate_timestamp(self, frame_id: int) -> str:
+        """计算帧的时间戳：start_datetime + (frame_id / fps)
         
-        注意：此方法现为降级方案，主要时间戳来源已改为FFmpeg提供的pts_time
-        仅在FFmpeg无法提供时间戳时使用系统时间作为备选
+        Returns:
+            str: 时间戳字符串，格式 "YYYY-MM-DD HH:MM:SS.mmm"
         """
-        # 🔧 改进：现在优先使用FFmpeg提供的pts_time
-        # 此方法作为降级方案保留，用于FFmpeg提供器不可用的情况
-        current_time = time.time()
-        self.frame_timestamps.append(current_time)
-        self.last_frame_timestamp = current_time
-        return current_time
+        if self.start_datetime is None:
+            # 降级方案：使用系统时间
+            current_time = datetime.now()
+            return current_time.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        
+        # 计算时间偏移：frame_id / fps 秒
+        time_offset_seconds = frame_id / self.fps
+        target_datetime = self.start_datetime + timedelta(seconds=time_offset_seconds)
+        return target_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
 
     def extract_detection_info(self, box_data):
       
         if not box_data: return None
         
-        # 🔧 改进：从FFmpeg时间戳提供器获取准确的pts_time
-        pts_time = None
-        if self.timestamp_provider:
-            pts_time = self.timestamp_provider.get_timestamp(self.frame_count)
-        
-        # 降级方案：使用系统时间
-        if pts_time is None:
-            pts_time = self.get_current_frame_timestamp()
+        # 🔧 计算时间戳：初始时间 + (frame_id / fps)
+        timestamp_str = self.calculate_timestamp(self.frame_count)
             
         frame_result = {
             'frame_id': self.frame_count,
             'camera_id': self.attr.chan_id + 1,
             'boxes_num': 0,  # 先设为0，后面更新
             'detections': [],
-            'pts_time': pts_time,  # 🔧 新增：FFmpeg提供的pts_time
-            'timestamp': pts_time,
-            'rtsp_timestamp': pts_time  # 用于时间戳同步
+            'timestamp': timestamp_str,
+            'rtsp_timestamp': timestamp_str  # 用于时间戳同步
         }
         
         try:
@@ -293,23 +297,16 @@ class yolov5_SDK(infer_process):
         """从box数据中提取检测信息"""
         if not box_data: return None
         
-        # 🔧 改进：从FFmpeg时间戳提供器获取准确的pts_time
-        pts_time = None
-        if self.timestamp_provider:
-            pts_time = self.timestamp_provider.get_timestamp(frame_count)
-        
-        # 降级方案：使用系统时间
-        if pts_time is None:
-            pts_time = self.get_current_frame_timestamp()
+        # 🔧 计算时间戳：初始时间 + (frame_id / fps)
+        timestamp_str = self.calculate_timestamp(frame_count)
             
         frame_result = {
             'frame_id': frame_count,
             'camera_id': self.attr.chan_id + 1,
             'boxes_num': box_data.boxesnum if hasattr(box_data, 'boxesnum') else 0,
             'detections': [],
-            'pts_time': pts_time,  # 🔧 新增：FFmpeg提供的pts_time
-            'timestamp': pts_time,
-            'rtsp_timestamp': pts_time  # 用于时间戳同步
+            'timestamp': timestamp_str,
+            'rtsp_timestamp': timestamp_str  # 用于时间戳同步
         }
         
         try:
@@ -483,7 +480,7 @@ def cancel_process(signum, frame):
     cancel_flag.value = True
     logger.info("收到停止信号")
 
-def create_sdk_worker_process(camera_id: int, video_path: str, result_queue: multiprocessing.Queue, timestamp_provider=None):
+def create_sdk_worker_process(camera_id: int, video_path: str, result_queue: multiprocessing.Queue, start_datetime_str=None, fps=25.0):
     """创建并运行一个独立的 SDK 推理子进程 (生产者)"""
     try:
         logger.info(f"Camera{camera_id} 子进程启动")
@@ -498,7 +495,7 @@ def create_sdk_worker_process(camera_id: int, video_path: str, result_queue: mul
         attr.output_path = ""
         
         logger.info(f"Camera{camera_id} 初始化yolov5_SDK")
-        worker = yolov5_SDK(attr, result_queue, timestamp_provider=timestamp_provider) 
+        worker = yolov5_SDK(attr, result_queue, start_datetime_str=start_datetime_str, fps=fps) 
         logger.info(f"Camera{camera_id} yolov5_SDK初始化成功")
         
         # 更新类别名称 - 在运行前调用

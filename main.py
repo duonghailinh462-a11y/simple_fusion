@@ -15,16 +15,16 @@ import copy
 import json
 import signal
 import logging
+import queue
 from collections import defaultdict, deque
 from statistics import mean, median
 sys.path.append('/usr/local/lynxi/sdk/sdk-samples/python')
 
-# 配置logging
+# 配置logging - 只输出到文件，不输出到终端
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(sys.stdout),
         logging.FileHandler('fusion_system.log', encoding='utf-8')
     ]
 )
@@ -55,7 +55,8 @@ except ImportError as e:
     logger.warning(f"无法导入RTSP/MQTT模块: {e}, 将使用本地视频模式")
     RTSP_MQTT_AVAILABLE = False
 
-from Timestamp_sync import FFmpegTimeStampProvider, FFmpegTimestampFrameSynchronizer
+# 🔧 移除FFmpeg相关导入，改用直接计算时间戳
+# from Timestamp_sync import FFmpegTimeStampProvider, FFmpegTimestampFrameSynchronizer
 from Basic import Config, DetectionUtils, GeometryUtils, PerformanceMonitor
 from TargetTrack import TargetBuffer
 from Fusion import CrossCameraFusion
@@ -230,12 +231,13 @@ def batch_convert_track_results(tracked_objects: List, result: dict, camera_id: 
     
     return tracked_detections
 
-# 🔧 修改：移除了 timestamp_provider 参数
+# 🔧 修改：使用初始视频时间 + frame_id/fps 计算时间戳
 def create_sdk_worker_process(camera_id: int, video_path: str, result_queue: multiprocessing.Queue):
     """创建并运行一个独立的 SDK 推理子进程 (生产者)"""
     
-    # 确保子进程能找到 SDKinfer_ffmpeg 模块
-    from SDKinfer_ffmpeg import yolov5_SDK, infer_process_attr
+    # 确保子进程能找到 SDKinfer 模块
+    from SDKinfer import yolov5_SDK, infer_process_attr
+    from Basic import Config
     
     try:
         logger.info(f"Camera{camera_id} 子进程启动")
@@ -247,14 +249,29 @@ def create_sdk_worker_process(camera_id: int, video_path: str, result_queue: mul
         attr.chan_id = camera_id - 1
         attr.plugin_path = "/usr/local/lynxi/sdk/sdk-samples/plugin/obj/libYolov5Plugin.so"
         attr.model_path = "/root/yolov5-7.0_lyngor1.17.0/best_yolov5s_onnx/Net_0/"
+        attr.show_type = 2
+        attr.output_path = ""  # 🔧 参考 main_1015.py：设置输出路径
+        # 🔧 修复：初始化 video_frame 为队列对象，避免 'int' object has no attribute 'queue' 错误
+        attr.video_frame = queue.Queue(10)
         
-        logger.info(f"Camera{camera_id} 初始化yolov5_SDK (V13_PyAV)")
+        logger.info(f"Camera{camera_id} 初始化yolov5_SDK")
         logger.info(f"Camera{camera_id} 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件")
         
-        # 🔧 改进：移除传递 timestamp_provider
+        # 🔧 从配置中获取初始时间和fps
+        start_datetime_str = Config.CAMERA_START_DATETIMES.get(camera_id)
+        fps = Config.FPS
+        
         # 注意：SDK初始化可能会在这里失败，如果RTSP连接不可用
-        worker = yolov5_SDK(attr, result_queue) 
+        worker = yolov5_SDK(attr, result_queue, start_datetime_str=start_datetime_str, fps=fps) 
         logger.info(f"Camera{camera_id} yolov5_SDK初始化成功")
+        
+        # 🔧 参考 main_1015.py：更新类别名称到插件中
+        class_name_path = "/usr/local/lynxi/sdk/sdk-samples/data/class.txt"
+        if os.path.exists(class_name_path):
+            worker.update_class_name(class_name_path)
+            logger.info(f"Camera{camera_id} 类别名称已更新")
+        
+        logger.info(f"Camera{camera_id} 开始运行SDK推理...")
         worker.run(cancel_flag)
         logger.info(f"Camera{camera_id} 子进程正常退出")
         
@@ -336,7 +353,7 @@ if __name__ == "__main__":
     radar_fusion_processors = {}  # 按摄像头存储融合处理器
     
     # 雷达数据文件路径 (可配置)
-    radar_data_path = 'e:/从化数据/save/5f拉流/radar_data.jsonl'
+    radar_data_path = '/root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/radar_data.jsonl'
         
     try:
         if os.path.exists(radar_data_path):
@@ -411,16 +428,30 @@ if __name__ == "__main__":
     # 4. 主循环：时间戳融合逻辑 (消费者)
     current_frame = 0
     
-    # 🔧 新增：设置摄像头起始时间戳（绝对时间格式）
-    logger.info("配置摄像头时间戳")
-    FFmpegTimeStampProvider.set_all_camera_start_datetimes(Config.CAMERA_START_DATETIMES)
-    logger.info("摄像头时间戳配置完成")
+    # 🔧 时间戳配置：使用初始视频时间 + frame_id/fps 计算
+    logger.info("时间戳计算方式: 初始视频时间 + (frame_id / fps)")
     
-    # 初始化FFmpeg时间戳帧同步器
-    frame_synchronizer = FFmpegTimestampFrameSynchronizer(
-        num_cameras=3, 
-        timestamp_tolerance_ms=4000  # 启动容忍度（毫秒），用于Warmup阶段对齐起跑线
-    )
+    # 初始化帧同步器（使用StrictFrameSynchronizer）
+    from FrameSynchronizer import StrictFrameSynchronizer
+    frame_synchronizer = StrictFrameSynchronizer(num_cameras=3)
+    
+    # 设置初始时间和fps
+    from datetime import datetime
+    if Config.CAMERA_START_DATETIMES:
+        # 使用第一个摄像头的时间作为基准（或可以分别设置）
+        first_camera_time = Config.CAMERA_START_DATETIMES.get(1, Config.CAMERA_START_DATETIMES.get(2, Config.CAMERA_START_DATETIMES.get(3)))
+        try:
+            if '.' in first_camera_time:
+                start_datetime = datetime.strptime(first_camera_time, "%Y-%m-%d %H:%M:%S.%f")
+            else:
+                start_datetime = datetime.strptime(first_camera_time, "%Y-%m-%d %H:%M:%S")
+            # 转换为时间戳（秒）
+            frame_synchronizer.start_time = start_datetime.timestamp()
+            frame_synchronizer.video_fps = Config.FPS
+            frame_synchronizer.frame_duration = 1.0 / Config.FPS
+            logger.info(f"帧同步器初始化: 起始时间={first_camera_time}, FPS={Config.FPS}")
+        except Exception as e:
+            logger.warning(f"时间戳解析失败: {e}, 使用默认值")
     # 🔧 更新：使用绝对时间戳同步 - Warmup + 动态丢弃策略
     sync_mode = "绝对时间戳同步 - Warmup + 动态丢弃策略"
     
@@ -468,34 +499,46 @@ if __name__ == "__main__":
                 # 没有可同步的帧，短暂等待，避免CPU空转
                 no_sync_count += 1
                 
-                # 🔧 改进：更详细的调试信息
-                if no_sync_count % 20 == 0:
-                    current_time = time.time()
+                # 🔧 改进：更详细的调试信息，帮助诊断同步问题
+                if no_sync_count % 50 == 0:  # 降低日志频率，从20改为50
                     buffer_status = frame_synchronizer.get_buffer_status()
                     queue_sizes = {i: queues[i].qsize() for i in [1, 2, 3]}
-                    # 🔧 修复：使用正确的属性名warmup_complete
-                    warmup_complete = getattr(frame_synchronizer, 'warmup_complete', False)
-                    warmup_status = "✅完成" if warmup_complete else "⏳进行中"
                     
-                    logger.debug(f"等待同步 (连续{no_sync_count}个周期)")
+                    # 分析为什么无法同步
+                    empty_cameras = [cid for cid, status in buffer_status.items() if status['count'] == 0]
+                    if empty_cameras:
+                        logger.debug(f"等待同步 (连续{no_sync_count}个周期) - 摄像头{empty_cameras}缓冲区为空")
+                    else:
+                        # 所有摄像头都有数据，但帧号差距可能太大
+                        frame_ranges = {cid: f"{status['min_frame']}-{status['max_frame']}" 
+                                       for cid, status in buffer_status.items() if status['count'] > 0}
+                        logger.debug(f"等待同步 (连续{no_sync_count}个周期) - 帧号范围: {frame_ranges}")
+                    
                     logger.debug(f"队列: C1={queue_sizes[1]}, C2={queue_sizes[2]}, C3={queue_sizes[3]}")
-                    logger.debug(f"缓冲区: {buffer_status}")
-                    logger.debug(f"Warmup: {warmup_status}")
                     
                     alive_count = sum(1 for p in processes if p.is_alive())
                     logger.debug(f"SDK进程: {alive_count}/3 运行中")
                 
-                # 🔧 改进：更长的超时时间，因为Warmup阶段可能需要更多时间
-                if no_sync_count > 500:
-                    logger.warning(f"已连续{no_sync_count}个周期无法同步")
-                    warmup_complete = getattr(frame_synchronizer, 'warmup_complete', False)
-                    logger.warning(f"Warmup状态: {'完成' if warmup_complete else '未完成'}")
-                    if not warmup_complete:
-                        logger.warning("等待所有摄像头对齐起跑线")
+                # 🔧 改进：对于视频文件，增加超时阈值（从500增加到1000）
+                # 因为视频文件处理速度可能较慢，需要更多时间等待同步
+                if no_sync_count > 1000:
                     buffer_status = frame_synchronizer.get_buffer_status()
-                    logger.warning(f"缓冲区: {buffer_status}")
                     queue_sizes = {i: queues[i].qsize() for i in [1, 2, 3]}
-                    logger.warning(f"队列: {queue_sizes}")
+                    
+                    # 详细分析无法同步的原因
+                    empty_cameras = [cid for cid, status in buffer_status.items() if status['count'] == 0]
+                    if empty_cameras:
+                        logger.warning(f"已连续{no_sync_count}个周期无法同步 - 摄像头{empty_cameras}缓冲区为空")
+                        logger.warning(f"可能原因: 摄像头{empty_cameras}处理速度慢，或队列为空")
+                    else:
+                        # 所有摄像头都有数据，但帧号差距可能太大
+                        frame_ranges = {cid: f"{status['min_frame']}-{status['max_frame']} (共{status['count']}帧)" 
+                                       for cid, status in buffer_status.items() if status['count'] > 0}
+                        logger.warning(f"已连续{no_sync_count}个周期无法同步 - 所有摄像头都有数据但无法对齐")
+                        logger.warning(f"帧号范围: {frame_ranges}")
+                        logger.warning(f"可能原因: 帧号差距超过容忍度(15帧)，或处理速度差异过大")
+                    
+                    logger.warning(f"队列: C1={queue_sizes[1]}, C2={queue_sizes[2]}, C3={queue_sizes[3]}")
                     alive_count = sum(1 for p in processes if p.is_alive())
                     logger.warning(f"SDK进程: {alive_count}/3 运行中")
 
@@ -507,7 +550,9 @@ if __name__ == "__main__":
                     logger.error("所有SDK子进程已停止，主循环退出")
                     break
 
-                time.sleep(0.005) 
+                # 🔧 改进：对于视频文件，稍微增加等待时间（从5ms增加到10ms）
+                # 这样可以给摄像头更多时间处理，减少CPU空转
+                time.sleep(0.01) 
                 continue
             
             # 重置无同步计数
@@ -588,7 +633,9 @@ if __name__ == "__main__":
                 tracked_detections = batch_convert_track_results(tracked_objects, result, camera_id, current_frame, filtered_nms_detections, box_to_class)
                 
                 # 7. 跨摄像头融合处理 - 新的融合逻辑
-                global_targets, local_targets = fusion_system.process_detections(tracked_detections, camera_id, perf_monitor)
+                # 从同步帧中获取时间戳
+                timestamp = result.get('timestamp', None)
+                global_targets, local_targets = fusion_system.process_detections(tracked_detections, camera_id, timestamp, perf_monitor)
                 
                 # 存储此帧的全局和本地目标
                 all_frame_detections.append({

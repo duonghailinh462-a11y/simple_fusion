@@ -38,6 +38,21 @@ from FusionComponents import (
     C2BufferEntry
 )
 
+class NumpyJSONEncoder(json.JSONEncoder):
+    """自定义JSON编码器，处理NumPy类型"""
+    def default(self, obj):
+        if isinstance(obj, (np.integer, np.int_, np.intc, np.intp, np.int8,
+                            np.int16, np.int32, np.int64, np.uint8, np.uint16,
+                            np.uint32, np.uint64)):
+            return int(obj)
+        elif isinstance(obj, (np.floating, np.float_, np.float16, np.float32, np.float64)):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
+        return super(NumpyJSONEncoder, self).default(obj)
+
 class CrossCameraFusion:
     """
     跨摄像头融合协调器 (重构版 - 遵循单一职责原则)
@@ -53,7 +68,8 @@ class CrossCameraFusion:
     """
     
     def __init__(self):
-        self.config = Config()
+        # 使用全局Config实例
+        pass
         
         # 使用新的组件
         self.target_manager = TargetManager()
@@ -81,10 +97,10 @@ class CrossCameraFusion:
         """分配新的全局ID (委托给 TargetManager)"""
         return self.target_manager.assign_new_global_id(camera_id, local_id)
 
-    def create_global_target(self, global_id: int, detection: dict, camera_id: int, perf_monitor=None) -> GlobalTarget:
+    def create_global_target(self, global_id: int, detection: dict, camera_id: int, timestamp: str = None, perf_monitor=None) -> GlobalTarget:
         """创建全局目标 (委托给 TargetManager)"""
         return self.target_manager.create_global_target(
-            global_id, detection, camera_id, self.frame_count, perf_monitor
+            global_id, detection, camera_id, self.frame_count, timestamp, perf_monitor
         )
     
     def create_local_target(self, detection: dict, camera_id: int, perf_monitor=None) -> LocalTarget:
@@ -93,7 +109,7 @@ class CrossCameraFusion:
             detection, camera_id, self.frame_count, perf_monitor
         )
     
-    def classify_targets(self, detections: List[dict], camera_id: int, perf_monitor=None) -> Tuple[List[GlobalTarget], List[LocalTarget]]:
+    def classify_targets(self, detections: List[dict], camera_id: int, timestamp: str = None, perf_monitor=None) -> Tuple[List[GlobalTarget], List[LocalTarget]]:
         """
         [已重构 - 像素方向修正版]
         - C1/C3: 正常分配 GlobalID [cite: 235-250]。
@@ -143,6 +159,8 @@ class CrossCameraFusion:
                         global_target.pixel_trajectory.append((center_x, int(center_y)))
                         global_target.confidence_history.append(detection['confidence'])
                         global_target.last_seen_frame = self.frame_count
+                        if timestamp:
+                            global_target.last_seen_timestamp = timestamp
                     
                     current_bev = global_target.bev_trajectory[-1]
                     global_target.is_in_fusion_zone = GeometryUtils.is_in_public_area(current_bev)
@@ -170,10 +188,9 @@ class CrossCameraFusion:
             if should_assign_gid:
                 # C1 或 C3 满足条件, 分配 GlobalID
                 global_id = self.assign_new_global_id(camera_id, track_id)
-                global_target = self.create_global_target(global_id, detection, camera_id, perf_monitor)
+                global_target = self.create_global_target(global_id, detection, camera_id, timestamp, perf_monitor)
                 self.local_track_buffer.assign_global_id(camera_id, track_id, global_id) 
                 self.global_targets[global_id] = global_target
-                self.target_frame_count[global_id] = 1
                 global_targets.append(global_target)
             
             else:
@@ -355,31 +372,38 @@ class CrossCameraFusion:
         pass
     
     def update_global_state(self, all_global_targets: List[GlobalTarget], all_local_targets: List[LocalTarget]):
-        """更新全局状态"""
+        """更新全局状态（基于时间戳）"""
         # ... (不变) [cite: 879-894]
         for global_target in all_global_targets:
-            self.target_frame_count[global_target.global_id] += 1
-            
             if global_target.bev_trajectory:
                 current_bev = global_target.bev_trajectory[-1]
                 global_target.is_in_fusion_zone = GeometryUtils.is_in_public_area(current_bev)
             
-            if (self.target_frame_count[global_target.global_id] >= self.config.MIN_FRAMES_THRESHOLD and 
-                global_target.global_id not in self.confirmed_targets):
-                self.confirmed_targets.add(global_target.global_id)
+            # 使用时间戳判断是否达到确认阈值
+            if global_target.global_id not in self.target_manager.confirmed_targets:
+                if global_target.first_seen_timestamp and global_target.last_seen_timestamp:
+                    try:
+                        first_time = datetime.strptime(global_target.first_seen_timestamp, '%Y-%m-%d %H:%M:%S.%f')
+                        last_time = datetime.strptime(global_target.last_seen_timestamp, '%Y-%m-%d %H:%M:%S.%f')
+                        time_diff = (last_time - first_time).total_seconds()
+                        # MIN_FRAMES_THRESHOLD 帧转换为时间（假设30fps）
+                        min_time_threshold = Config.MIN_FRAMES_THRESHOLD / 30.0  # 秒
+                        if time_diff >= min_time_threshold:
+                            self.target_manager.confirmed_targets.add(global_target.global_id)
+                    except (ValueError, AttributeError) as e:
+                        logger.warning(f"时间戳解析失败 (GID:{global_target.global_id}): {e}")
     
-    def process_detections(self, detections: List[dict], camera_id: int, perf_monitor=None) -> Tuple[List[GlobalTarget], List[LocalTarget]]:
+    def process_detections(self, detections: List[dict], camera_id: int, timestamp: str = None, perf_monitor=None) -> Tuple[List[GlobalTarget], List[LocalTarget]]:
         """处理单个摄像头的检测结果"""
         # ... (不变) [cite: 896-918]
         if perf_monitor:
             perf_monitor.start_timer('process_detections')
         
-        global_targets, local_targets = self.classify_targets(detections, camera_id, perf_monitor)
+        global_targets, local_targets = self.classify_targets(detections, camera_id, timestamp, perf_monitor)
         
         for global_target in global_targets:
             if global_target.global_id not in self.global_targets:
                 self.global_targets[global_target.global_id] = global_target
-                self.target_frame_count[global_target.global_id] = 1
         
         if perf_monitor:
             duration = perf_monitor.end_timer('process_detections')
@@ -411,8 +435,20 @@ class CrossCameraFusion:
         
         # 处理全局目标
         for global_target in all_global_targets:
-            frame_count = self.target_frame_count.get(global_target.global_id, 0)
-            if frame_count < 2 and global_target.global_id not in self.confirmed_targets:
+            # 使用时间戳判断是否应该输出（至少出现一定时间或已确认）
+            should_output = global_target.global_id in self.target_manager.confirmed_targets
+            if not should_output and global_target.first_seen_timestamp and global_target.last_seen_timestamp:
+                try:
+                    first_time = datetime.strptime(global_target.first_seen_timestamp, '%Y-%m-%d %H:%M:%S.%f')
+                    last_time = datetime.strptime(global_target.last_seen_timestamp, '%Y-%m-%d %H:%M:%S.%f')
+                    time_diff = (last_time - first_time).total_seconds()
+                    # 至少出现 2 帧的时间（假设30fps）
+                    min_time_for_output = 2 / 30.0  # 秒
+                    should_output = time_diff >= min_time_for_output
+                except (ValueError, AttributeError):
+                    should_output = False
+            
+            if not should_output:
                 continue
             
             if not global_target.bev_trajectory:
@@ -446,7 +482,7 @@ class CrossCameraFusion:
             if not local_target.matched_global_id:
                 continue
             
-            if local_target.matched_global_id not in self.confirmed_targets:
+            if local_target.matched_global_id not in self.target_manager.confirmed_targets:
                 continue
             
             if local_target.current_bev_pos[0] == 0.0 and local_target.current_bev_pos[1] == 0.0:
@@ -480,7 +516,7 @@ class CrossCameraFusion:
     def is_confirmed_target(self, global_id: int) -> bool:
         """检查目标是否已确认"""
         # ... [cite: 987-989]
-        return global_id in self.confirmed_targets
+        return global_id in self.target_manager.confirmed_targets
 
     def cleanup_inactive_targets(self):
         """[已修改] 清理不活跃目标, 同时清理 C2 缓冲区"""
@@ -499,9 +535,8 @@ class CrossCameraFusion:
 
         for global_id in inactive_global_ids:
             self.global_targets.pop(global_id, None)
-            self.colors.pop(global_id, None)
-            self.target_frame_count.pop(global_id, None)
-            self.confirmed_targets.discard(global_id)
+            self.target_manager.colors.pop(global_id, None)
+            self.target_manager.confirmed_targets.discard(global_id)
             
             keys_to_remove = [k for k, v in self.local_to_global.items() if v == global_id]
             for key in keys_to_remove:
@@ -513,7 +548,7 @@ class CrossCameraFusion:
         # 1. 清理已超时的条目
         c2_buffer_timeout = Config.MAX_RETENTION_FRAMES
         active_c2_entries = [
-            entry for entry in self.c2_buffer_from_c3
+            entry for entry in self.matching_engine.c2_buffer_from_c3
             if (current_time - entry.first_seen_frame) <= c2_buffer_timeout
         ]
         
@@ -527,22 +562,28 @@ class CrossCameraFusion:
                 final_c2_buffer.append(entry)
             else:
                 # C2 跟踪器跟丢了, 这个条目也失效了
-                self.metrics['fifo_pop_stale'] += 1
-                self.c2_targets_processed_direction.discard(entry.local_id)
+                self.matching_engine.metrics['fifo_pop_stale'] += 1
+                self.matching_engine.c2_targets_processed_direction.discard(entry.local_id)
 
         # 3. 清理已处理方向的集合 (C2 LID 已消失)
         active_processed_set = {
-            lid for lid in self.c2_targets_processed_direction 
+            lid for lid in self.matching_engine.c2_targets_processed_direction 
             if lid in active_c2_local_ids
         }
-        self.c2_targets_processed_direction = active_processed_set
+        self.matching_engine.c2_targets_processed_direction = active_processed_set
 
-        if len(final_c2_buffer) < len(self.c2_buffer_from_c3):
-            removed_count = len(self.c2_buffer_from_c3) - len(final_c2_buffer)
+        if len(final_c2_buffer) < len(self.matching_engine.c2_buffer_from_c3):
+            removed_count = len(self.matching_engine.c2_buffer_from_c3) - len(final_c2_buffer)
             logger.debug(f"清理C3->C2缓冲区: 移除{removed_count}个过期条目")
-        self.c2_buffer_from_c3 = deque(final_c2_buffer)
+        self.matching_engine.c2_buffer_from_c3 = deque(final_c2_buffer)
         # ⬆️ ⬆️ ⬆️ 结束 ⬆️ ⬆️ ⬆️
 
+    def _flush_logs(self):
+        """刷新日志缓冲区到JSON输出数据"""
+        if self.log_buffer:
+            self.json_output_data.extend(self.log_buffer)
+            self.log_buffer.clear()
+    
     def next_frame(self):
         """进入下一帧"""
         # ... (不变) [cite: 1016-1022]
@@ -559,7 +600,7 @@ class CrossCameraFusion:
             self._flush_logs()
             
             with open(output_file, 'w', encoding='utf-8') as f:
-                json.dump(self.json_output_data, f, ensure_ascii=False, indent=2)
+                json.dump(self.json_output_data, f, ensure_ascii=False, indent=2, cls=NumpyJSONEncoder)
             logger.info(f"JSON数据已保存: {output_file}, 共{len(self.json_output_data)}帧")
         except Exception as e:
             logger.error(f"保存JSON文件出错: {e}")

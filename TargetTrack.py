@@ -21,8 +21,10 @@ from ByteTrack.optimized_byte_tracker import OptimizedBYTETracker as BYTETracker
 # --- 目标跟踪缓冲区和融合系统类  ---
 
 class TargetBuffer:
-    def __init__(self, time_window: int = Config.TIME_WINDOW):
+    def __init__(self, time_window: int = None):
         self.buffer = deque(maxlen=500)
+        if time_window is None:
+            time_window = Config.TIME_WINDOW
         self.time_window = time_window
         self.frame_counter = 0
         self.active_targets = {}
@@ -49,7 +51,9 @@ class TargetBuffer:
                              if v['timestamp'] > cutoff_time}
 
     def find_matching_targets(self, class_name: str, 
-                            tolerance_frames: int = Config.TOLERANCE_FRAMES) -> List[dict]:
+                            tolerance_frames: int = None) -> List[dict]:
+        if tolerance_frames is None:
+            tolerance_frames = Config.TOLERANCE_FRAMES
         cutoff_time = self.frame_counter - tolerance_frames
         matches = [target for target in self.buffer 
                   if (target['timestamp'] >= cutoff_time and 
@@ -75,6 +79,8 @@ class GlobalTarget:
     is_in_fusion_zone: bool = False
     confidence_history: List[float] = None
     fusion_entry_frame: int = -1
+    first_seen_timestamp: str = None  # 首次出现的时间戳 (格式: 'YYYY-MM-DD HH:MM:SS.fff')
+    last_seen_timestamp: str = None   # 最后出现的时间戳 (格式: 'YYYY-MM-DD HH:MM:SS.fff')
     
     def __post_init__(self):
         if self.confidence_history is None:
@@ -189,6 +195,30 @@ class LocalTrackBuffer:
         # 🔧 新增：清理更新时间记录
         if local_id in self.last_update_frame[camera_id]:
             del self.last_update_frame[camera_id][local_id]
+    
+    def cleanup_inactive_tracks(self, current_time: int, timeout_frames: int = None):
+        """清理不活跃的轨迹（超过指定帧数未更新）"""
+        if timeout_frames is None:
+            timeout_frames = Config.MAX_RETENTION_FRAMES
+        
+        inactive_tracks = []
+        for camera_id in list(self.tracks.keys()):
+            for local_id in list(self.tracks[camera_id].keys()):
+                last_update = self.last_update_frame[camera_id].get(local_id)
+                if last_update is None:
+                    # 如果没有更新时间记录，认为是不活跃的
+                    inactive_tracks.append((camera_id, local_id))
+                elif (current_time - last_update) > timeout_frames:
+                    # 超过超时时间未更新
+                    inactive_tracks.append((camera_id, local_id))
+        
+        # 清理不活跃的轨迹
+        for camera_id, local_id in inactive_tracks:
+            self.cleanup_track(camera_id, local_id)
+    
+    def get_active_local_ids(self, camera_id: int) -> Set[int]:
+        """获取指定摄像头中所有活跃的本地ID集合"""
+        return set(self.tracks[camera_id].keys())
 
 def analyze_trajectory_for_global_assignment(pixel_track_history: List[Tuple[int, int]], 
                                             camera_id: int,
