@@ -197,6 +197,10 @@ class FFmpegTimestampFrameSynchronizer:
     
     def _timestamp_to_datetime(self, timestamp_str: str) -> datetime:
         """将时间戳字符串转换为 datetime 对象"""
+        if timestamp_str is None:
+            raise ValueError("timestamp_str cannot be None")
+        if not isinstance(timestamp_str, str):
+            raise TypeError(f"timestamp_str must be a string, got {type(timestamp_str)}: {timestamp_str}")
         if '.' in timestamp_str:
             return datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
         else:
@@ -208,6 +212,10 @@ class FFmpegTimestampFrameSynchronizer:
     
     def _get_time_difference_sec(self, ts1: str, ts2: str) -> float:
         """计算两个时间戳之间的差值（秒）"""
+        if ts1 is None or ts2 is None:
+            raise ValueError(f"Cannot calculate time difference: ts1={ts1}, ts2={ts2}")
+        if not isinstance(ts1, str) or not isinstance(ts2, str):
+            raise TypeError(f"Timestamps must be strings: ts1={type(ts1)}, ts2={type(ts2)}")
         dt1 = self._timestamp_to_datetime(ts1)
         dt2 = self._timestamp_to_datetime(ts2)
         return abs((dt2 - dt1).total_seconds())
@@ -279,6 +287,9 @@ class FFmpegTimestampFrameSynchronizer:
             ts = self._peek_earliest_timestamp(cid)
             if ts is None:
                 # 至少一个缓冲区是空的，等待
+                return None, None
+            if not isinstance(ts, str):
+                logger.error(f"Camera {cid} timestamp is not a string: {type(ts)} = {ts}")
                 return None, None
             earliest_timestamps[cid] = ts
 

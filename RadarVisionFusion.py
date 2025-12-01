@@ -392,7 +392,6 @@ class RadarDataLoader:
                         camera_id = self._get_camera_id_from_ip(source_ip)
                         
                         if camera_id is None:
-                            print(f"  警告: 未知的雷达IP: {source_ip}")
                             continue
                         
                         ts = parse_time(obj.get('time', ''))

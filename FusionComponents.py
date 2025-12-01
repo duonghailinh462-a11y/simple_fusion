@@ -31,7 +31,8 @@ class TargetManager:
     """
     
     def __init__(self):
-        self.config = Config()
+        # 使用全局Config实例
+        pass
         
         # ID管理
         self.global_id_counter = 1
@@ -39,7 +40,6 @@ class TargetManager:
         
         # 确认目标管理
         self.confirmed_targets: Set[int] = set()
-        self.target_frame_count: Dict[int, int] = defaultdict(int)
         
         logger.info("TargetManager 初始化完成")
     
@@ -64,13 +64,13 @@ class TargetManager:
     
     def create_global_target(self, global_id: int, detection: dict, 
                            camera_id: int, frame_count: int, 
-                           perf_monitor=None) -> GlobalTarget:
+                           timestamp: str = None, perf_monitor=None) -> GlobalTarget:
         """创建全局目标"""
         center_x = int((detection['box'][0] + detection['box'][2]) / 2)
         center_y = int(detection['box'][3])
         
-        center_x = max(0, min(center_x, self.config.IMAGE_WIDTH - 1))
-        center_y = max(0, min(center_y, self.config.IMAGE_HEIGHT - 1))
+        center_x = max(0, min(center_x, Config.IMAGE_WIDTH - 1))
+        center_y = max(0, min(center_y, Config.IMAGE_HEIGHT - 1))
         
         H_matrix = CAMERA_MATRICES[camera_id]
         bev_result = GeometryUtils.project_pixel_to_bev(H_matrix, center_x, center_y)
@@ -95,7 +95,9 @@ class TargetManager:
             fusion_alpha=0.2,
             is_in_fusion_zone=is_in_fusion_zone,
             confidence_history=[detection['confidence']],
-            fusion_entry_frame=fusion_entry_frame
+            fusion_entry_frame=fusion_entry_frame,
+            first_seen_timestamp=timestamp,
+            last_seen_timestamp=timestamp
         )
     
     def create_local_target(self, detection: dict, camera_id: int, 
@@ -104,8 +106,8 @@ class TargetManager:
         center_x = int((detection['box'][0] + detection['box'][2]) / 2)
         center_y = int(detection['box'][3])
         
-        center_x = max(0, min(center_x, self.config.IMAGE_WIDTH - 1))
-        center_y = max(0, min(center_y, self.config.IMAGE_HEIGHT - 1))
+        center_x = max(0, min(center_x, Config.IMAGE_WIDTH - 1))
+        center_y = max(0, min(center_y, Config.IMAGE_HEIGHT - 1))
             
         H_matrix = CAMERA_MATRICES[camera_id]
         bev_result = GeometryUtils.project_pixel_to_bev(H_matrix, center_x, center_y)
@@ -136,14 +138,26 @@ class TargetManager:
             fusion_entry_frame=fusion_entry_frame
         )
     
-    def update_target_confirmation(self, global_id: int) -> bool:
-        """更新目标确认状态，返回是否为确认目标"""
-        self.target_frame_count[global_id] += 1
-        
+    def update_target_confirmation(self, global_id: int, global_target: GlobalTarget) -> bool:
+        """更新目标确认状态，返回是否为确认目标（基于时间戳）"""
         if global_id not in self.confirmed_targets:
-            if self.target_frame_count[global_id] >= self.config.MIN_FRAMES_THRESHOLD:
-                self.confirmed_targets.add(global_id)
-                return True
+            # 使用时间戳判断是否达到阈值
+            if global_target.first_seen_timestamp and global_target.last_seen_timestamp:
+                from datetime import datetime
+                try:
+                    first_time = datetime.strptime(global_target.first_seen_timestamp, '%Y-%m-%d %H:%M:%S.%f')
+                    last_time = datetime.strptime(global_target.last_seen_timestamp, '%Y-%m-%d %H:%M:%S.%f')
+                    time_diff = (last_time - first_time).total_seconds()
+                    # MIN_FRAMES_THRESHOLD 帧转换为时间（假设30fps）
+                    min_time_threshold = Config.MIN_FRAMES_THRESHOLD / 30.0  # 秒
+                    if time_diff >= min_time_threshold:
+                        self.confirmed_targets.add(global_id)
+                        return True
+                except (ValueError, AttributeError) as e:
+                    logger.warning(f"时间戳解析失败: {e}, 使用帧计数作为备选方案")
+                    # 备选方案：如果时间戳解析失败，使用帧计数
+                    # 这里需要从 global_target 获取帧数信息，暂时跳过确认
+                    pass
         return global_id in self.confirmed_targets
 
 
@@ -169,7 +183,8 @@ class MatchingEngine:
     """
     
     def __init__(self):
-        self.config = Config()
+        # 使用全局Config实例
+        pass
         
         # C3 -> C2 融合数据结构
         self.c2_buffer_from_c3: deque[C2BufferEntry] = deque()
@@ -215,7 +230,7 @@ class MatchingEngine:
         c2_entry_at_head = self.c2_buffer_from_c3[0]
         
         # 检查是否过期
-        if (frame_count - c2_entry_at_head.first_seen_frame) > self.config.MAX_RETENTION_FRAMES:
+        if (frame_count - c2_entry_at_head.first_seen_frame) > Config.MAX_RETENTION_FRAMES:
             logger.debug(f"C2 LID:{c2_entry_at_head.local_id} 已过期, POP丢弃")
             self.metrics['fifo_pop_stale'] += 1
             self.c2_buffer_from_c3.popleft()

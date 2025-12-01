@@ -184,7 +184,7 @@ class TimestampConfig:
                 3: "2025-11-21 11:18:09.304",
             }
 
-class Config:
+class _Config:
     """统一的配置管理类 - 使用组合模式"""
     def __init__(self):
         self.image = ImageConfig()
@@ -344,8 +344,7 @@ class GeometryUtils:
     def is_in_radar_vision_fusion_area(pixel_point: Tuple[int, int], camera_id: int) -> bool:
         """检查像素点是否在该摄像头的雷视融合区域内"""
         # 获取Config实例的融合区域配置
-        config = Config()
-        fusion_areas = config.RADAR_VISION_FUSION_AREAS
+        fusion_areas = Config.RADAR_VISION_FUSION_AREAS
         if not fusion_areas or camera_id not in fusion_areas:
             return False
         fusion_area = fusion_areas[camera_id]
@@ -360,7 +359,9 @@ class DetectionUtils:
 
     @staticmethod
     def non_max_suppression(detections: List[dict], 
-                          iou_threshold: float = Config.IOU_THRESHOLD) -> List[dict]:
+                          iou_threshold: float = None) -> List[dict]:
+        if iou_threshold is None:
+            iou_threshold = Config.IOU_THRESHOLD
         if not detections: return detections
         detections = sorted(detections, key=lambda x: x['confidence'], reverse=True)
         keep = []
@@ -466,3 +467,6 @@ class SmoothingFilter:
 # # 例如：2025-11-21 11:18:09.304 + 100/25秒 = 2025-11-21 11:18:13.304
 #
 # ============================================================================
+
+# 创建全局Config实例，以便直接通过Config.FPS等方式访问
+Config = _Config()
