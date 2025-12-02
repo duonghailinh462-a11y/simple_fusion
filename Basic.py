@@ -179,9 +179,9 @@ class TimestampConfig:
     def __post_init__(self):
         if self.CAMERA_START_DATETIMES is None:
             self.CAMERA_START_DATETIMES = {
-                1: "2025-11-21 11:18:09.304",
-                2: "2025-11-21 11:18:09.304",
-                3: "2025-11-21 11:18:09.304",
+                1: "2025-11-21 11:59:10.097",
+                2: "2025-11-21 11:59:12.200",
+                3: "2025-11-21 11:59:10.281",
             }
 
 class _Config:

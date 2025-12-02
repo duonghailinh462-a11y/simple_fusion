@@ -73,6 +73,39 @@ def point_in_polygon(point, polygon):
 
 
 # ==========================================
+# Track 类 - 融合轨迹对象
+# ==========================================
+class Track:
+    """融合轨迹对象，用于轨迹预测和生命周期管理"""
+    
+    def __init__(self, fusion_id, lat, lon, speed=0.0, azimuth=0.0):
+        self.id = fusion_id
+        self.lat = lat
+        self.lon = lon
+        self.speed = speed
+        self.azimuth = azimuth
+        self.last_update_time = 0
+        self.radar_id_ref = None
+        self.vision_id_ref = None
+    
+    def predict(self, dt):
+        """根据速度和方向预测轨迹位置"""
+        if self.speed < 0.5 or dt <= 0:
+            return
+        
+        dist = self.speed * dt
+        rad = math.radians(self.azimuth)
+        
+        # 计算位置变化
+        dy = dist * math.cos(rad)
+        dx = dist * math.sin(rad)
+        
+        # 更新地理坐标
+        self.lat += dy / LAT_TO_M
+        self.lon += dx / LON_TO_M
+
+
+# ==========================================
 # 数据结构
 # ==========================================
 class RadarObject:
@@ -127,7 +160,7 @@ class RadarVisionFusionProcessor:
 
     def __init__(self, fusion_area_geo=None, lat_offset=0.0, lon_offset=0.0):
         """
-        初始化雷达融合处理器
+        初始化雷达融合处理器 - 集成高级融合逻辑
         
         Args:
             fusion_area_geo: 融合区域 (地理坐标多边形)
@@ -138,6 +171,7 @@ class RadarVisionFusionProcessor:
         self.MAX_LANE_DIFF = 3.5      # 横向距离阈值 (米)
         self.MAX_LONG_DIFF = 20.0     # 纵向距离阈值 (米)
         self.MAX_TIME_DIFF = 0.2      # 最大时间差 (秒)
+        self.MAX_COAST_TIME = 2.0     # 最大漂移时间 (秒)
         self.LOYALTY_BONUS = 10000.0  # 忠诚度奖励
         
         self.fusion_area_geo = fusion_area_geo
@@ -149,8 +183,11 @@ class RadarVisionFusionProcessor:
         self.radar_timestamps = deque(maxlen=100)  # 保留最近100个时间戳
         
         # 匹配映射 (track_id -> radar_id)
-        self.radar_id_map = {}  # 当前帧的匹配关系
-        self.vision_id_map = {}  # 视觉ID -> 雷达ID
+        self.radar_id_map = {}  # 雷达ID -> 融合ID
+        self.vision_id_map = {}  # 视觉ID -> 融合ID
+        
+        # 🔧 新增：活跃轨迹管理 (融合ID -> Track对象)
+        self.active_tracks = {}  # 维护活跃的融合轨迹
         
         # 统计信息
         self.stats = {
@@ -183,6 +220,7 @@ class RadarVisionFusionProcessor:
     def find_closest_radar_timestamp(self, vision_timestamp, max_time_diff=None):
         """
         找到最接近的雷达时间戳
+        视觉为准，雷达靠拢
         
         Args:
             vision_timestamp: 视觉时间戳
@@ -269,7 +307,8 @@ class RadarVisionFusionProcessor:
 
     def process_frame(self, vision_timestamp, vision_objects):
         """
-        处理单帧的雷视融合
+        处理单帧的雷视融合 - 集成高级融合逻辑
+        使用贪婪匹配、去重机制、轨迹预测
         
         Args:
             vision_timestamp: 视觉帧时间戳
@@ -278,58 +317,180 @@ class RadarVisionFusionProcessor:
         Returns:
             更新后的视觉目标列表 (with radar_id)
         """
-        # 找到最接近的雷达时间戳
+        # ===== 步骤 1：轨迹预测与清理 =====
+        dead_ids = []
+        for fusion_id, track in self.active_tracks.items():
+            dt = vision_timestamp - track.last_update_time
+            if dt > 0:
+                track.predict(dt)  # 预测轨迹位置
+            if dt > self.MAX_COAST_TIME:
+                dead_ids.append(fusion_id)
+        
+        # 清理过期轨迹
+        for fusion_id in dead_ids:
+            del self.active_tracks[fusion_id]
+            self.vision_id_map = {k: v for k, v in self.vision_id_map.items() if v != fusion_id}
+            self.radar_id_map = {k: v for k, v in self.radar_id_map.items() if v != fusion_id}
+        
+        # ===== 步骤 2：坐标校准 =====
+        for v_obj in vision_objects:
+            v_obj.calib_lat = v_obj.lat + self.lat_offset
+            v_obj.calib_lon = v_obj.lon + self.lon_offset
+        
+        # ===== 步骤 3：找到最接近的雷达时间戳 =====
         radar_timestamp = self.find_closest_radar_timestamp(vision_timestamp)
-
         if radar_timestamp is None:
-            # 没有雷达数据，直接返回
             return vision_objects
-
+        
         radar_objects = self.radar_buffer.get(radar_timestamp, [])
-
         if not radar_objects:
             return vision_objects
-
-        # 初始化本帧的ID占用表
-        used_track_ids = set()
-
-        # 雷达主动匹配视觉
+        
+        # ===== 步骤 4：初始化本帧的ID占用表（去重机制） =====
+        used_fusion_ids = set()
         matched_vision_track_ids = set()
-
+        
+        # ===== 步骤 5：雷达主动贪婪匹配视觉 =====
         for radar_obj in radar_objects:
             self.stats['radar_objects_processed'] += 1
-
-            # 尝试匹配
-            matched_vision_obj = self.match_radar_to_vision(radar_obj, vision_objects)
-
-            if matched_vision_obj is not None:
-                # 匹配成功
+            
+            # 区域过滤
+            if self.fusion_area_geo and not point_in_polygon(
+                [radar_obj.longitude, radar_obj.latitude],
+                self.fusion_area_geo
+            ):
+                continue
+            
+            best_vision_idx = -1
+            min_cost = 1e6
+            
+            # 贪婪搜索最佳匹配的视觉目标
+            for j, v_obj in enumerate(vision_objects):
+                if v_obj.track_id in matched_vision_track_ids:
+                    continue  # 已匹配过，跳过
+                
+                # 区域过滤
+                if self.fusion_area_geo and not point_in_polygon(
+                    [v_obj.calib_lon, v_obj.calib_lat],
+                    self.fusion_area_geo
+                ):
+                    continue
+                
+                # 计算距离成本
+                dy = (v_obj.calib_lat - radar_obj.latitude) * LAT_TO_M
+                dx = (v_obj.calib_lon - radar_obj.longitude) * LON_TO_M
+                dist = math.sqrt(dx**2 + dy**2)
+                
+                # 计算方位角成本
+                angle = math.degrees(math.atan2(dx, dy))
+                if angle < 0:
+                    angle += 360
+                delta_rad = math.radians((angle - radar_obj.azimuth + 180) % 360 - 180)
+                
+                lat_diff = abs(dist * math.sin(delta_rad))
+                lon_diff = abs(dist * math.cos(delta_rad))
+                
+                # 距离阈值检查
+                long_thresh = self.get_dynamic_long_threshold(radar_obj.speed)
+                if lat_diff > self.MAX_LANE_DIFF or lon_diff > long_thresh:
+                    continue
+                
+                # 计算总成本
+                cost = (10.0 * lat_diff) + (1.0 * lon_diff)
+                
+                # 忠诚度奖励：如果之前匹配过，降低成本
+                v_key = str(v_obj.track_id)
+                prev_fusion_id_radar = self.radar_id_map.get(radar_obj.id)
+                prev_fusion_id_vision = self.vision_id_map.get(v_key)
+                
+                if prev_fusion_id_radar and prev_fusion_id_radar == prev_fusion_id_vision:
+                    cost -= self.LOYALTY_BONUS
+                
+                if cost < min_cost:
+                    min_cost = cost
+                    best_vision_idx = j
+            
+            # 匹配成功
+            if best_vision_idx != -1 and min_cost < 1e5:
+                v_obj = vision_objects[best_vision_idx]
+                v_key = str(v_obj.track_id)
+                matched_vision_track_ids.add(v_obj.track_id)
+                
+                # 确定融合ID
+                fusion_id = self.vision_id_map.get(v_key) or self.radar_id_map.get(radar_obj.id)
+                if not fusion_id:
+                    fusion_id = f"r{radar_obj.id[-4:]}-v{v_key}"
+                
+                # 去重检查
+                if fusion_id in used_fusion_ids:
+                    fusion_id = f"r{radar_obj.id[-4:]}-v{v_key}-{int(vision_timestamp*1000)%1000}"
+                
+                used_fusion_ids.add(fusion_id)
+                
+                # 更新映射
+                self.vision_id_map[v_key] = fusion_id
+                self.radar_id_map[radar_obj.id] = fusion_id
+                
+                # 创建或更新轨迹
+                track = Track(fusion_id, v_obj.calib_lat, v_obj.calib_lon, 
+                             radar_obj.speed, radar_obj.azimuth)
+                track.last_update_time = vision_timestamp
+                track.radar_id_ref = radar_obj.id
+                track.vision_id_ref = v_key
+                self.active_tracks[fusion_id] = track
+                
+                # 设置视觉目标的雷达ID
+                v_obj.radar_id = radar_obj.id
                 self.stats['successful_matches'] += 1
-                matched_vision_obj.radar_id = radar_obj.id
-                matched_vision_track_ids.add(matched_vision_obj.track_id)
-                used_track_ids.add(matched_vision_obj.track_id)
-
-                # 更新映射关系
-                self.vision_id_map[matched_vision_obj.track_id] = radar_obj.id
             else:
-                # 匹配失败
                 self.stats['failed_matches'] += 1
-
-        # 处理未匹配的视觉目标
-        for vision_obj in vision_objects:
+        
+        # ===== 步骤 6：处理未匹配的视觉目标 =====
+        for v_obj in vision_objects:
             self.stats['vision_objects_processed'] += 1
-
-            if vision_obj.track_id not in matched_vision_track_ids:
-                # 尝试从历史映射中恢复
-                if vision_obj.track_id in self.vision_id_map:
-                    # 检查这个映射是否仍然有效
-                    radar_id = self.vision_id_map[vision_obj.track_id]
-                    # 可选：验证这个雷达ID是否仍在当前帧中
-                    vision_obj.radar_id = radar_id
-                else:
-                    # 没有历史映射，保持为 None
-                    vision_obj.radar_id = None
-
+            v_key = str(v_obj.track_id)
+            
+            if v_obj.track_id in matched_vision_track_ids:
+                continue  # 已匹配，跳过
+            
+            # 尝试获取已有的融合ID
+            fusion_id = self.vision_id_map.get(v_key)
+            
+            # 去重检查：如果融合ID已被占用，清除
+            if fusion_id and fusion_id in used_fusion_ids:
+                fusion_id = None
+            
+            # 幽灵复活：尝试继承已有的融合ID
+            if not fusion_id:
+                min_dist = 5.0
+                best_ghost = None
+                
+                for exist_fusion_id, track in self.active_tracks.items():
+                    # 只能继承含雷达历史的轨迹
+                    if "r" in exist_fusion_id and track.last_update_time < vision_timestamp and exist_fusion_id not in used_fusion_ids:
+                        dist_m = math.sqrt(
+                            ((track.lat - v_obj.calib_lat) * LAT_TO_M)**2 +
+                            ((track.lon - v_obj.calib_lon) * LON_TO_M)**2
+                        )
+                        if dist_m < min_dist:
+                            min_dist = dist_m
+                            best_ghost = exist_fusion_id
+                
+                if best_ghost:
+                    fusion_id = best_ghost
+                    self.vision_id_map[v_key] = fusion_id
+            
+            # 最终确定融合ID
+            if not fusion_id:
+                fusion_id = f"v{v_key}"
+            
+            # 去重检查（双保险）
+            if fusion_id in used_fusion_ids and "r" in fusion_id:
+                fusion_id = f"v{v_key}"
+            
+            used_fusion_ids.add(fusion_id)
+            v_obj.radar_id = None  # 未匹配的视觉目标没有雷达ID
+        
         return vision_objects
 
     def clear_old_radar_data(self, current_timestamp, max_age=1.0):

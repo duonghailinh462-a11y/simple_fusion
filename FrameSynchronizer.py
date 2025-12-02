@@ -8,6 +8,7 @@ import json
 import re
 from collections import defaultdict, deque
 from statistics import mean, median
+from datetime import datetime
 sys.path.append('/usr/local/lynxi/sdk/sdk-samples/python')
 
 import numpy as np
@@ -30,244 +31,209 @@ from pycommon.dump_json import *
 class StrictFrameSynchronizer:
     """严格帧同步管理器，确保所有摄像头帧严格同步且不丢帧"""
     
-    def __init__(self, num_cameras=3):
+    def __init__(self, num_cameras=3, time_window=0.5, camera_start_times=None):
         self.num_cameras = num_cameras
-        self.global_frame_counter = 0
-        self.camera_frame_counters = {i: 0 for i in range(1, num_cameras + 1)}
         self.frame_buffers = {i: {} for i in range(1, num_cameras + 1)}
-        self.sync_tolerance = 5  # 基础容忍度5帧，实际使用时会扩大到15帧
-        self.max_buffer_size = 150  # 增大缓冲区以等待同步（从100增加到150）
         
-        # 视频参数
-        self.video_fps = 30  # 假设30fps
-        self.frame_duration = 1.0 / self.video_fps
+        # 🔧 改进：完全基于时间戳同步，不依赖帧号
+        self.time_window = time_window  # 时间窗口（秒），默认0.5秒
+        self.max_buffer_size = 200  # 增大缓冲区
         
-        # 时间戳基准
-        self.start_time = 0 
-        # 为不同摄像头设置轻微延迟(暂时不使用)
-        self.camera_delays = {1: 0.0, 2: 0.033, 3: 0.067}  # 1帧和2帧延迟
+        # 🔧 新增：用于时间戳同步的参数
+        self.last_synced_timestamp = None  # 上一次同步的时间戳
+        self.timestamp_format = "%Y-%m-%d %H:%M:%S.%f"  # 时间戳格式
         
-        print(f"🎯 严格帧同步器初始化完成 - {num_cameras}摄像头, FPS:{self.video_fps}")
+        # 🔧 新增：对齐到最晚开始的时间点 - 直接丢弃早期帧
+        self.camera_start_times = camera_start_times or {}
+        self.sync_start_timestamp = self._calculate_sync_start_time()
         
+        print(f"🎯 时间戳同步器初始化完成 - {num_cameras}摄像头, 时间窗口:{time_window}秒")
+        if self.sync_start_timestamp:
+            print(f"📍 同步起始时间戳: {self.sync_start_timestamp:.3f} (对齐到最晚开始的摄像头)")
+    
+    def _calculate_sync_start_time(self):
+        """
+        计算同步起始时间 - 对齐到最晚开始的摄像头
+        
+        🔧 策略：取交集，从最晚开始的摄像头时间点开始同步
+        - 直接丢弃早开始的摄像头在该时间点之前的所有帧
+        - 简单直接，避免复杂的偏移计算
+        """
+        if not self.camera_start_times:
+            return None
+        
+        # 解析所有摄像头的起始时间
+        start_timestamps = {}
+        for cam_id, time_str in self.camera_start_times.items():
+            ts = self._parse_timestamp(time_str)
+            if ts is not None:
+                start_timestamps[cam_id] = ts
+        
+        if not start_timestamps:
+            return None
+        
+        # 取最晚的起始时间作为同步起点
+        max_timestamp = max(start_timestamps.values())
+        
+        # 打印各摄像头的起始时间信息
+        for cam_id in sorted(start_timestamps.keys()):
+            ts = start_timestamps[cam_id]
+            delay = ts - min(start_timestamps.values())
+            print(f"  C{cam_id} 起始时间: {ts:.3f} (延迟: {delay:.3f}s)")
+        
+        return max_timestamp
+    
     def add_frame(self, camera_id, frame_data):
-        """添加帧到缓冲区，使用SDKinfer计算好的时间戳"""
-        frame_number = frame_data.get('frame_id', self.camera_frame_counters[camera_id])
+        """添加帧到缓冲区，使用时间戳作为唯一标识"""
         
-        # 🔧 使用SDKinfer中已计算的时间戳（字符串格式）
-        # 如果frame_data中已有timestamp，直接使用；否则计算一个
+        # 🔧 确保有时间戳
         if 'timestamp' not in frame_data or frame_data['timestamp'] is None:
-            # 降级方案：计算时间戳
-            timestamp_seconds = self.start_time + (frame_number * self.frame_duration)
+            # 降级方案：使用系统时间
             from datetime import datetime
-            timestamp = datetime.fromtimestamp(timestamp_seconds).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
             frame_data['timestamp'] = timestamp
         
         # 增强帧数据
-        frame_data['frame_number'] = frame_number
         frame_data['camera_id'] = camera_id
-        frame_data['sync_id'] = f"C{camera_id}_F{frame_number}"
         
-        # 添加到缓冲区
-        self.frame_buffers[camera_id][frame_number] = frame_data
-        
-        # 更新摄像头帧计数器
-        if frame_number >= self.camera_frame_counters[camera_id]:
-            self.camera_frame_counters[camera_id] = frame_number + 1
+        # 添加到缓冲区 - 使用时间戳作为键
+        ts_str = frame_data.get('timestamp')
+        ts_float = self._parse_timestamp(ts_str)
+        if ts_float is not None:
+            self.frame_buffers[camera_id][ts_float] = frame_data
         
         # 清理过期帧
         self._cleanup_old_frames(camera_id)
         
-        return frame_number
-        
+    def _parse_timestamp(self, timestamp_str):
+        """解析时间戳字符串为浮点数（秒）"""
+        try:
+            if isinstance(timestamp_str, (int, float)):
+                return float(timestamp_str)
+            
+            # 处理字符串格式的时间戳
+            if isinstance(timestamp_str, str):
+                # 尝试解析为 "YYYY-MM-DD HH:MM:SS.mmm" 格式
+                try:
+                    dt = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S.%f")
+                    return dt.timestamp()
+                except ValueError:
+                    # 尝试不带毫秒的格式
+                    dt = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+                    return dt.timestamp()
+            
+            return None
+        except Exception as e:
+            return None
+    
     def get_synchronized_frames(self):
-        """获取同步帧 - 改进的容忍同步策略，针对视频文件优化"""
+        """
+        获取同步帧 - 完全基于时间戳同步，不依赖帧号
+        
+        🔧 改进：
+        - 完全抛弃帧号，只用时间戳
+        - 允许任意大的帧号差距
+        - 只要时间戳在同一时间窗口内就认为同步
+        """
         synchronized_frames = {}
         
-        # 🔧 改进：检查每个摄像头是否都有数据
-        # 对于视频文件，如果某个摄像头暂时没有数据，可能是处理速度慢
-        # 我们仍然要求所有摄像头都有数据，但增加容忍度
+        # 检查每个摄像头是否都有数据
         empty_cameras = [cid for cid in range(1, self.num_cameras + 1) if not self.frame_buffers[cid]]
         if empty_cameras:
-            # 对于视频文件，如果某个摄像头缓冲区为空，说明它可能处理速度慢
-            # 我们仍然返回None，但会在主循环中等待
             return None, None
         
-        # 容忍同步策略：在sync_tolerance范围内寻找最佳对齐点
-        all_frames = []
+        # 获取所有摄像头的所有帧的时间戳
+        all_timestamps = {}
         for camera_id in range(1, self.num_cameras + 1):
-            all_frames.extend(self.frame_buffers[camera_id].keys())
+            all_timestamps[camera_id] = []
+            for key, frame_data in self.frame_buffers[camera_id].items():
+                ts_str = frame_data.get('timestamp')
+                ts_float = self._parse_timestamp(ts_str)
+                if ts_float is not None:
+                    all_timestamps[camera_id].append((ts_float, key, frame_data))
+            
+            # 按时间戳排序
+            all_timestamps[camera_id].sort(key=lambda x: x[0])
         
-        if not all_frames:
+        # 检查是否所有摄像头都有有效的时间戳
+        if any(len(ts_list) == 0 for ts_list in all_timestamps.values()):
             return None, None
-
-        # 找到最小的基准帧
-        min_frame = min(all_frames)
         
-        # 🔧 改进：对于视频文件，扩大容忍度检查范围
-        # 处理速度差异可能导致帧号差距较大，但视频文件不存在网络波动
-        # 所以可以安全地扩大容忍度
-        extended_tolerance = self.sync_tolerance * 3  # 扩大容忍度到15帧（从5帧）
+        # 🔧 改进：在时间窗口内寻找所有摄像头都有帧的时间点
+        # 获取所有摄像头中最早的时间戳作为基准
+        earliest_timestamps = [all_timestamps[cid][0][0] for cid in range(1, self.num_cameras + 1)]
+        reference_timestamp = max(earliest_timestamps)  # 取最晚的最早时间戳作为基准
         
-        # 检查在容忍范围内是否所有摄像头都有帧
-        for offset in range(extended_tolerance + 1):
-            target_frame = min_frame + offset
-            available_cameras = 0
-            potential_sync = {}
+        # 如果有上一次同步的时间戳，优先从该时间戳之后查找
+        if self.last_synced_timestamp is not None:
+            reference_timestamp = max(reference_timestamp, self.last_synced_timestamp)
+        
+        # 在时间窗口内寻找所有摄像头都有帧的时间点
+        for camera_id in range(1, self.num_cameras + 1):
+            best_match = None
+            best_distance = float('inf')
             
-            for camera_id in range(1, self.num_cameras + 1):
-                # 在容忍范围内寻找最接近的帧
-                best_frame = None
-                best_distance = float('inf')
-                
-                for frame_num in self.frame_buffers[camera_id].keys():
-                    distance = abs(frame_num - target_frame)
-                    if distance <= extended_tolerance and distance < best_distance:
-                        best_frame = frame_num
-                        best_distance = distance
-                
-                if best_frame is not None:
-                    potential_sync[camera_id] = best_frame
-                    available_cameras += 1
+            for ts_float, key, frame_data in all_timestamps[camera_id]:
+                # 在时间窗口内寻找最接近基准时间戳的帧
+                distance = abs(ts_float - reference_timestamp)
+                if distance <= self.time_window and distance < best_distance:
+                    best_match = (ts_float, key, frame_data)
+                    best_distance = distance
             
-            # 如果所有摄像头都在容忍范围内有帧
-            if available_cameras == self.num_cameras:
-                for camera_id, frame_num in potential_sync.items():
-                    synchronized_frames[camera_id] = self.frame_buffers[camera_id].pop(frame_num)
-                
-                self.global_frame_counter = target_frame
-                # 简化成功日志
-                # print(f"⚡ 同步成功 (容忍模式): 基准帧 {target_frame} (各帧偏差: {[abs(f-target_frame) for f in potential_sync.values()]})")
-                return synchronized_frames, target_frame
+            if best_match is None:
+                # 这个摄像头在时间窗口内没有帧
+                return None, None
+            
+            synchronized_frames[camera_id] = best_match[2]
+            ts_float = best_match[0]
+            key = best_match[1]
+            
+            # 从缓冲区中移除已使用的帧
+            self.frame_buffers[camera_id].pop(key, None)
         
-        return None, None
+        # 更新最后同步的时间戳
+        self.last_synced_timestamp = reference_timestamp
+        
+        # 返回时间戳作为同步标识符（而不是帧号）
+        return synchronized_frames, reference_timestamp
     
     def get_buffer_status(self):
-        """获取缓冲区状态信息"""
+        """获取缓冲区状态信息 - 基于时间戳"""
         status = {}
         for camera_id in range(1, self.num_cameras + 1):
             if self.frame_buffers[camera_id]:
-                frames = list(self.frame_buffers[camera_id].keys())
-                status[camera_id] = {
-                    'count': len(frames),
-                    'min_frame': min(frames),
-                    'max_frame': max(frames),
-                    'frames': sorted(frames)
-                }
+                # 获取所有帧的时间戳
+                timestamps = []
+                for key, frame_data in self.frame_buffers[camera_id].items():
+                    ts_str = frame_data.get('timestamp')
+                    ts_float = self._parse_timestamp(ts_str)
+                    if ts_float is not None:
+                        timestamps.append(ts_float)
+                
+                if timestamps:
+                    timestamps.sort()
+                    status[camera_id] = {
+                        'count': len(timestamps),
+                        'min_timestamp': timestamps[0],
+                        'max_timestamp': timestamps[-1],
+                        'time_span': timestamps[-1] - timestamps[0]
+                    }
+                else:
+                    status[camera_id] = {'count': 0}
             else:
-                status[camera_id] = {'count': 0, 'frames': []}
+                status[camera_id] = {'count': 0}
         return status
     
     def _cleanup_old_frames(self, camera_id):
         """
-        更积极的缓冲区清理策略，基于全局已同步的帧号 (`global_frame_counter`)
+        不清理帧 - 视频文件处理，保留所有帧
+        
+        🔧 改进：
+        - 处理视频文件时，不需要丢弃任何帧
+        - 所有帧都保留在缓冲区中
+        - 只在缓冲区超过极限时报告
         """
-        # 🔧 改进：对于视频文件，增加安全边距，避免过早清理
-        # 安全阈值 = 全局已同步帧号 - 扩展容忍度 - 额外安全边距
-        # 这确保了我们不会意外删除可能在下一次同步中用到的帧
-        extended_tolerance = self.sync_tolerance * 3  # 与get_synchronized_frames中的容忍度一致
-        safety_margin = 20  # 增加安全边距（从10增加到20）
-        safe_cleanup_threshold = self.global_frame_counter - extended_tolerance - safety_margin
-        
-        if safe_cleanup_threshold < 0: return # 早期阶段不清理
-        
-        # 清理确实过期的帧
-        old_frames = [f for f in self.frame_buffers[camera_id].keys() if f < safe_cleanup_threshold]
-        if old_frames:
-            for frame_num in old_frames:
-                del self.frame_buffers[camera_id][frame_num]
-            print(f"🗑️  C{camera_id} 清理过期帧: {len(old_frames)}个 (阈值 < {safe_cleanup_threshold})")
-        
-        # 紧急清理：如果缓冲区仍然过大，强制清理最老的帧
-        if len(self.frame_buffers[camera_id]) > self.max_buffer_size:
-            all_frames = sorted(self.frame_buffers[camera_id].keys())
-            # 保留最新的 max_buffer_size * 0.8 个帧
-            frames_to_remove = all_frames[:-int(self.max_buffer_size * 0.8)]
-            
-            if frames_to_remove:
-                for frame_num in frames_to_remove:
-                    del self.frame_buffers[camera_id][frame_num]
-                print(f"🚨 C{camera_id} 紧急清理缓冲区: {len(frames_to_remove)}个帧 (当前大小: {len(self.frame_buffers[camera_id])})")
-        
-        # 定期报告缓冲区状态 (降低频率)
-        if self.global_frame_counter > 0 and self.global_frame_counter % 150 == 0:
+        # 定期报告缓冲区状态
+        if self.last_synced_timestamp is not None and int(self.last_synced_timestamp * 10) % 150 == 0:
             buffer_sizes = {i: len(self.frame_buffers[i]) for i in range(1, self.num_cameras + 1)}
-            print(f"📊 缓冲区状态: {buffer_sizes}, 全局同步帧: {self.global_frame_counter}")
-
-
-class FrameLossPrevention:
-    """防止丢帧检测机制"""
-    
-    def __init__(self):
-        self.expected_frame_sequence = {1: 0, 2: 0, 3: 0}
-        self.missing_frames = {1: [], 2: [], 3: []}
-        self.duplicate_frames = {1: [], 2: [], 3: []}
-        self.total_frames_processed = {1: 0, 2: 0, 3: 0}
-        self.frame_timeout = 0.1  # 100ms超时
-        
-        print("🛡️  防丢帧检测机制初始化完成")
-        
-    def check_frame_sequence(self, camera_id, frame_number):
-        """检查帧序列是否连续，返回是否应该处理该帧"""
-        expected = self.expected_frame_sequence[camera_id]
-        
-        if frame_number == expected:
-            # 正常帧
-            self.expected_frame_sequence[camera_id] = frame_number + 1
-            self.total_frames_processed[camera_id] += 1
-            return True
-            
-        elif frame_number > expected:
-            # 有丢帧
-            missing = list(range(expected, frame_number))
-            self.missing_frames[camera_id].extend(missing)
-            self.expected_frame_sequence[camera_id] = frame_number + 1
-            self.total_frames_processed[camera_id] += 1
-            
-            if len(missing) <= 3:  # 丢帧不多，警告但继续处理
-                print(f"⚠️  C{camera_id} 丢帧: {missing} (期望:{expected}, 实际:{frame_number})")
-                return True
-            else:  # 丢帧过多，可能有问题
-                print(f"❌ C{camera_id} 严重丢帧: {missing} (期望:{expected}, 实际:{frame_number})")
-                return True  # 仍然处理，但需要注意
-                
-        else:
-            # 重复帧或乱序帧
-            self.duplicate_frames[camera_id].append(frame_number)
-            print(f"🔄 C{camera_id} 重复/乱序帧: {frame_number} (期望:{expected})")
-            return False  # 不处理重复帧
-    
-    def get_missing_frames_report(self):
-        """获取丢帧报告"""
-        report = {}
-        for camera_id in [1, 2, 3]:
-            missing_count = len(self.missing_frames[camera_id])
-            duplicate_count = len(self.duplicate_frames[camera_id])
-            total_processed = self.total_frames_processed[camera_id]
-            
-            if missing_count > 0 or duplicate_count > 0:
-                report[camera_id] = {
-                    'missing_frames': self.missing_frames[camera_id].copy(),
-                    'duplicate_frames': self.duplicate_frames[camera_id].copy(),
-                    'missing_count': missing_count,
-                    'duplicate_count': duplicate_count,
-                    'total_processed': total_processed,
-                    'loss_rate': (missing_count / max(total_processed, 1)) * 100
-                }
-                
-                # 清空计数器
-                self.missing_frames[camera_id] = []
-                self.duplicate_frames[camera_id] = []
-                
-        return report
-    
-    def get_statistics(self):
-        """获取统计信息"""
-        stats = {}
-        for camera_id in [1, 2, 3]:
-            stats[camera_id] = {
-                'total_processed': self.total_frames_processed[camera_id],
-                'expected_next': self.expected_frame_sequence[camera_id],
-                'current_missing': len(self.missing_frames[camera_id]),
-                'current_duplicates': len(self.duplicate_frames[camera_id])
-            }
-        return stats
+            print(f"📊 缓冲区状态: {buffer_sizes}, 最后同步时间戳: {self.last_synced_timestamp:.3f}")

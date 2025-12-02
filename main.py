@@ -25,7 +25,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('fusion_system.log', encoding='utf-8')
+        logging.FileHandler('fusion_system.log', mode='w', encoding='utf-8')  # mode='w' 每次运行时清空日志
     ]
 )
 logger = logging.getLogger(__name__)
@@ -60,7 +60,6 @@ except ImportError as e:
 from Basic import Config, DetectionUtils, GeometryUtils, PerformanceMonitor
 from TargetTrack import TargetBuffer
 from Fusion import CrossCameraFusion
-from FrameSynchronizer import FrameLossPrevention
 from RadarVisionFusion import RadarVisionFusionProcessor, RadarDataLoader, OutputObject
 from CameraManager import CameraManager
 
@@ -222,9 +221,7 @@ def batch_convert_track_results(tracked_objects: List, result: dict, camera_id: 
             'local_id': track.track_id,
             'center_point': [(tlbr[0] + tlbr[2]) / 2, (tlbr[1] + tlbr[3]) / 2],
             'timestamp': result.get('timestamp', time.time()),
-            'frame_number': result.get('frame_number', current_frame),
             'camera_id': camera_id,
-            'sync_id': result.get('sync_id', f"C{camera_id}_F{current_frame}"),
             'in_fusion_area': in_fusion_area  # 新增：标记是否在融合区域内
         }
         tracked_detections.append(detection)
@@ -426,14 +423,19 @@ if __name__ == "__main__":
 
 
     # 4. 主循环：时间戳融合逻辑 (消费者)
-    current_frame = 0
     
-    # 🔧 时间戳配置：使用初始视频时间 + frame_id/fps 计算
-    logger.info("时间戳计算方式: 初始视频时间 + (frame_id / fps)")
+    # 🔧 时间戳配置：完全基于时间戳同步，不依赖帧号
+    logger.info("同步方式: 纯时间戳同步 (不依赖帧号)")
     
-    # 初始化帧同步器（使用StrictFrameSynchronizer）
+    # 🔧 初始化帧同步器 - 改用时间戳同步而非帧号同步
     from FrameSynchronizer import StrictFrameSynchronizer
-    frame_synchronizer = StrictFrameSynchronizer(num_cameras=3)
+    # 时间窗口设置为0.5秒，允许最多500ms的时间戳差异
+    # 传入摄像头起始时间，自动对齐到最晚开始的摄像头
+    frame_synchronizer = StrictFrameSynchronizer(
+        num_cameras=3, 
+        time_window=2.5,  # 🔧 增大时间窗口以容纳摄像头起始时间差（最大2.103秒）
+        camera_start_times=Config.CAMERA_START_DATETIMES
+    )
     
     # 设置初始时间和fps
     from datetime import datetime
@@ -449,13 +451,11 @@ if __name__ == "__main__":
             frame_synchronizer.start_time = start_datetime.timestamp()
             frame_synchronizer.video_fps = Config.FPS
             frame_synchronizer.frame_duration = 1.0 / Config.FPS
-            logger.info(f"帧同步器初始化: 起始时间={first_camera_time}, FPS={Config.FPS}")
+            logger.info(f"帧同步器初始化: 起始时间={first_camera_time}, FPS={Config.FPS}, 时间窗口={frame_synchronizer.time_window}秒")
         except Exception as e:
             logger.warning(f"时间戳解析失败: {e}, 使用默认值")
-    # 🔧 更新：使用绝对时间戳同步 - Warmup + 动态丢弃策略
-    sync_mode = "绝对时间戳同步 - Warmup + 动态丢弃策略"
-    
-    frame_loss_prevention = FrameLossPrevention()
+    # 🔧 更新：使用时间戳同步 - 允许不同摄像头的帧号差距，只要时间戳接近即可
+    sync_mode = "时间戳同步 - 允许帧号差距，基于时间戳对齐"
     
     logger.info("融合主循环启动")
     logger.info(f"同步模式: {sync_mode}")
@@ -476,13 +476,10 @@ if __name__ == "__main__":
                 while True: # 使用 get_nowait() 快速清空队列，避免阻塞
                     try:
                         result = queues[camera_id].get_nowait()
-                        frame_id = result['frame_id']
                         perf_monitor.add_counter('queue_operations')
                         
-                        # 防丢帧检测
-                        if frame_loss_prevention.check_frame_sequence(camera_id, frame_id):
-                            # 添加到FFmpeg时间戳同步器
-                            frame_synchronizer.add_frame(camera_id, result)
+                        # 直接添加到时间戳同步器
+                        frame_synchronizer.add_frame(camera_id, result)
                         
                     except multiprocessing.queues.Empty:
                         break # 队列为空，退出内层循环
@@ -493,14 +490,14 @@ if __name__ == "__main__":
             queue_processing_time = perf_monitor.end_timer('queue_processing')
             
             # B. 获取时间戳同步的帧
-            synchronized_frames, sync_frame_number = frame_synchronizer.get_synchronized_frames()
+            synchronized_frames, sync_timestamp = frame_synchronizer.get_synchronized_frames()
             
             if not synchronized_frames:
                 # 没有可同步的帧，短暂等待，避免CPU空转
                 no_sync_count += 1
                 
                 # 🔧 改进：更详细的调试信息，帮助诊断同步问题
-                if no_sync_count % 50 == 0:  # 降低日志频率，从20改为50
+                if no_sync_count % 50 == 0:  # 降低日志频率
                     buffer_status = frame_synchronizer.get_buffer_status()
                     queue_sizes = {i: queues[i].qsize() for i in [1, 2, 3]}
                     
@@ -509,19 +506,18 @@ if __name__ == "__main__":
                     if empty_cameras:
                         logger.debug(f"等待同步 (连续{no_sync_count}个周期) - 摄像头{empty_cameras}缓冲区为空")
                     else:
-                        # 所有摄像头都有数据，但帧号差距可能太大
-                        frame_ranges = {cid: f"{status['min_frame']}-{status['max_frame']}" 
-                                       for cid, status in buffer_status.items() if status['count'] > 0}
-                        logger.debug(f"等待同步 (连续{no_sync_count}个周期) - 帧号范围: {frame_ranges}")
+                        # 所有摄像头都有数据，但时间戳可能不在同一时间窗口内
+                        time_spans = {cid: f"{status.get('time_span', 0):.2f}s" 
+                                     for cid, status in buffer_status.items() if status['count'] > 0}
+                        logger.debug(f"等待同步 (连续{no_sync_count}个周期) - 缓冲区时间跨度: {time_spans}")
                     
                     logger.debug(f"队列: C1={queue_sizes[1]}, C2={queue_sizes[2]}, C3={queue_sizes[3]}")
                     
                     alive_count = sum(1 for p in processes if p.is_alive())
                     logger.debug(f"SDK进程: {alive_count}/3 运行中")
                 
-                # 🔧 改进：对于视频文件，增加超时阈值（从500增加到1000）
-                # 因为视频文件处理速度可能较慢，需要更多时间等待同步
-                if no_sync_count > 1000:
+                # 🔧 改进：纯时间戳同步，超时阈值可以更大
+                if no_sync_count > 2000:
                     buffer_status = frame_synchronizer.get_buffer_status()
                     queue_sizes = {i: queues[i].qsize() for i in [1, 2, 3]}
                     
@@ -531,12 +527,12 @@ if __name__ == "__main__":
                         logger.warning(f"已连续{no_sync_count}个周期无法同步 - 摄像头{empty_cameras}缓冲区为空")
                         logger.warning(f"可能原因: 摄像头{empty_cameras}处理速度慢，或队列为空")
                     else:
-                        # 所有摄像头都有数据，但帧号差距可能太大
-                        frame_ranges = {cid: f"{status['min_frame']}-{status['max_frame']} (共{status['count']}帧)" 
-                                       for cid, status in buffer_status.items() if status['count'] > 0}
-                        logger.warning(f"已连续{no_sync_count}个周期无法同步 - 所有摄像头都有数据但无法对齐")
-                        logger.warning(f"帧号范围: {frame_ranges}")
-                        logger.warning(f"可能原因: 帧号差距超过容忍度(15帧)，或处理速度差异过大")
+                        # 所有摄像头都有数据，但时间戳可能不在同一时间窗口内
+                        time_spans = {cid: f"{status.get('time_span', 0):.2f}s" 
+                                     for cid, status in buffer_status.items() if status['count'] > 0}
+                        logger.warning(f"已连续{no_sync_count}个周期无法同步 - 所有摄像头都有数据但时间戳不在同一窗口内")
+                        logger.warning(f"缓冲区时间跨度: {time_spans}")
+                        logger.warning(f"可能原因: 时间戳计算错误，或摄像头时间不同步，或处理速度差异过大")
                     
                     logger.warning(f"队列: C1={queue_sizes[1]}, C2={queue_sizes[2]}, C3={queue_sizes[3]}")
                     alive_count = sum(1 for p in processes if p.is_alive())
@@ -550,8 +546,7 @@ if __name__ == "__main__":
                     logger.error("所有SDK子进程已停止，主循环退出")
                     break
 
-                # 🔧 改进：对于视频文件，稍微增加等待时间（从5ms增加到10ms）
-                # 这样可以给摄像头更多时间处理，减少CPU空转
+                # 🔧 改进：稍微增加等待时间，给摄像头更多处理时间
                 time.sleep(0.01) 
                 continue
             
@@ -559,7 +554,7 @@ if __name__ == "__main__":
             no_sync_count = 0
 
             # C. 只要有数据就进行融合
-            current_frame = sync_frame_number
+            current_frame = int(sync_timestamp)  # 将时间戳转换为整数用于日志
             current_frame_results = synchronized_frames
             # 📊 性能监控：记录每帧同步和处理情况
             perf_monitor.add_counter('frames_synchronized')
@@ -789,13 +784,13 @@ if __name__ == "__main__":
             json_mqtt_time = perf_monitor.end_timer('json_mqtt_processing')       
             fusion_system.next_frame()
 
-            # D. 定期报告丢帧情况
+            # D. 定期报告缓冲区状态
             if current_frame > 0 and current_frame % 300 == 0:
-                missing_report = frame_loss_prevention.get_missing_frames_report()
-                if missing_report:
-                    logger.info(f"丢帧报告 (截至Frame {current_frame})")
-                    for cam_id, report in missing_report.items():
-                        logger.info(f"C{cam_id}: 丢帧{report['missing_count']}个({report['loss_rate']:.2f}%), 重复{report['duplicate_count']}个")
+                buffer_status = frame_synchronizer.get_buffer_status()
+                logger.info(f"缓冲区状态 (截至时间戳 {current_frame})")
+                for cam_id, status in buffer_status.items():
+                    if status['count'] > 0:
+                        logger.info(f"C{cam_id}: {status['count']}帧, 时间跨度: {status.get('time_span', 0):.2f}s")
         
         logger.info("所有处理完成")
         
@@ -815,19 +810,9 @@ if __name__ == "__main__":
         # 6. 输出最终同步统计
         logger.info("="*60)
         logger.info("最终同步统计报告")
-        final_stats = frame_loss_prevention.get_statistics()
         
-        total_processed = sum(stat['total_processed'] for stat in final_stats.values())
         synchronized_frames_count = fusion_system.frame_count
-
-        logger.info("处理概况:")
-        logger.info(f"总接收帧数: {total_processed}帧")
         logger.info(f"成功同步并处理的帧组: {synchronized_frames_count}组")
-        
-        if total_processed > 0 and len(final_stats) > 0:
-            avg_processed_per_cam = total_processed / len(final_stats)
-            sync_rate = (synchronized_frames_count / max(avg_processed_per_cam, 1)) * 100
-            logger.info(f"同步成功率: {sync_rate:.2f}%")
         
         buffer_status = frame_synchronizer.get_buffer_status()
         remaining_frames = sum(status['count'] for status in buffer_status.values())
