@@ -7,3 +7,4 @@ __pycache__/
 # 大体积视频和数据文件
 videos/
 *.jsonl
+*.mp4
