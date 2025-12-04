@@ -1,0 +1,10 @@
+# Python 编译缓存
+__pycache__/
+
+# 临时输出文件
+*.json
+
+# 大体积视频和数据文件
+videos/
+*.jsonl
+*.mp4

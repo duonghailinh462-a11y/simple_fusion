@@ -1,0 +1,135 @@
+2025-12-03 16:02:13,211 - __main__ - INFO - ============================================================
+2025-12-03 16:02:13,212 - __main__ - INFO - 程序开始启动...
+2025-12-03 16:02:13,212 - __main__ - INFO - ============================================================
+2025-12-03 16:02:13,213 - __main__ - INFO - 摄像头1: Main Entrance - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
+2025-12-03 16:02:13,214 - __main__ - INFO - 摄像头2: Back Yard - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
+2025-12-03 16:02:13,214 - __main__ - INFO - 摄像头3: Side Gate - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
+2025-12-03 16:02:13,214 - __main__ - INFO - 使用RTSP流作为输入
+2025-12-03 16:02:13,214 - FusionComponents - INFO - TargetManager 初始化完成
+2025-12-03 16:02:13,214 - FusionComponents - INFO - MatchingEngine 初始化完成
+2025-12-03 16:02:13,214 - Fusion - INFO - CrossCameraFusion初始化完成 (重构版)
+2025-12-03 16:02:13,214 - Basic - INFO - 性能监视器初始化完成
+2025-12-03 16:02:13,215 - CameraManager - INFO - CameraManager 初始化完成
+2025-12-03 16:02:13,217 - CameraManager - INFO - 已创建3个队列 (maxsize=10)
+2025-12-03 16:02:13,217 - __main__ - INFO - 初始化雷达融合模块
+2025-12-03 16:02:14,430 - __main__ - INFO - C1 雷达融合处理器初始化成功, 雷达数据帧数: 1768
+2025-12-03 16:02:14,436 - __main__ - INFO - C2 雷达融合处理器初始化成功, 雷达数据帧数: 1369
+2025-12-03 16:02:14,441 - __main__ - INFO - C3 雷达融合处理器初始化成功, 雷达数据帧数: 1312
+2025-12-03 16:02:14,442 - __main__ - INFO - 雷达融合模块初始化成功
+2025-12-03 16:02:19,453 - mqtt_publisher - ERROR - MQTT 连接失败: timed out
+2025-12-03 16:02:19,453 - __main__ - WARNING - MQTT连接失败: timed out, 将使用JSON文件保存
+2025-12-03 16:02:19,454 - __main__ - INFO - 已启用优化版ByteTracker - 交替跟踪模式
+2025-12-03 16:02:19,454 - CameraManager - INFO - 测试RTSP连接 (使用PyAV/OpenCV)
+2025-12-03 16:02:19,454 - CameraManager - INFO - Camera1 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
+2025-12-03 16:02:19,454 - CameraManager - INFO - Camera2 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
+2025-12-03 16:02:19,454 - CameraManager - INFO - Camera3 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
+2025-12-03 16:02:19,455 - CameraManager - INFO - 启动SDK版多摄像头融合系统
+2025-12-03 16:02:19,466 - CameraManager - INFO - 启动Camera1 SDK推理进程
+2025-12-03 16:02:19,478 - CameraManager - INFO - 启动Camera2 SDK推理进程
+2025-12-03 16:02:19,485 - __main__ - INFO - Camera1 子进程启动
+2025-12-03 16:02:19,486 - __main__ - INFO - Camera1 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
+2025-12-03 16:02:19,488 - __main__ - INFO - Camera1 初始化yolov5_SDK
+2025-12-03 16:02:19,488 - __main__ - INFO - Camera1 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
+2025-12-03 16:02:19,490 - CameraManager - INFO - 启动Camera3 SDK推理进程
+2025-12-03 16:02:19,490 - CameraManager - INFO - 所有SDK推理进程已启动
+2025-12-03 16:02:19,491 - CameraManager - INFO - 进入预热阶段，等待所有摄像头推送第一帧数据
+2025-12-03 16:02:19,511 - __main__ - INFO - Camera2 子进程启动
+2025-12-03 16:02:19,512 - __main__ - INFO - Camera2 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
+2025-12-03 16:02:19,513 - __main__ - INFO - Camera2 初始化yolov5_SDK
+2025-12-03 16:02:19,513 - __main__ - INFO - Camera2 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
+2025-12-03 16:02:19,509 - __main__ - INFO - Camera3 子进程启动
+2025-12-03 16:02:19,515 - __main__ - INFO - Camera3 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
+2025-12-03 16:02:19,516 - __main__ - INFO - Camera3 初始化yolov5_SDK
+2025-12-03 16:02:19,516 - __main__ - INFO - Camera3 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
+2025-12-03 16:02:20,359 - SDKinfer - INFO - Camera1 时间戳初始化: 起始时间=2025-11-21 11:59:10.097, FPS=25
+2025-12-03 16:02:20,361 - __main__ - INFO - Camera1 yolov5_SDK初始化成功
+2025-12-03 16:02:20,397 - SDKinfer - INFO - Camera1 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
+2025-12-03 16:02:20,398 - __main__ - INFO - Camera1 类别名称已更新
+2025-12-03 16:02:20,398 - __main__ - INFO - Camera1 开始运行SDK推理...
+2025-12-03 16:02:20,452 - SDKinfer - INFO - Camera1 SDK线程已启动
+2025-12-03 16:02:20,874 - SDKinfer - INFO - Camera3 时间戳初始化: 起始时间=2025-11-21 11:59:10.281, FPS=25
+2025-12-03 16:02:20,879 - __main__ - INFO - Camera3 yolov5_SDK初始化成功
+2025-12-03 16:02:20,892 - SDKinfer - INFO - Camera3 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
+2025-12-03 16:02:20,893 - __main__ - INFO - Camera3 类别名称已更新
+2025-12-03 16:02:20,893 - __main__ - INFO - Camera3 开始运行SDK推理...
+2025-12-03 16:02:20,929 - SDKinfer - INFO - Camera3 SDK线程已启动
+2025-12-03 16:02:20,995 - CameraManager - INFO - 摄像头 C1 已就绪
+2025-12-03 16:02:20,995 - CameraManager - INFO - 摄像头 C3 已就绪
+2025-12-03 16:02:21,298 - SDKinfer - INFO - Camera2 时间戳初始化: 起始时间=2025-11-21 11:59:12.200, FPS=25
+2025-12-03 16:02:21,299 - __main__ - INFO - Camera2 yolov5_SDK初始化成功
+2025-12-03 16:02:21,306 - SDKinfer - INFO - Camera2 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
+2025-12-03 16:02:21,307 - __main__ - INFO - Camera2 类别名称已更新
+2025-12-03 16:02:21,307 - __main__ - INFO - Camera2 开始运行SDK推理...
+2025-12-03 16:02:21,312 - SDKinfer - INFO - Camera2 SDK线程已启动
+2025-12-03 16:02:21,496 - CameraManager - INFO - 摄像头 C2 已就绪
+2025-12-03 16:02:21,496 - CameraManager - INFO - 所有摄像头均已就绪，预热完成
+2025-12-03 16:02:21,497 - __main__ - INFO - 同步方式: 纯时间戳同步 (不依赖帧号)
+2025-12-03 16:02:21,497 - __main__ - INFO - 融合主循环启动 - 单路处理模式
+2025-12-03 16:02:21,497 - __main__ - INFO - 处理模式: 单路独立处理 + 后期三路匹配
+2025-12-03 16:02:21,497 - __main__ - INFO - ============================================================
+2025-12-03 16:02:24,042 - __main__ - INFO - Frame 200 C1: 雷达匹配 2/2 个目标，radar_id_map大小=2
+2025-12-03 16:02:24,706 - FusionComponents - INFO - C2 PUSH: LID:12 -> C3缓冲区, 队列长度:1
+2025-12-03 16:02:25,577 - FusionComponents - INFO - C2 PUSH: LID:13 -> C3缓冲区, 队列长度:2
+2025-12-03 16:02:28,213 - __main__ - INFO - Frame 500 C1: 雷达匹配 1/2 个目标，radar_id_map大小=1
+2025-12-03 16:02:29,645 - __main__ - INFO - Frame 600 C1: 雷达匹配 1/3 个目标，radar_id_map大小=1
+2025-12-03 16:02:29,650 - __main__ - INFO - 队列状态 (截至帧 600)
+2025-12-03 16:02:29,650 - __main__ - INFO - C1: 队列大小 0
+2025-12-03 16:02:29,651 - __main__ - INFO - C2: 队列大小 1
+2025-12-03 16:02:29,651 - __main__ - INFO - C3: 队列大小 0
+2025-12-03 16:02:30,327 - FusionComponents - INFO - C2 PUSH: LID:18 -> C3缓冲区, 队列长度:1
+2025-12-03 16:02:36,452 - __main__ - INFO - Frame 1100 C3: 雷达匹配 2/3 个目标，radar_id_map大小=2
+2025-12-03 16:02:39,121 - FusionComponents - INFO - C2 PUSH: LID:37 -> C3缓冲区, 队列长度:1
+2025-12-03 16:02:39,364 - __main__ - INFO - Frame 1300 C3: 雷达匹配 1/3 个目标，radar_id_map大小=1
+2025-12-03 16:02:42,258 - __main__ - INFO - Frame 1500 C1: 雷达匹配 1/5 个目标，radar_id_map大小=1
+2025-12-03 16:02:42,272 - __main__ - INFO - 队列状态 (截至帧 1500)
+2025-12-03 16:02:42,272 - __main__ - INFO - C1: 队列大小 0
+2025-12-03 16:02:42,272 - __main__ - INFO - C2: 队列大小 0
+2025-12-03 16:02:42,273 - __main__ - INFO - C3: 队列大小 1
+2025-12-03 16:02:45,218 - __main__ - INFO - Frame 1700 C1: 雷达匹配 1/6 个目标，radar_id_map大小=1
+2025-12-03 16:02:45,901 - __main__ - INFO - 收到停止信号，正在退出...
+2025-12-03 16:02:45,903 - __main__ - INFO - 所有处理完成
+2025-12-03 16:02:45,904 - __main__ - INFO - 准备保存 1341 帧的JSON数据
+2025-12-03 16:02:45,904 - __main__ - INFO - 收到停止信号，正在退出...
+2025-12-03 16:02:45,908 - __main__ - INFO - 收到停止信号，正在退出...
+2025-12-03 16:02:45,919 - __main__ - INFO - 收到停止信号，正在退出...
+2025-12-03 16:02:46,338 - Fusion - INFO - JSON数据已保存: output_fusion_refactored.json, 共1341帧
+2025-12-03 16:02:46,338 - __main__ - INFO - ============================================================
+2025-12-03 16:02:46,338 - __main__ - INFO - 最终处理统计报告
+2025-12-03 16:02:46,338 - __main__ - INFO - 成功处理的帧数: 1744帧
+2025-12-03 16:02:46,339 - __main__ - INFO - ============================================================
+2025-12-03 16:02:46,339 - __main__ - INFO - 最终ByteTracker优化统计
+2025-12-03 16:02:46,339 - __main__ - INFO - DEBUG - 跟踪器输入统计:
+2025-12-03 16:02:46,339 - __main__ - INFO - C1: 调用913次, 空输入0次, 非空913次, 总检测数4859, 平均5.3个/帧
+2025-12-03 16:02:46,339 - __main__ - INFO - C2: 调用758次, 空输入112次, 非空646次, 总检测数1765, 平均2.3个/帧
+2025-12-03 16:02:46,339 - __main__ - INFO - C3: 调用653次, 空输入0次, 非空653次, 总检测数2969, 平均4.5个/帧
+2025-12-03 16:02:46,339 - __main__ - INFO - C1:
+2025-12-03 16:02:46,339 - __main__ - INFO -   总帧数: 913
+2025-12-03 16:02:46,339 - __main__ - INFO -   跟踪帧: 457 (50.1%)
+2025-12-03 16:02:46,339 - __main__ - INFO -   预测帧: 456 (49.9%)
+2025-12-03 16:02:46,339 - __main__ - INFO -   性能提升: 1.00x
+2025-12-03 16:02:46,340 - __main__ - INFO -   平均跟踪耗时: 0.003s
+2025-12-03 16:02:46,340 - __main__ - INFO -   平均预测耗时: 0.001s
+2025-12-03 16:02:46,340 - __main__ - INFO - C2:
+2025-12-03 16:02:46,340 - __main__ - INFO -   总帧数: 758
+2025-12-03 16:02:46,340 - __main__ - INFO -   跟踪帧: 436 (57.5%)
+2025-12-03 16:02:46,340 - __main__ - INFO -   预测帧: 322 (42.5%)
+2025-12-03 16:02:46,340 - __main__ - INFO -   性能提升: 1.00x
+2025-12-03 16:02:46,340 - __main__ - INFO -   平均跟踪耗时: 0.002s
+2025-12-03 16:02:46,340 - __main__ - INFO -   平均预测耗时: 0.000s
+2025-12-03 16:02:46,340 - __main__ - INFO - C3:
+2025-12-03 16:02:46,340 - __main__ - INFO -   总帧数: 653
+2025-12-03 16:02:46,340 - __main__ - INFO -   跟踪帧: 327 (50.1%)
+2025-12-03 16:02:46,341 - __main__ - INFO -   预测帧: 326 (49.9%)
+2025-12-03 16:02:46,341 - __main__ - INFO -   性能提升: 1.00x
+2025-12-03 16:02:46,341 - __main__ - INFO -   平均跟踪耗时: 0.003s
+2025-12-03 16:02:46,341 - __main__ - INFO -   平均预测耗时: 0.001s
+2025-12-03 16:02:46,341 - __main__ - INFO - ============================================================
+2025-12-03 16:02:46,341 - __main__ - INFO - 正在保存JSON数据
+2025-12-03 16:02:46,341 - __main__ - INFO - 准备保存 1341 帧的JSON数据
+2025-12-03 16:02:46,786 - Fusion - INFO - JSON数据已保存: output_fusion_refactored.json, 共1341帧
+2025-12-03 16:02:46,786 - CameraManager - INFO - 停止所有摄像头进程
+2025-12-03 16:02:46,786 - CameraManager - INFO - 终止Camera1进程
+2025-12-03 16:02:47,361 - CameraManager - INFO - 终止Camera2进程
+2025-12-03 16:02:47,920 - CameraManager - INFO - 终止Camera3进程
+2025-12-03 16:02:48,417 - CameraManager - INFO - 所有摄像头进程已停止
+2025-12-03 16:02:48,417 - __main__ - INFO - 资源清理完成
