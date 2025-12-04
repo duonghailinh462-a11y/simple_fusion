@@ -148,6 +148,13 @@ class FusionConfig:
     TIME_WINDOW_STRICT: int = 30
     TIME_WINDOW_FLEXIBLE: int = 60
     
+    # 🔧 新增：融合时间窗口（参考main_1015）
+    FUSION_TIME_WINDOW: int = 60
+    
+    # 🔧 新增：像素Y值阈值（用于判断是否在底部区域，参考main_1015）
+    PIXEL_BOTTOM_THRESHOLD: float = 700
+    PIXEL_TOP_THRESHOLD: float = 1080
+    
     # C2 出口区域 (BEV坐标)
     C2_EXIT_REGION_C3: np.ndarray = None
     C2_EXIT_REGION_C1: np.ndarray = None
@@ -232,6 +239,12 @@ class _Config:
     def TIME_WINDOW_STRICT(self): return self.fusion.TIME_WINDOW_STRICT
     @property
     def TIME_WINDOW_FLEXIBLE(self): return self.fusion.TIME_WINDOW_FLEXIBLE
+    @property
+    def FUSION_TIME_WINDOW(self): return self.fusion.FUSION_TIME_WINDOW
+    @property
+    def PIXEL_BOTTOM_THRESHOLD(self): return self.fusion.PIXEL_BOTTOM_THRESHOLD
+    @property
+    def PIXEL_TOP_THRESHOLD(self): return self.fusion.PIXEL_TOP_THRESHOLD
     @property
     def C2_EXIT_REGION_C3(self): return self.fusion.C2_EXIT_REGION_C3
     @property

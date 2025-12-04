@@ -142,6 +142,9 @@ class CrossCameraFusion:
             bev_result = GeometryUtils.project_pixel_to_bev(H_matrix, center_x, center_y)
             if not bev_result:
                 bev_result = (0.0, 0.0)
+                # 🔧 调试：记录BEV转换失败
+                if self.frame_count % 100 == 0:
+                    logger.warning(f"C{camera_id} F{self.frame_count} BEV转换失败: 像素({center_x}, {center_y})")
             
             if perf_monitor:
                 perf_monitor.add_counter('bev_conversions')
@@ -154,13 +157,13 @@ class CrossCameraFusion:
                 global_id = self.local_track_buffer.get_global_id(camera_id, track_id)
                 global_target = self.global_targets.get(global_id)
                 if global_target:
-                    if bev_result[0] != 0.0 or bev_result[1] != 0.0:
-                        global_target.bev_trajectory.append(bev_result)
-                        global_target.pixel_trajectory.append((center_x, int(center_y)))
-                        global_target.confidence_history.append(detection['confidence'])
-                        global_target.last_seen_frame = self.frame_count
-                        if timestamp:
-                            global_target.last_seen_timestamp = timestamp
+                    # 🔧 修复：始终更新轨迹，即使BEV坐标为(0,0)也要记录
+                    global_target.bev_trajectory.append(bev_result)
+                    global_target.pixel_trajectory.append((center_x, int(center_y)))
+                    global_target.confidence_history.append(detection['confidence'])
+                    global_target.last_seen_frame = self.frame_count
+                    if timestamp:
+                        global_target.last_seen_timestamp = timestamp
                     
                     current_bev = global_target.bev_trajectory[-1]
                     global_target.is_in_fusion_zone = GeometryUtils.is_in_public_area(current_bev)
@@ -176,17 +179,20 @@ class CrossCameraFusion:
                     global_targets.append(global_target)
                 continue
             
-            # ⬇️ ⬇️ ⬇️ [重构] GlobalID 分配逻辑 ⬇️ ⬇️ ⬇️
-            pixel_track_history = self.local_track_buffer.get_pixel_track_history(camera_id, track_id) # [cite: 201-203]
+            # ⬇️ ⬇️ ⬇️ [重构] GlobalID 分配逻辑 (参考main_1015) ⬇️ ⬇️ ⬇️
+            pixel_track_history = self.local_track_buffer.get_pixel_track_history(camera_id, track_id)
 
-            should_assign_gid = (
-                camera_id != 2 and 
-                analyze_trajectory_for_global_assignment(pixel_track_history, camera_id, # [cite: 235-236]
-                                                       min_trajectory_length=3)
+            # 🔧 修改：基于像素Y值判断是否分配global_id（参考main_1015逻辑）
+            should_assign_gid = analyze_trajectory_for_global_assignment(
+                pixel_track_history, 
+                camera_id,
+                min_trajectory_length=3,
+                pixel_bottom_threshold=Config.PIXEL_BOTTOM_THRESHOLD,
+                pixel_top_threshold=Config.PIXEL_TOP_THRESHOLD
             )
 
             if should_assign_gid:
-                # C1 或 C3 满足条件, 分配 GlobalID
+                # 满足条件，分配 GlobalID
                 global_id = self.assign_new_global_id(camera_id, track_id)
                 global_target = self.create_global_target(global_id, detection, camera_id, timestamp, perf_monitor)
                 self.local_track_buffer.assign_global_id(camera_id, track_id, global_id) 
@@ -194,45 +200,9 @@ class CrossCameraFusion:
                 global_targets.append(global_target)
             
             else:
-                # C1/C3 不满足条件, 或 (重要!) 目标来自 C2, 始终创建 LocalTarget
+                # 不满足条件，创建 LocalTarget
                 local_target = self.create_local_target(detection, camera_id, perf_monitor)
                 local_targets.append(local_target)
-                
-                # ⬇️ ⬇️ ⬇️ [新] C3->C2 "Push" 逻辑 (基于像素方向) ⬇️ ⬇️ ⬇️
-                if camera_id == 2:
-                    # 如果这个 C2 目标已经被判断过方向, 则跳过
-                    if track_id in self.matching_engine.c2_targets_processed_direction:
-                        continue
-                    
-                    # 关键: 必须在融合区内才进行方向判断
-                    if not local_target.is_in_fusion_area:
-                        logger.debug(f"C2 LID:{track_id} 不在融合区, 跳过方向判断")
-                        continue
-
-                    # 检查轨迹长度是否足够判断方向
-                    if len(pixel_track_history) >= MIN_TRAJ_LEN_FOR_DIRECTION:
-                        start_y = pixel_track_history[0][1]
-                        current_y = pixel_track_history[-1][1]
-                        delta_y = current_y - start_y
-                        
-                        logger.debug(f"C2 LID:{track_id} 轨迹长度:{len(pixel_track_history)}, Delta_Y:{delta_y:.1f}px")
-
-                        # Y值变小 (轨迹向上) -> 来自 C3
-                        if delta_y < -PIXEL_Y_DIRECTION_THRESHOLD:
-                            # 判定来自 C3
-                            # 使用 MatchingEngine 添加到缓冲区
-                            self.matching_engine.add_c2_to_buffer(local_target, self.frame_count)
-                        
-                        # Y值变大 (轨迹向下) -> 来自 C1
-                        elif delta_y > PIXEL_Y_DIRECTION_THRESHOLD:
-                            self.matching_engine.c2_targets_processed_direction.add(track_id)
-                            logger.debug(f"C2 LID:{track_id} 判定来自 C1 (轨迹向下)")
-                        
-                        else:
-                            logger.debug(f"C2 LID:{track_id} 轨迹Y轴变化不明显")
-                    else:
-                        logger.debug(f"C2 LID:{track_id} 轨迹太短 ({len(pixel_track_history)}帧)")
-                # ⬆️ ⬆️ ⬆️ 结束 ⬆️ ⬆️ ⬆️
         
         if perf_monitor:
             perf_monitor.end_timer('classify_targets')
@@ -247,122 +217,95 @@ class CrossCameraFusion:
         global_target.last_seen_frame = self.frame_count
         global_target.is_in_fusion_zone = local_target.is_in_fusion_area
     
-    def _match_C3_gid_to_C2_lid_fifo(self, c3_global_target: GlobalTarget, 
-                                       locked_global_ids: Set[int]) -> bool:
-        """
-        C3->C2 FIFO 匹配 (委托给 MatchingEngine)
-        """
-        c2_local_id = self.matching_engine.match_c3_to_c2_fifo(
-            c3_global_target, self.frame_count
-        )
-        
-        if c2_local_id is not None:
-            # 匹配成功，绑定
-            lookup_key = (2, c2_local_id)
-            self.local_to_global[lookup_key] = c3_global_target.global_id
-            locked_global_ids.add(c3_global_target.global_id)
-            return True
-        
-        return False
-
-    def _match_fallback_time_window(self, local_target: LocalTarget, active_global_targets: List[GlobalTarget],
-                                   locked_global_ids: Set[int], permanently_bound_global_ids: Set[int]):
-        """
-        [C1 <-> C2 专用]
-        使用旧的时间窗口匹配逻辑
-        """
-        # 确定候选池 - C1 匹配 C2, C2 匹配 C1
-        candidate_globals = []
-        if local_target.camera_id == 1:
-            candidate_globals = [gt for gt in active_global_targets if gt.camera_id == 2]
-        elif local_target.camera_id == 2:
-            candidate_globals = [gt for gt in active_global_targets if gt.camera_id == 1]
-        
-        fusion_candidates = [
-            gt for gt in candidate_globals 
-            if (gt.is_in_fusion_zone and 
-                gt.global_id not in locked_global_ids and
-                gt.global_id not in permanently_bound_global_ids)
-        ]
-        
-        if not fusion_candidates:
-            return
-        
-        # 使用 MatchingEngine 进行匹配
-        best_match = self.matching_engine.match_time_window(
-            local_target, fusion_candidates, time_window
-        )
-        
-        if best_match:
-            # 检查是否已被锁定
-            if best_match.global_id not in locked_global_ids and \
-               best_match.global_id not in permanently_bound_global_ids:
-                local_target.matched_global_id = best_match.global_id
-                lookup_key = (local_target.camera_id, local_target.local_id)
-                self.local_to_global[lookup_key] = best_match.global_id
-                locked_global_ids.add(best_match.global_id)
-                self._smoothly_merge_trajectory(best_match, local_target)
-    
     def _perform_matching(self, local_targets_this_frame: List[LocalTarget], 
                      active_global_targets: List[GlobalTarget], perf_monitor=None):
         """
-        [已重构]
-        核心匹配方法
-        1. C3->C2 (新): 遍历 GlobalTarget, C3 GID 触发 FIFO 匹配。
-        2. C1<->C2 (旧): 遍历 LocalTarget, C1/C2 LID 触发时间窗口匹配。
+        🔧 修改：核心匹配方法 - 基于融合区进入时间进行时间同步匹配（参考main_1015）
+        使用永久绑定记录防止跨帧重复绑定
+        不再使用方向判断逻辑
         """
         if perf_monitor:
             perf_monitor.start_timer('perform_matching')
         
+        # 用于锁定本帧已匹配的 global_id，防止一对多
         locked_global_ids_this_frame = set()
+
+        # 创建一个包含所有已被永久绑定的 global_id 的集合
         permanently_bound_global_ids = set(self.local_to_global.values())
 
-        # --- 1. C3 -> C2 (FIFO 逻辑) ---
-        # 遍历所有活跃的 GlobalTarget, 寻找 C3 触发器
+        # 1. 预处理：刷新所有全局目标的融合区状态和进入时间
         for gt in active_global_targets:
-            # 必须是 C3, 必须在融合区, 且尚未被绑定
-            if (gt.camera_id == 3 and 
-                gt.is_in_fusion_zone and 
-                gt.global_id not in permanently_bound_global_ids and
-                gt.global_id not in locked_global_ids_this_frame):
-                
-                # C3 GID 触发 FIFO 匹配
-                self._match_C3_gid_to_C2_lid_fifo(gt, locked_global_ids_this_frame)
+            if gt.bev_trajectory:
+                current_bev = gt.bev_trajectory[-1]
+                is_now_in_zone = GeometryUtils.is_in_public_area(current_bev)
+                gt.is_in_fusion_zone = is_now_in_zone
+                if is_now_in_zone and gt.fusion_entry_frame == -1:
+                    gt.fusion_entry_frame = self.frame_count
 
-        # --- 2. C1 <-> C2 (时间窗口逻辑) ---
-        # 遍历所有 LocalTarget, 寻找 C1 或 C2 触发器
-        for lt in local_targets_this_frame:
-            lookup_key = (lt.camera_id, lt.local_id)
-            
-            # 检查是否已绑定 (C3->C2 在上一步中可能已绑定, 或 C1<->C2 之前已绑定)
+        time_window = Config.FUSION_TIME_WINDOW if hasattr(Config, 'FUSION_TIME_WINDOW') else 60
+
+        # 2. 遍历所有本帧的 local_target 进行处理
+        for local_target in local_targets_this_frame:
+            lookup_key = (local_target.camera_id, local_target.local_id)
+
+            # 2.1 检查此 local_target 是否已经绑定
             if lookup_key in self.local_to_global:
                 bound_global_id = self.local_to_global[lookup_key]
                 bound_global_target = self.global_targets.get(bound_global_id)
+
                 if bound_global_target:
-                    # 自动轨迹更新
-                    self._smoothly_merge_trajectory(bound_global_target, lt)
-                    lt.matched_global_id = bound_global_id
+                    self._smoothly_merge_trajectory(bound_global_target, local_target)
+                    local_target.matched_global_id = bound_global_id
                 else:
                     del self.local_to_global[lookup_key]
+                
                 continue
 
-            # 只处理 C1 和 C2 的 LocalTarget
-            # C3 的 LocalTarget 不需要匹配 (它们是 GID 的起点)
-            if lt.camera_id == 1 or lt.camera_id == 2:
-                # 检查这个 C2 目标是否是 "来自C3" 且在缓冲区中等待
-                if lt.camera_id == 2 and lt.local_id in self.matching_engine.c2_targets_processed_direction:
-                    # 检查它是否在 C3 缓冲区
-                    if self.matching_engine.is_c2_in_buffer(lt.local_id):
-                        logger.debug(f"C2 LID:{lt.local_id} 在C3缓冲区中, 跳过C1<->C2匹配")
-                        continue 
-
-                # 目标来自 C1, 或者来自 C2 (且判断为 C1 方向)
-                if not lt.is_in_fusion_area:
-                    continue
+            # 2.2 如果未绑定，执行首次匹配逻辑
+            if not local_target.is_in_fusion_area:
+                continue
                 
-                self._match_fallback_time_window(lt, active_global_targets, 
-                                               locked_global_ids_this_frame, 
-                                               permanently_bound_global_ids)
+            if local_target.fusion_entry_frame == -1:
+                local_target.fusion_entry_frame = self.frame_count
+            
+            # 确定候选池 - 基于摄像头配对关系（参考main_1015）
+            candidate_globals = []
+            if local_target.camera_id == 1:
+                candidate_globals = [gt for gt in active_global_targets if gt.camera_id == 2]
+            elif local_target.camera_id == 2:
+                candidate_globals = [gt for gt in active_global_targets if gt.camera_id in [1, 3]]
+            elif local_target.camera_id == 3:
+                candidate_globals = [gt for gt in active_global_targets if gt.camera_id == 2]
+            
+            # 筛选时，同时检查帧内锁和永久绑定状态
+            fusion_candidates = [
+                gt for gt in candidate_globals 
+                if (gt.is_in_fusion_zone and 
+                    gt.global_id not in locked_global_ids_this_frame and
+                    gt.global_id not in permanently_bound_global_ids)
+            ]
+            
+            if not fusion_candidates:
+                continue
+            
+            best_match = None
+            best_time_diff = float('inf')
+            
+            for candidate in fusion_candidates:
+                if not DetectionUtils.is_class_compatible(local_target.class_name, candidate.class_name):
+                    continue
+                if candidate.fusion_entry_frame == -1:
+                    continue
+                time_diff = abs(local_target.fusion_entry_frame - candidate.fusion_entry_frame)
+                if time_diff <= time_window and time_diff < best_time_diff:
+                    best_time_diff = time_diff
+                    best_match = candidate
+            
+            if best_match:
+                local_target.matched_global_id = best_match.global_id
+                self.local_to_global[lookup_key] = best_match.global_id
+                locked_global_ids_this_frame.add(best_match.global_id)
+                self._smoothly_merge_trajectory(best_match, local_target)
         
         if perf_monitor:
             perf_monitor.end_timer('perform_matching')
