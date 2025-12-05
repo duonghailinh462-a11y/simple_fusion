@@ -1,0 +1,97 @@
+# 融合策略配置文件
+# 用于管理不同的融合逻辑版本
+
+strategies:
+  # 原始融合策略：纯时间窗口匹配
+  original:
+    name: "OriginalFusionStrategy"
+    description: "原始融合逻辑 - 纯时间窗口匹配，无方向判断，无FIFO排队"
+    parameters:
+      time_window: 60  # 融合时间窗口（帧数）
+    
+    # 特点
+    features:
+      - "C1 ↔ C2: 时间窗口匹配"
+      - "C3 → C2: 时间窗口匹配"
+      - "无方向判断逻辑"
+      - "无FIFO排队机制"
+    
+    # 适用场景
+    use_cases:
+      - "简单场景"
+      - "目标进入时间差异明显"
+      - "计算资源受限"
+    
+    # 优缺点
+    pros:
+      - "简单快速"
+      - "计算复杂度低"
+    cons:
+      - "可能误匹配"
+      - "无法处理复杂场景"
+      - "多目标同时进入时容易出错"
+
+  # 改进融合策略：时间窗口 + 方向判断 + FIFO排队
+  improved:
+    name: "ImprovedFusionStrategy"
+    description: "改进融合逻辑 - 时间窗口 + 方向判断 + FIFO排队"
+    parameters:
+      time_window: 60  # 融合时间窗口（帧数）
+      pixel_y_direction_threshold: 50  # 像素Y值变化阈值
+      max_retention_frames: 100  # C2缓冲区最大保留帧数
+    
+    # 特点
+    features:
+      - "C1 ↔ C2: 时间窗口匹配（保持不变）"
+      - "C3 → C2: FIFO排队匹配（新增）"
+      - "方向判断：C2向上移动时才加入缓冲区"
+      - "FIFO排队：C3按队列顺序与C2匹配"
+    
+    # 适用场景
+    use_cases:
+      - "复杂场景"
+      - "多目标同时进入"
+      - "需要更高的融合准确率"
+    
+    # 优缺点
+    pros:
+      - "多维度考虑"
+      - "减少误匹配"
+      - "更好处理复杂场景"
+    cons:
+      - "计算复杂度中等"
+      - "参数调优困难"
+      - "需要更多内存（缓冲区）"
+
+# 版本管理
+versions:
+  v1:
+    name: "原始版本"
+    frame_sync: "original"
+    fusion_strategy: "original"
+    description: "原始帧同步 + 原始融合"
+  
+  v2:
+    name: "改进版本"
+    frame_sync: "original"
+    fusion_strategy: "improved"
+    description: "原始帧同步 + 改进融合"
+  
+  v3:
+    name: "输出同步版本"
+    frame_sync: "output"
+    fusion_strategy: "original"
+    description: "输出同步 + 原始融合"
+  
+  v4:
+    name: "完全改进版本"
+    frame_sync: "output"
+    fusion_strategy: "improved"
+    description: "输出同步 + 改进融合"
+
+# 默认配置
+default:
+  strategy: "improved"
+  time_window: 60
+  pixel_y_direction_threshold: 50
+  max_retention_frames: 100
