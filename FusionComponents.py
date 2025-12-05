@@ -310,7 +310,7 @@ class TrajectoryMerger:
     
     @staticmethod
     def merge_trajectory(global_target: GlobalTarget, local_target: LocalTarget):
-        """平滑地合并轨迹"""
+        """平滑地合并轨迹 - 使用动态加权融合"""
         alpha = global_target.fusion_alpha
         
         # 融合 BEV 轨迹
@@ -333,6 +333,12 @@ class TrajectoryMerger:
         
         # 更新置信度历史
         global_target.confidence_history.append(local_target.confidence)
+        
+        # 【新增】动态增加融合权重，实现平滑过渡
+        # 从 alpha=0 逐步增长到 1.0，使得融合逐步从原始轨迹过渡到新轨迹
+        global_target.fusion_alpha += 0.01
+        if global_target.fusion_alpha > 1.0:
+            global_target.fusion_alpha = 1.0
         
         # 限制轨迹长度
         max_trajectory_length = 100
