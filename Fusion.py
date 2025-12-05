@@ -38,6 +38,9 @@ from FusionComponents import (
     C2BufferEntry
 )
 
+# 导入融合策略
+from FusionStrategies import FusionStrategyFactory
+
 class NumpyJSONEncoder(json.JSONEncoder):
     """自定义JSON编码器，处理NumPy类型"""
     def default(self, obj):
@@ -67,7 +70,7 @@ class CrossCameraFusion:
     2. C3 -> C2: FIFO 匹配（基于像素方向判断）
     """
     
-    def __init__(self):
+    def __init__(self, fusion_strategy: str = "improved"):
         # 使用全局Config实例
         pass
         
@@ -75,6 +78,9 @@ class CrossCameraFusion:
         self.target_manager = TargetManager()
         self.matching_engine = MatchingEngine()
         self.trajectory_merger = TrajectoryMerger()
+        
+        # 【策略模式】创建融合策略实例
+        self.fusion_strategy = FusionStrategyFactory.create_strategy(fusion_strategy)
         
         # 全局目标管理
         self.global_targets: Dict[int, GlobalTarget] = {}
@@ -91,7 +97,7 @@ class CrossCameraFusion:
         self.frame_count = 0
         self.json_output_data = []
         
-        logger.info("CrossCameraFusion初始化完成 (重构版)")
+        logger.info(f"CrossCameraFusion初始化完成 (重构版) - 使用策略: {self.fusion_strategy.get_strategy_name()}")
     
     def assign_new_global_id(self, camera_id: int, local_id: int) -> int:
         """分配新的全局ID (委托给 TargetManager)"""
@@ -306,66 +312,35 @@ class CrossCameraFusion:
     def _perform_matching(self, local_targets_this_frame: List[LocalTarget], 
                      active_global_targets: List[GlobalTarget], perf_monitor=None):
         """
-        [已重构]
-        核心匹配方法
-        1. C3->C2 (新): 遍历 GlobalTarget, C3 GID 触发 FIFO 匹配。
-        2. C1<->C2 (旧): 遍历 LocalTarget, C1/C2 LID 触发时间窗口匹配。
+        【策略模式】核心匹配方法 - 委托给融合策略执行
+        支持多种融合策略（原始、改进等）
         """
-        if perf_monitor:
-            perf_monitor.start_timer('perform_matching')
+        # 【新增】使用融合策略执行匹配
+        result = self.fusion_strategy.perform_matching(
+            local_targets_this_frame,
+            active_global_targets,
+            self.local_to_global,
+            self.frame_count,
+            perf_monitor
+        )
         
-        locked_global_ids_this_frame = set()
-        permanently_bound_global_ids = set(self.local_to_global.values())
-
-        # --- 1. C3 -> C2 (FIFO 逻辑) ---
-        # 遍历所有活跃的 GlobalTarget, 寻找 C3 触发器
-        for gt in active_global_targets:
-            # 必须是 C3, 必须在融合区, 且尚未被绑定
-            if (gt.camera_id == 3 and 
-                gt.is_in_fusion_zone and 
-                gt.global_id not in permanently_bound_global_ids and
-                gt.global_id not in locked_global_ids_this_frame):
-                
-                # C3 GID 触发 FIFO 匹配
-                self._match_C3_gid_to_C2_lid_fifo(gt, locked_global_ids_this_frame)
-
-        # --- 2. C1 <-> C2 (时间窗口逻辑) ---
-        # 遍历所有 LocalTarget, 寻找 C1 或 C2 触发器
-        for lt in local_targets_this_frame:
-            lookup_key = (lt.camera_id, lt.local_id)
+        # 更新本地到全局的映射
+        self.local_to_global = result['local_to_global']
+        locked_global_ids_this_frame = result['locked_global_ids']
+        
+        # 处理已绑定的LocalTarget（融合轨迹）
+        for local_target in local_targets_this_frame:
+            lookup_key = (local_target.camera_id, local_target.local_id)
             
-            # 检查是否已绑定 (C3->C2 在上一步中可能已绑定, 或 C1<->C2 之前已绑定)
             if lookup_key in self.local_to_global:
                 bound_global_id = self.local_to_global[lookup_key]
                 bound_global_target = self.global_targets.get(bound_global_id)
+                
                 if bound_global_target:
-                    # 自动轨迹更新
-                    self._smoothly_merge_trajectory(bound_global_target, lt)
-                    lt.matched_global_id = bound_global_id
+                    self._smoothly_merge_trajectory(bound_global_target, local_target)
+                    local_target.matched_global_id = bound_global_id
                 else:
                     del self.local_to_global[lookup_key]
-                continue
-
-            # 只处理 C1 和 C2 的 LocalTarget
-            # C3 的 LocalTarget 不需要匹配 (它们是 GID 的起点)
-            if lt.camera_id == 1 or lt.camera_id == 2:
-                # 检查这个 C2 目标是否是 "来自C3" 且在缓冲区中等待
-                if lt.camera_id == 2 and lt.local_id in self.matching_engine.c2_targets_processed_direction:
-                    # 检查它是否在 C3 缓冲区
-                    if self.matching_engine.is_c2_in_buffer(lt.local_id):
-                        logger.debug(f"C2 LID:{lt.local_id} 在C3缓冲区中, 跳过C1<->C2匹配")
-                        continue 
-
-                # 目标来自 C1, 或者来自 C2 (且判断为 C1 方向)
-                if not lt.is_in_fusion_area:
-                    continue
-                
-                self._match_fallback_time_window(lt, active_global_targets, 
-                                               locked_global_ids_this_frame, 
-                                               permanently_bound_global_ids)
-        
-        if perf_monitor:
-            perf_monitor.end_timer('perform_matching')
     
     def _perform_matching_legacy(self, *args, **kwargs):
         """(占位符) 旧的函数, 逻辑已合并到 _perform_matching"""

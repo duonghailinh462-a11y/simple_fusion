@@ -336,7 +336,10 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, cancel_process)
     
     # 2. 初始化核心组件
-    fusion_system = CrossCameraFusion()
+    # 【策略选择】选择融合策略
+    fusion_strategy = "improved"  # 可改为 "original"
+    fusion_system = CrossCameraFusion(fusion_strategy=fusion_strategy)
+    logger.info(f"使用融合策略: {fusion_strategy}")
     perf_monitor = PerformanceMonitor()
     
     # 2.0 初始化摄像头管理器
