@@ -8,3 +8,4 @@ __pycache__/
 videos/
 *.jsonl
 *.mp4
+*.log
