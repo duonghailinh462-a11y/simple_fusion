@@ -38,6 +38,9 @@ from FusionComponents import (
     C2BufferEntry
 )
 
+# 导入融合策略
+from FusionStrategies import FusionStrategyFactory
+
 class NumpyJSONEncoder(json.JSONEncoder):
     """自定义JSON编码器，处理NumPy类型"""
     def default(self, obj):
@@ -61,13 +64,14 @@ class CrossCameraFusion:
     - 协调目标管理器、匹配引擎和轨迹融合器
     - 管理全局目标字典和映射关系
     - 处理帧级别的融合逻辑
+    - 委托给融合策略执行匹配逻辑
     
-    核心逻辑：
-    1. C1 <-> C2: 基于时间窗口的匹配
-    2. C3 -> C2: FIFO 匹配（基于像素方向判断）
+    匹配逻辑由 FusionStrategies.py 中的策略类实现：
+    - OriginalFusionStrategy: C1<->C2 和 C3->C2 都使用时间窗口匹配
+    - ImprovedFusionStrategy: C1<->C2 时间窗口，C3->C2 FIFO排队 + 方向判断
     """
     
-    def __init__(self):
+    def __init__(self, fusion_strategy: str = "improved"):
         # 使用全局Config实例
         pass
         
@@ -91,7 +95,15 @@ class CrossCameraFusion:
         self.frame_count = 0
         self.json_output_data = []
         
-        logger.info("CrossCameraFusion初始化完成 (重构版)")
+        # 【新增】融合策略注入
+        self.fusion_strategy = FusionStrategyFactory.create_strategy(
+            fusion_strategy,
+            time_window=Config.FUSION_TIME_WINDOW if hasattr(Config, 'FUSION_TIME_WINDOW') else 60,
+            pixel_y_direction_threshold=50,
+            max_retention_frames=Config.MAX_RETENTION_FRAMES if hasattr(Config, 'MAX_RETENTION_FRAMES') else 100
+        )
+        
+        logger.info(f"CrossCameraFusion初始化完成 (重构版) - 使用策略: {self.fusion_strategy.get_strategy_name()}")
     
     def assign_new_global_id(self, camera_id: int, local_id: int) -> int:
         """分配新的全局ID (委托给 TargetManager)"""
@@ -208,7 +220,6 @@ class CrossCameraFusion:
             perf_monitor.end_timer('classify_targets')
         return global_targets, local_targets
     
-    # ... (移除了 C2->C3 的旧函数) ...
 
     def _smoothly_merge_trajectory(self, global_target: GlobalTarget, 
                                   local_target: LocalTarget):
@@ -217,102 +228,6 @@ class CrossCameraFusion:
         global_target.last_seen_frame = self.frame_count
         global_target.is_in_fusion_zone = local_target.is_in_fusion_area
     
-    def _perform_matching(self, local_targets_this_frame: List[LocalTarget], 
-                     active_global_targets: List[GlobalTarget], perf_monitor=None):
-        """
-        🔧 修改：核心匹配方法 - 基于融合区进入时间进行时间同步匹配（参考main_1015）
-        使用永久绑定记录防止跨帧重复绑定
-        不再使用方向判断逻辑
-        """
-        if perf_monitor:
-            perf_monitor.start_timer('perform_matching')
-        
-        # 用于锁定本帧已匹配的 global_id，防止一对多
-        locked_global_ids_this_frame = set()
-
-        # 创建一个包含所有已被永久绑定的 global_id 的集合
-        permanently_bound_global_ids = set(self.local_to_global.values())
-
-        # 1. 预处理：刷新所有全局目标的融合区状态和进入时间
-        for gt in active_global_targets:
-            if gt.bev_trajectory:
-                current_bev = gt.bev_trajectory[-1]
-                is_now_in_zone = GeometryUtils.is_in_public_area(current_bev)
-                gt.is_in_fusion_zone = is_now_in_zone
-                if is_now_in_zone and gt.fusion_entry_frame == -1:
-                    gt.fusion_entry_frame = self.frame_count
-
-        time_window = Config.FUSION_TIME_WINDOW if hasattr(Config, 'FUSION_TIME_WINDOW') else 60
-
-        # 2. 遍历所有本帧的 local_target 进行处理
-        for local_target in local_targets_this_frame:
-            lookup_key = (local_target.camera_id, local_target.local_id)
-
-            # 2.1 检查此 local_target 是否已经绑定
-            if lookup_key in self.local_to_global:
-                bound_global_id = self.local_to_global[lookup_key]
-                bound_global_target = self.global_targets.get(bound_global_id)
-
-                if bound_global_target:
-                    self._smoothly_merge_trajectory(bound_global_target, local_target)
-                    local_target.matched_global_id = bound_global_id
-                else:
-                    del self.local_to_global[lookup_key]
-                
-                continue
-
-            # 2.2 如果未绑定，执行首次匹配逻辑
-            if not local_target.is_in_fusion_area:
-                continue
-                
-            if local_target.fusion_entry_frame == -1:
-                local_target.fusion_entry_frame = self.frame_count
-            
-            # 确定候选池 - 基于摄像头配对关系（参考main_1015）
-            candidate_globals = []
-            if local_target.camera_id == 1:
-                candidate_globals = [gt for gt in active_global_targets if gt.camera_id == 2]
-            elif local_target.camera_id == 2:
-                candidate_globals = [gt for gt in active_global_targets if gt.camera_id in [1, 3]]
-            elif local_target.camera_id == 3:
-                candidate_globals = [gt for gt in active_global_targets if gt.camera_id == 2]
-            
-            # 筛选时，同时检查帧内锁和永久绑定状态
-            fusion_candidates = [
-                gt for gt in candidate_globals 
-                if (gt.is_in_fusion_zone and 
-                    gt.global_id not in locked_global_ids_this_frame and
-                    gt.global_id not in permanently_bound_global_ids)
-            ]
-            
-            if not fusion_candidates:
-                continue
-            
-            best_match = None
-            best_time_diff = float('inf')
-            
-            for candidate in fusion_candidates:
-                if not DetectionUtils.is_class_compatible(local_target.class_name, candidate.class_name):
-                    continue
-                if candidate.fusion_entry_frame == -1:
-                    continue
-                time_diff = abs(local_target.fusion_entry_frame - candidate.fusion_entry_frame)
-                if time_diff <= time_window and time_diff < best_time_diff:
-                    best_time_diff = time_diff
-                    best_match = candidate
-            
-            if best_match:
-                local_target.matched_global_id = best_match.global_id
-                self.local_to_global[lookup_key] = best_match.global_id
-                locked_global_ids_this_frame.add(best_match.global_id)
-                self._smoothly_merge_trajectory(best_match, local_target)
-        
-        if perf_monitor:
-            perf_monitor.end_timer('perform_matching')
-    
-    def _perform_matching_legacy(self, *args, **kwargs):
-        """(占位符) 旧的函数, 逻辑已合并到 _perform_matching"""
-        pass
     
     def update_global_state(self, all_global_targets: List[GlobalTarget], all_local_targets: List[LocalTarget]):
         """更新全局状态（基于时间戳）"""
