@@ -147,12 +147,11 @@ class yolov5_SDK(infer_process):
       
         if not box_data: return None
         
-        # 🔧 计算时间戳：初始时间 + (frame_number / fps)
+        # 🔧 计算时间戳：初始时间 + (frame_id / fps)
         timestamp_str = self.calculate_timestamp(self.frame_count)
             
         frame_result = {
-            'frame_number': self.frame_count,  # 🔧 改为frame_number用于帧号同步
-            'frame_id': self.frame_count,  # 保留frame_id用于兼容性
+            'frame_id': self.frame_count,  # 用于帧号同步
             'camera_id': self.attr.chan_id + 1,
             'boxes_num': 0,  # 先设为0，后面更新
             'detections': [],
@@ -280,7 +279,7 @@ class yolov5_SDK(infer_process):
                 # 空帧也需要入队
                 try:
                     self.result_queue.put({
-                        'frame_id': frame_count, 
+                        'frame_id': frame_count,  # 用于帧号同步 
                         'camera_id': self.attr.chan_id + 1,
                         'boxes_num': 0, 
                         'detections': []
@@ -302,7 +301,7 @@ class yolov5_SDK(infer_process):
         timestamp_str = self.calculate_timestamp(frame_count)
             
         frame_result = {
-            'frame_id': frame_count,
+            'frame_id': frame_count,  # 用于帧号同步
             'camera_id': self.attr.chan_id + 1,
             'boxes_num': box_data.boxesnum if hasattr(box_data, 'boxesnum') else 0,
             'detections': [],
@@ -572,7 +571,7 @@ def batch_convert_track_results(tracked_objects: List, result: dict, camera_id: 
             'local_id': track.track_id,
             'center_point': [(tlbr[0] + tlbr[2]) / 2, (tlbr[1] + tlbr[3]) / 2],
             'timestamp': result.get('timestamp', time.time()),
-            'frame_number': result.get('frame_number', current_frame),
+            'frame_id': result.get('frame_id', current_frame),
             'camera_id': camera_id,
             'sync_id': result.get('sync_id', f"C{camera_id}_F{current_frame}")
         }

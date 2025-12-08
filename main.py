@@ -460,7 +460,7 @@ if __name__ == "__main__":
     
     logger.info(f"帧同步器初始化: FPS={Config.FPS}, 起始时间戳={start_timestamp:.3f}")
     # 🔧 更新：使用帧号同步 - 三路帧号相同时认为同步
-    sync_mode = "帧号同步 - 三路帧号相同时同步，时间戳=start_timestamp + frame_number/fps"
+    sync_mode = "帧号同步 - 三路帧号相同时同步，时间戳=start_timestamp + frame_id/fps"
     
     logger.info("融合主循环启动")
     logger.info(f"同步模式: {sync_mode}")
@@ -512,7 +512,7 @@ if __name__ == "__main__":
                         logger.debug(f"等待同步 (连续{no_sync_count}个周期) - 摄像头{empty_cameras}缓冲区为空")
                     else:
                         # 所有摄像头都有数据，但帧号可能不相同
-                        frame_spans = {cid: f"[{status.get('min_frame_number', 0)}-{status.get('max_frame_number', 0)}]" 
+                        frame_spans = {cid: f"[{status.get('min_frame_id', 0)}-{status.get('max_frame_id', 0)}]" 
                                       for cid, status in buffer_status.items() if status['count'] > 0}
                         logger.debug(f"等待同步 (连续{no_sync_count}个周期) - 缓冲区帧号范围: {frame_spans}")
                     
@@ -533,7 +533,7 @@ if __name__ == "__main__":
                         logger.warning(f"可能原因: 摄像头{empty_cameras}处理速度慢，或队列为空")
                     else:
                         # 所有摄像头都有数据，但帧号可能不相同
-                        frame_ranges = {cid: f"[{status.get('min_frame_number', 0)}-{status.get('max_frame_number', 0)}]" 
+                        frame_ranges = {cid: f"[{status.get('min_frame_id', 0)}-{status.get('max_frame_id', 0)}]" 
                                        for cid, status in buffer_status.items() if status['count'] > 0}
                         logger.warning(f"已连续{no_sync_count}个周期无法同步 - 所有摄像头都有数据但帧号不相同")
                         logger.warning(f"缓冲区帧号范围: {frame_ranges}")
