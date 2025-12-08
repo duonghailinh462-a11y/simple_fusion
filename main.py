@@ -427,38 +427,40 @@ if __name__ == "__main__":
 
     # 4. 主循环：时间戳融合逻辑 (消费者)
     
-    # 🔧 时间戳配置：完全基于时间戳同步，不依赖帧号
-    logger.info("同步方式: 纯时间戳同步 (不依赖帧号)")
+    # 🔧 时间戳配置：基于帧号同步，三路帧号相同时认为同步
+    logger.info("同步方式: 帧号同步 (三路帧号相同时同步)")
     
-    # 🔧 初始化帧同步器 - 改用时间戳同步而非帧号同步
+    # 🔧 初始化帧同步器 - 改用帧号同步
     from FrameSynchronizer import StrictFrameSynchronizer
-    # 时间窗口设置为0.5秒，允许最多500ms的时间戳差异
-    # 传入摄像头起始时间，自动对齐到最晚开始的摄像头
-    frame_synchronizer = StrictFrameSynchronizer(
-        num_cameras=3, 
-        time_window=2.5,  # 🔧 增大时间窗口以容纳摄像头起始时间差（最大2.103秒）
-        camera_start_times=Config.CAMERA_START_DATETIMES
-    )
-    
-    # 设置初始时间和fps
     from datetime import datetime
+    
+    # 获取起始时间戳（秒级Unix时间戳）
+    start_timestamp = None
     if Config.CAMERA_START_DATETIMES:
-        # 使用第一个摄像头的时间作为基准（或可以分别设置）
         first_camera_time = Config.CAMERA_START_DATETIMES.get(1, Config.CAMERA_START_DATETIMES.get(2, Config.CAMERA_START_DATETIMES.get(3)))
         try:
             if '.' in first_camera_time:
                 start_datetime = datetime.strptime(first_camera_time, "%Y-%m-%d %H:%M:%S.%f")
             else:
                 start_datetime = datetime.strptime(first_camera_time, "%Y-%m-%d %H:%M:%S")
-            # 转换为时间戳（秒）
-            frame_synchronizer.start_time = start_datetime.timestamp()
-            frame_synchronizer.video_fps = Config.FPS
-            frame_synchronizer.frame_duration = 1.0 / Config.FPS
-            logger.info(f"帧同步器初始化: 起始时间={first_camera_time}, FPS={Config.FPS}, 时间窗口={frame_synchronizer.time_window}秒")
+            start_timestamp = start_datetime.timestamp()
+            logger.info(f"起始时间: {first_camera_time} (时间戳: {start_timestamp:.3f})")
         except Exception as e:
-            logger.warning(f"时间戳解析失败: {e}, 使用默认值")
-    # 🔧 更新：使用时间戳同步 - 允许不同摄像头的帧号差距，只要时间戳接近即可
-    sync_mode = "时间戳同步 - 允许帧号差距，基于时间戳对齐"
+            logger.warning(f"时间戳解析失败: {e}, 将使用系统时间")
+            start_timestamp = time.time()
+    else:
+        start_timestamp = time.time()
+    
+    # 初始化帧同步器 - 基于帧号同步
+    frame_synchronizer = StrictFrameSynchronizer(
+        num_cameras=3, 
+        fps=Config.FPS,  # 帧率
+        start_timestamp=start_timestamp  # 起始时间戳
+    )
+    
+    logger.info(f"帧同步器初始化: FPS={Config.FPS}, 起始时间戳={start_timestamp:.3f}")
+    # 🔧 更新：使用帧号同步 - 三路帧号相同时认为同步
+    sync_mode = "帧号同步 - 三路帧号相同时同步，时间戳=start_timestamp + frame_number/fps"
     
     logger.info("融合主循环启动")
     logger.info(f"同步模式: {sync_mode}")
@@ -509,17 +511,17 @@ if __name__ == "__main__":
                     if empty_cameras:
                         logger.debug(f"等待同步 (连续{no_sync_count}个周期) - 摄像头{empty_cameras}缓冲区为空")
                     else:
-                        # 所有摄像头都有数据，但时间戳可能不在同一时间窗口内
-                        time_spans = {cid: f"{status.get('time_span', 0):.2f}s" 
-                                     for cid, status in buffer_status.items() if status['count'] > 0}
-                        logger.debug(f"等待同步 (连续{no_sync_count}个周期) - 缓冲区时间跨度: {time_spans}")
+                        # 所有摄像头都有数据，但帧号可能不相同
+                        frame_spans = {cid: f"[{status.get('min_frame_number', 0)}-{status.get('max_frame_number', 0)}]" 
+                                      for cid, status in buffer_status.items() if status['count'] > 0}
+                        logger.debug(f"等待同步 (连续{no_sync_count}个周期) - 缓冲区帧号范围: {frame_spans}")
                     
                     logger.debug(f"队列: C1={queue_sizes[1]}, C2={queue_sizes[2]}, C3={queue_sizes[3]}")
                     
                     alive_count = sum(1 for p in processes if p.is_alive())
                     logger.debug(f"SDK进程: {alive_count}/3 运行中")
                 
-                # 🔧 改进：纯时间戳同步，超时阈值可以更大
+                # 🔧 改进：帧号同步，超时阈值可以更大
                 if no_sync_count > 2000:
                     buffer_status = frame_synchronizer.get_buffer_status()
                     queue_sizes = {i: queues[i].qsize() for i in [1, 2, 3]}
@@ -530,12 +532,12 @@ if __name__ == "__main__":
                         logger.warning(f"已连续{no_sync_count}个周期无法同步 - 摄像头{empty_cameras}缓冲区为空")
                         logger.warning(f"可能原因: 摄像头{empty_cameras}处理速度慢，或队列为空")
                     else:
-                        # 所有摄像头都有数据，但时间戳可能不在同一时间窗口内
-                        time_spans = {cid: f"{status.get('time_span', 0):.2f}s" 
-                                     for cid, status in buffer_status.items() if status['count'] > 0}
-                        logger.warning(f"已连续{no_sync_count}个周期无法同步 - 所有摄像头都有数据但时间戳不在同一窗口内")
-                        logger.warning(f"缓冲区时间跨度: {time_spans}")
-                        logger.warning(f"可能原因: 时间戳计算错误，或摄像头时间不同步，或处理速度差异过大")
+                        # 所有摄像头都有数据，但帧号可能不相同
+                        frame_ranges = {cid: f"[{status.get('min_frame_number', 0)}-{status.get('max_frame_number', 0)}]" 
+                                       for cid, status in buffer_status.items() if status['count'] > 0}
+                        logger.warning(f"已连续{no_sync_count}个周期无法同步 - 所有摄像头都有数据但帧号不相同")
+                        logger.warning(f"缓冲区帧号范围: {frame_ranges}")
+                        logger.warning(f"可能原因: 三路视频帧号不同步，或处理速度差异过大")
                     
                     logger.warning(f"队列: C1={queue_sizes[1]}, C2={queue_sizes[2]}, C3={queue_sizes[3]}")
                     alive_count = sum(1 for p in processes if p.is_alive())

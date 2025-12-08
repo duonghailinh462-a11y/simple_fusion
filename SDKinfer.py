@@ -147,11 +147,12 @@ class yolov5_SDK(infer_process):
       
         if not box_data: return None
         
-        # 🔧 计算时间戳：初始时间 + (frame_id / fps)
+        # 🔧 计算时间戳：初始时间 + (frame_number / fps)
         timestamp_str = self.calculate_timestamp(self.frame_count)
             
         frame_result = {
-            'frame_id': self.frame_count,
+            'frame_number': self.frame_count,  # 🔧 改为frame_number用于帧号同步
+            'frame_id': self.frame_count,  # 保留frame_id用于兼容性
             'camera_id': self.attr.chan_id + 1,
             'boxes_num': 0,  # 先设为0，后面更新
             'detections': [],
