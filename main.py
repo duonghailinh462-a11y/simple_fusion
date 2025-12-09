@@ -62,6 +62,7 @@ from TargetTrack import TargetBuffer
 from Fusion import CrossCameraFusion
 from RadarVisionFusion import RadarVisionFusionProcessor, RadarDataLoader, OutputObject
 from CameraManager import CameraManager
+from ResultBuffer import ResultOutputManager
 
 # 创建共享布尔值用于停止运行线程
 cancel_flag = multiprocessing.Value('b', False)
@@ -331,18 +332,18 @@ if __name__ == "__main__":
         1: [np.array([[0, 720], [226, 324], [576, 77], [714, 77], [1278, 390], [1280, 720]], dtype=np.int32),
             np.array([[218,324], [472,149], [366,141], [48,312]], dtype=np.int32)],
         2: [np.array([[0, 503], [0, 714], [1280, 720], [1280, 410], [800, 128],[471,133]], dtype=np.int32)],
-        3: [np.array([[70, 720], [1030, 720], [934, 166], [90, 166]], dtype=np.int32)]}
-        
+        3: [np.array([[70, 720], [1030, 720], [934, 166], [90, 166]], dtype=np.int32)]
+    }
+
     signal.signal(signal.SIGINT, cancel_process)
-    
+
     # 2. 初始化核心组件
-    fusion_system = CrossCameraFusion()
     perf_monitor = PerformanceMonitor()
-    
+
     # 2.0 初始化摄像头管理器
     camera_manager = CameraManager(video_paths, cancel_flag)
     queues = camera_manager.create_queues(maxsize=10)
-    
+
     # 2.1 初始化雷达融合模块
     logger.info("初始化雷达融合模块")
     radar_fusion_enabled = False
@@ -400,6 +401,15 @@ if __name__ == "__main__":
         except Exception as e:
             logger.warning(f"MQTT连接失败: {e}, 将使用JSON文件保存")
             mqtt_publisher = None
+    
+    # 初始化结果输出管理器（三路缓冲和时间对齐）
+    fusion_system = CrossCameraFusion()
+    result_output_manager = ResultOutputManager(
+        fusion_system=fusion_system,
+        mqtt_publisher=mqtt_publisher,
+        time_threshold=0.5  # 时间阈值（秒）
+    )
+    logger.info("结果输出管理器已初始化 - 三路缓冲和时间对齐模式")
     
     class TrackerArgs: # 新ByteTracker 所需参数
         def __init__(self):
@@ -704,7 +714,7 @@ if __name__ == "__main__":
                 
                 perf_monitor.end_timer('radar_fusion_processing')
             
-            # D.1 存储单路处理结果，用于后期三路匹配
+            # D.1 添加单路处理结果到缓冲区
             perf_monitor.start_timer('store_single_camera_results')
             for camera_id in [1, 2, 3]:
                 if camera_id in current_frame_results:
@@ -717,21 +727,31 @@ if __name__ == "__main__":
                     # 获取该摄像头的radar_ids
                     camera_radar_ids = {t.local_id: radar_id_map.get(t.local_id) for t in camera_local_targets}
                     
-                    # 存储结果
-                    fusion_system.store_single_camera_result(camera_id, original_timestamp, camera_local_targets, camera_radar_ids)
+                    # 添加到结果缓冲区（替代原来的 fusion_system.store_single_camera_result）
+                    result_output_manager.add_single_camera_result(
+                        camera_id, original_timestamp, camera_local_targets, camera_radar_ids
+                    )
             
             perf_monitor.end_timer('store_single_camera_results')
             
-            # D.2 定期进行三路匹配（每处理100帧）
+            # D.2 每一帧都处理缓冲区中的结果（实时输出）
+            perf_monitor.start_timer('result_buffer_processing')
+            
+            # 每一帧都尝试处理缓冲区中的结果
+            output_count = 0
+            while result_output_manager.process_and_output():
+                output_count += 1
+            
+            if output_count > 0:
+                logger.info(f"Frame {current_frame}: 输出 {output_count} 组结果")
+            
+            # 定期记录缓冲区状态（每100帧）
             if current_frame > 0 and current_frame % 100 == 0:
-                perf_monitor.start_timer('cross_camera_matching')
-                try:
-                    global_targets_from_matching, unmatched_local_targets = fusion_system.match_cross_camera_targets(time_window=0.5)
-                    if global_targets_from_matching:
-                        logger.info(f"Frame {current_frame}: 三路匹配找到 {len(global_targets_from_matching)} 个全局目标")
-                except Exception as e:
-                    logger.error(f"三路匹配异常: {e}")
-                perf_monitor.end_timer('cross_camera_matching')
+                buffer_status = result_output_manager.get_buffer_status()
+                logger.info(f"缓冲区状态: C1={buffer_status['c1_size']} "
+                           f"C2={buffer_status['c2_size']} C3={buffer_status['c3_size']}")
+            
+            perf_monitor.end_timer('result_buffer_processing')
             
             # E. 生成JSON数据并尝试发送MQTT
             perf_monitor.start_timer('json_mqtt_processing')
@@ -839,6 +859,10 @@ if __name__ == "__main__":
         import traceback
         traceback.print_exc()
     finally:
+        # 刷新所有缓冲区中的结果
+        logger.info("程序结束，刷新缓冲区...")
+        result_output_manager.flush_all()
+        
         # 🔧 修复：在finally块中保存JSON，确保即使异常退出也能保存数据
         logger.info("正在保存JSON数据")
         try:
