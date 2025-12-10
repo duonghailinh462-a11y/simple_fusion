@@ -153,6 +153,76 @@ class MqttPublisher:
             logger.error(f"发布消息时发生异常: {e}")
             return False
 
+    def publish_radar_objects(self, radar_objects: List[dict], 
+                             topic_prefix: str = "radar") -> bool:
+        """
+        发布已过滤的雷达对象
+        
+        :param radar_objects: 雷达对象列表
+        :param topic_prefix: 主题前缀（默认为 "radar"）
+        :return: 是否成功发送
+        """
+        if not self.connected:
+            logger.warning("MQTT 未连接，跳过发布")
+            return False
+        
+        if not radar_objects:
+            return True
+        
+        try:
+            # 构造消息格式
+            message = {
+                "reportTime": int(time.time() * 1000),
+                "objectCount": len(radar_objects),
+                "objects": radar_objects
+            }
+            
+            # 生成主题
+            topic = f"{topic_prefix}/objects"
+            
+            # 发布消息
+            payload = json.dumps(message, ensure_ascii=False, cls=NumpyJSONEncoder)
+            result = self.client.publish(topic, payload, qos=1)
+            
+            if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                logger.debug(f"已发布 {len(radar_objects)} 个雷达对象到主题 {topic}")
+                return True
+            else:
+                logger.error(f"雷达数据发布失败: {result.rc}")
+                return False
+        
+        except Exception as e:
+            logger.error(f"发布雷达数据异常: {e}")
+            return False
+
+    def publish_radar_statistics(self, stats: Dict[str, Any], 
+                                topic_prefix: str = "radar") -> bool:
+        """
+        发布雷达统计信息
+        
+        :param stats: 统计数据字典
+        :param topic_prefix: 主题前缀（默认为 "radar"）
+        :return: 是否成功发送
+        """
+        if not self.connected:
+            return False
+        
+        try:
+            message = {
+                "reportTime": int(time.time() * 1000),
+                "statistics": stats
+            }
+            
+            topic = f"{topic_prefix}/stats"
+            payload = json.dumps(message, ensure_ascii=False, cls=NumpyJSONEncoder)
+            result = self.client.publish(topic, payload, qos=1)
+            
+            return result.rc == mqtt.MQTT_ERR_SUCCESS
+        
+        except Exception as e:
+            logger.error(f"发布统计信息异常: {e}")
+            return False
+
     def disconnect(self):
         """断开连接"""
         if self.client:
