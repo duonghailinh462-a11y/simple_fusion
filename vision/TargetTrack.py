@@ -14,8 +14,8 @@ from ctypes import *
 import ctypes
 from dataclasses import dataclass
 from typing import List, Tuple, Optional, Set, Dict
-from Basic import Config, DetectionUtils
-from ByteTrack.optimized_byte_tracker import OptimizedBYTETracker as BYTETracker
+from core.Basic import Config, DetectionUtils
+from vision.ByteTrack.optimized_byte_tracker import OptimizedBYTETracker as BYTETracker
 
 
 # --- 目标跟踪缓冲区和融合系统类  ---

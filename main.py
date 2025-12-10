@@ -47,9 +47,9 @@ from ByteTrack.optimized_byte_tracker import OptimizedBYTETracker as BYTETracker
 
 # 导入RTSP和MQTT相关模块 (新增)
 try:
-    from rtsp_reader import RTSPStreamReader
-    from mqtt_publisher import MqttPublisher  
-    from config_reader import ConfigReader
+    from vision.rtsp_reader import RTSPStreamReader
+    from core.mqtt_publisher import MqttPublisher  
+    from core.config_reader import ConfigReader
     RTSP_MQTT_AVAILABLE = True
 except ImportError as e:
     logger.warning(f"无法导入RTSP/MQTT模块: {e}, 将使用本地视频模式")
@@ -57,12 +57,12 @@ except ImportError as e:
 
 # 🔧 移除FFmpeg相关导入，改用直接计算时间戳
 # from Timestamp_sync import FFmpegTimeStampProvider, FFmpegTimestampFrameSynchronizer
-from Basic import Config, DetectionUtils, GeometryUtils, PerformanceMonitor
-from TargetTrack import TargetBuffer
-from Fusion import CrossCameraFusion
-from RadarVisionFusion import RadarVisionFusionProcessor, RadarDataLoader, OutputObject
-from CameraManager import CameraManager
-from ResultBuffer import ResultOutputManager
+from core.Basic import Config, DetectionUtils, GeometryUtils, PerformanceMonitor
+from vision.TargetTrack import TargetBuffer
+from core.Fusion import CrossCameraFusion
+from core.RadarVisionFusion import RadarVisionFusionProcessor, RadarDataLoader, OutputObject
+from vision.CameraManager import CameraManager
+from core.ResultBuffer import ResultOutputManager
 
 # 创建共享布尔值用于停止运行线程
 cancel_flag = multiprocessing.Value('b', False)
@@ -234,8 +234,8 @@ def create_sdk_worker_process(camera_id: int, video_path: str, result_queue: mul
     """创建并运行一个独立的 SDK 推理子进程 (生产者)"""
     
     # 确保子进程能找到 SDKinfer 模块
-    from SDKinfer import yolov5_SDK, infer_process_attr
-    from Basic import Config
+    from vision.SDKinfer import yolov5_SDK, infer_process_attr
+    from core.Basic import Config
     
     try:
         logger.info(f"Camera{camera_id} 子进程启动")

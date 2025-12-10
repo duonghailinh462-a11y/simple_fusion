@@ -15,7 +15,7 @@
 from typing import Dict, List, Tuple, Optional
 from collections import deque
 import logging
-from TargetTrack import LocalTarget, GlobalTarget
+from vision.TargetTrack import LocalTarget, GlobalTarget
 
 logger = logging.getLogger(__name__)
 

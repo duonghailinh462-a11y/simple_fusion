@@ -1,0 +1,35 @@
+// 来源: 协议文档第6页 [cite: 60-77]
+syntax = "proto3";
+
+message ObjLocus {
+  string deviceSn = 1;     // 设备编号
+  string time = 2;         // 数据时间
+  uint32 count = 3;        // 目标数量
+  repeated Locus locusList = 4; // 轨迹列表
+}
+
+message Locus {
+  string id = 1;           // 目标ID
+  uint32 objType = 2;      // 目标类型 (1:机动车, 2:行人, 3:非机动车)
+  uint32 lane = 3;         // 车道
+  float length = 4;        // 长度
+  float width = 5;         // 宽度
+  float height = 6;        // 高度
+  uint32 measState = 7;    // 状态
+  float posX = 8;          // X坐标
+  float posY = 9;          // Y坐标
+  float posZ = 10;         // Z坐标
+  double latitude = 11;    // 纬度
+  double longitude = 12;   // 经度
+  double altitude = 13;    // 海拔
+  float speed = 14;        // 速度
+  float accelerate = 15;   // 加速度
+  float azimuth = 16;      // 航向角
+  uint32 probability = 17; // 置信度
+  uint32 eventMask = 18;   // 事件
+  uint32 vehicleType = 19; // 车辆类型
+  uint32 vehicleColor = 20;// 车身颜色
+  uint32 plateType = 21;   // 车牌类型
+  uint32 plateColor = 22;  // 车牌颜色
+  string plateNo = 23;     // 车牌号码
+}

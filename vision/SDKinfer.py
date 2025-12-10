@@ -28,7 +28,7 @@ import pylynchipsdk as sdk
 from pycommon.infer_process import *
 from pycommon.callback_data_struct import *
 from pycommon.dump_json import *
-from Basic import NAMES
+from core.Basic import NAMES
 
 class yolov5_SDK(infer_process):
     """

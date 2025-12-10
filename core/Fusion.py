@@ -25,14 +25,14 @@ import pylynchipsdk as sdk
 from pycommon.infer_process import *
 from pycommon.callback_data_struct import *
 from pycommon.dump_json import *
-from ByteTrack.optimized_byte_tracker import OptimizedBYTETracker as BYTETracker
+from vision.ByteTrack.optimized_byte_tracker import OptimizedBYTETracker as BYTETracker
 
-from Basic import Config, DetectionUtils, GeometryUtils, PerformanceMonitor, CAMERA_MATRICES
-from fusion_debug import FusionDebugger
-from TargetTrack import GlobalTarget, LocalTarget, LocalTrackBuffer, analyze_trajectory_for_global_assignment, FusionEntry
+from core.Basic import Config, DetectionUtils, GeometryUtils, PerformanceMonitor, CAMERA_MATRICES
+from core.fusion_debug import FusionDebugger
+from vision.TargetTrack import GlobalTarget, LocalTarget, LocalTrackBuffer, analyze_trajectory_for_global_assignment, FusionEntry
 
 # 导入新的融合组件
-from FusionComponents import (
+from core.FusionComponents import (
     TargetManager,
     MatchingEngine,
     TrajectoryMerger,
@@ -537,7 +537,7 @@ class CrossCameraFusion:
             # 雷达的唯一作用就是匹配上之后把ID填进来，不输出雷达的经纬度
             participant = {
                 "timestamp": current_timestamp,
-                "cameraid": global_target.camera_id,
+                "source": "camera",  # 视觉数据源标记
                 "type": global_target.class_name,
                 "confidence": global_target.confidence_history[-1] if global_target.confidence_history else 0.0,
                 "track_id": global_target.global_id,
@@ -574,7 +574,7 @@ class CrossCameraFusion:
                 # 雷达的唯一作用就是匹配上之后把ID填进来，不输出雷达的经纬度
                 participant = {
                     "timestamp": current_timestamp,
-                    "cameraid": local_target.camera_id,
+                    "source": "camera",  # 视觉数据源标记
                     "type": local_target.class_name,
                     "confidence": local_target.confidence,
                     "track_id": local_target.matched_global_id,
@@ -594,6 +594,61 @@ class CrossCameraFusion:
             "reportTime": current_time_ms,
             "participant": participants
         }
+    
+    def merge_radar_to_json_data(self, json_data: dict, radar_objects: List[dict], frame_timestamp: float = None) -> dict:
+        """
+        将融合区外的雷达数据合并到JSON输出中
+        
+        Args:
+            json_data: 视觉JSON数据
+            radar_objects: 筛选后的雷达对象列表（来自RadarDataFilter）
+            frame_timestamp: 视频帧的时间戳 (可选)
+        
+        Returns:
+            合并后的JSON数据
+        """
+        if not radar_objects:
+            return json_data
+        
+        # 处理时间戳
+        if frame_timestamp is not None:
+            try:
+                if isinstance(frame_timestamp, str):
+                    try:
+                        dt = datetime.strptime(frame_timestamp, '%Y-%m-%d %H:%M:%S.%f')
+                    except ValueError:
+                        parts = frame_timestamp.split('.')
+                        if len(parts) == 2:
+                            us_part = parts[1].ljust(6, '0')
+                            ts_with_us = f"{parts[0]}.{us_part}"
+                            dt = datetime.strptime(ts_with_us, '%Y-%m-%d %H:%M:%S.%f')
+                        else:
+                            raise ValueError("时间戳格式错误")
+                    current_timestamp = dt.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                elif isinstance(frame_timestamp, (int, float)):
+                    current_timestamp = datetime.fromtimestamp(frame_timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                else:
+                    current_timestamp = None
+            except (ValueError, TypeError, OSError):
+                current_timestamp = None
+        else:
+            current_timestamp = None
+        
+        # 添加雷达对象
+        for radar_obj in radar_objects:
+            participant = {
+                "timestamp": current_timestamp or radar_obj.get('timestamp', ''),
+                "source": "radar",  # 雷达数据源标记
+                "type": radar_obj.get('type', 'unknown'),
+                "confidence": radar_obj.get('confidence', 0.0),
+                "track_id": None,  # 雷达数据没有track_id
+                "radar_id": radar_obj.get('radar_id'),
+                "lon": radar_obj.get('lon'),
+                "lat": radar_obj.get('lat')
+            }
+            json_data['participant'].append(participant)
+        
+        return json_data
 
     def is_confirmed_target(self, global_id: int) -> bool:
         """检查目标是否已确认"""

@@ -139,23 +139,44 @@ python main.py
 - **原因**：处理压力大，缓冲区处理不过来
 - **解决**：优化融合逻辑或调整time_threshold
 
-## 文件说明
+## 项目结构
 
-- `main.py` - 主程序，协调整个系统
-- `ResultBuffer.py` - 三路结果缓冲和时间对齐模块
-- `Fusion.py` - 跨摄像头融合协调器
-- `FusionComponents.py` - 融合组件（目标管理、匹配、轨迹融合）
-- `RadarVisionFusion.py` - 雷达视觉融合
-- `Basic.py` - 配置和工具类
-- `SDKinfer.py` - SDK推理子进程
-- `TargetTrack.py` - 目标跟踪数据结构
-- `RESULT_BUFFER_INTEGRATION_GUIDE.md` - ResultBuffer集成指南
+```
+/zhw/no-frame-sync/
+├── main.py                    # 主程序入口（融合与同步的消费者）
+├── main_1015.py              # 备用主程序
+├── core/                      # 核心模块（公共库）
+│   ├── Basic.py              # 基础工具：配置、检测工具、几何工具、性能监控
+│   ├── Fusion.py             # 跨摄像头融合逻辑
+│   ├── FusionComponents.py   # 融合数据结构
+│   ├── RadarVisionFusion.py  # 雷达视觉融合处理
+│   ├── ResultBuffer.py       # 结果缓冲和输出管理
+│   ├── config_reader.py      # 配置文件读取器
+│   ├── mqtt_publisher.py     # MQTT发布器
+│   └── fusion_debug.py       # 融合过程调试器
+├── vision/                    # 视觉模块（图像处理与跟踪）
+│   ├── SDKinfer.py           # SDK推理类（生产者）
+│   ├── rtsp_reader.py        # RTSP流读取器
+│   ├── CameraManager.py      # 摄像头管理器（进程管理）
+│   └── TargetTrack.py        # 目标跟踪缓冲
+├── radar/                     # 雷达模块
+│   ├── RadarDataFilter.py    # 雷达数据筛选和转发
+│   └── RadarDataManager.py   # 雷达数据管理器
+├── config/                    # 配置文件
+│   ├── fusion_config.py      # 融合配置
+│   ├── camera_config.ini     # 摄像头配置（RTSP URLs）
+│   └── mqtt_config.ini       # MQTT配置
+└── PROJECT_STRUCTURE.md       # 详细的项目结构文档
+```
+
+详见 `PROJECT_STRUCTURE.md` 了解各模块详情。
 
 ## 版本信息
 
-- **当前版本**：1.0
-- **状态**：可正常运行，融合效果待测试
-- **最后更新**：2025-12-08
+- **当前版本**：1.1
+- **状态**：代码结构重构完成，可正常运行
+- **最后更新**：2025-12-10
+- **最近更新**：完成项目模块化重构，统一导入规范
 
 ┌─────────────────────────────────────────────────┐
 │ 车辆从 C1 主责区 移动到 C1-C2 交界区             │
