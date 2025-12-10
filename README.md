@@ -51,9 +51,13 @@ python main.py
 
 ### 3. 输出结果
 - JSON数据：`output_fusion_refactored.json`
-- 日志文件：`fusion_system.log`
+- 日志文件：`logs/fusion_system.log`（统一日志，包含路径信息）
 
-## 关键参数
+## 文件说明
+
+- `main.py` - 主程序入口
+- `PROJECT_STRUCTURE.md` - 项目结构详细说明
+- `docs/LOGGING.md` - 日志系统说明
 
 ### 时间对齐
 - **time_threshold**: 0.5秒（三路时间差异阈值）
