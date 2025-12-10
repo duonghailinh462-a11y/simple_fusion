@@ -156,3 +156,39 @@ python main.py
 - **当前版本**：1.0
 - **状态**：可正常运行，融合效果待测试
 - **最后更新**：2025-12-08
+
+┌─────────────────────────────────────────────────┐
+│ 车辆从 C1 主责区 移动到 C1-C2 交界区             │
+└─────────────────────────────────────────────────┘
+
+【C1 的视角】
+  起始阶段：目标在 C1 主责区内出现
+  ├─ C1 分配 GlobalID = 101
+  └─ C1_GlobalTarget(GID=101) ✓
+
+  进入交界区：
+  ├─ C1_GlobalTarget(GID=101) 继续跟踪
+  └─ 独立更新自己的轨迹
+
+【C2 的视角】
+  起始阶段：目标在 C1 主责区（C2 主责区外）
+  ├─ C2 创建 LocalTarget(LID=5)  [未分配GID]
+  └─ 因为起始点不在 C2 主责区，不分配GlobalID
+
+  进入交界区：
+  ├─ C2_LocalTarget(LID=5) 进入融合区
+  ├─ 尝试匹配其他摄像头的 GlobalTarget
+  └─ 匹配成功：C2_LocalTarget(LID=5) ↔ C1_GlobalTarget(GID=101)
+
+【融合逻辑】
+  融合区域内，C1的GlobalTarget更新方式：
+  
+  new_pos = 0.2 × C2_local_pos + 0.8 × C1_global_pos
+            ↑                      ↑
+         来自C2的观测          C1的上一帧位置
+  
+  ⚠️ 注意：
+  - C1_GlobalTarget 依然是 GlobalTarget (GID=101)
+  - C2_LocalTarget 依然是 LocalTarget (LID=5)
+  - 只是用 C2 的观测来修正 C1 的 GlobalTarget 轨迹
+  - 最终输出的ID = 101 (来自C1)

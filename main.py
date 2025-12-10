@@ -22,7 +22,7 @@ sys.path.append('/usr/local/lynxi/sdk/sdk-samples/python')
 
 # 配置logging - 只输出到文件，不输出到终端
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler('fusion_system.log', mode='w', encoding='utf-8')  # mode='w' 每次运行时清空日志
@@ -714,7 +714,7 @@ if __name__ == "__main__":
                 
                 perf_monitor.end_timer('radar_fusion_processing')
             
-            # D.1 添加单路处理结果到缓冲区
+            # D.1 添加单路处理结果到缓冲区（存储已融合的GlobalTarget）
             perf_monitor.start_timer('store_single_camera_results')
             for camera_id in [1, 2, 3]:
                 if camera_id in current_frame_results:
@@ -742,15 +742,15 @@ if __name__ == "__main__":
                             logger.warning(f"时间戳转换失败: {e}，使用当前时间")
                             original_timestamp = time.time()
                     
-                    # 获取该摄像头的本地目标
-                    camera_local_targets = [t for t in all_local_targets if t.camera_id == camera_id]
+                    # 获取该摄像头的全局目标（已融合的最终结果）
+                    camera_global_targets = [t for t in all_global_targets if t.camera_id == camera_id]
                     
-                    # 获取该摄像头的radar_ids
-                    camera_radar_ids = {t.local_id: radar_id_map.get(t.local_id) for t in camera_local_targets}
+                    # 获取该摄像头的radar_ids（使用global_id作为key）
+                    camera_radar_ids = {t.global_id: radar_id_map.get(t.global_id) for t in camera_global_targets}
                     
                     # 添加到结果缓冲区（替代原来的 fusion_system.store_single_camera_result）
                     result_output_manager.add_single_camera_result(
-                        camera_id, original_timestamp, camera_local_targets, camera_radar_ids
+                        camera_id, original_timestamp, camera_global_targets, camera_radar_ids
                     )
             
             perf_monitor.end_timer('store_single_camera_results')
