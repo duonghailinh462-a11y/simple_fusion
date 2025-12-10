@@ -31,15 +31,15 @@ class CameraResultBuffer:
         # 保持时间戳的有序性
         self.timestamps = deque(maxlen=max_buffer_size)
     
-    def add_result(self, timestamp: float, local_targets: List[LocalTarget], 
+    def add_result(self, timestamp: float, global_targets: List[GlobalTarget], 
                    radar_ids: Dict[int, Optional[int]]):
-        """添加单路处理结果"""
+        """添加单路处理结果（存储已融合的GlobalTarget）"""
         if timestamp in self.buffer:
             logger.warning(f"C{self.camera_id} 时间戳 {timestamp} 已存在，将被覆盖")
         
         self.buffer[timestamp] = {
             'timestamp': timestamp,
-            'local_targets': local_targets,
+            'global_targets': global_targets,
             'radar_ids': radar_ids
         }
         self.timestamps.append(timestamp)
@@ -83,10 +83,10 @@ class TripleResultMatcher:
         }
     
     def add_result(self, camera_id: int, timestamp: float, 
-                   local_targets: List[LocalTarget], 
+                   global_targets: List[GlobalTarget], 
                    radar_ids: Dict[int, Optional[int]]):
-        """添加单路处理结果"""
-        self.buffers[camera_id].add_result(timestamp, local_targets, radar_ids)
+        """添加单路处理结果（存储已融合的GlobalTarget）"""
+        self.buffers[camera_id].add_result(timestamp, global_targets, radar_ids)
     
     def find_closest_triple(self) -> Optional[Tuple[float, float, float, Dict, Dict, Dict]]:
         """
@@ -184,10 +184,10 @@ class ResultOutputManager:
         self.output_count = 0
     
     def add_single_camera_result(self, camera_id: int, timestamp: float,
-                                local_targets: List[LocalTarget],
+                                global_targets: List[GlobalTarget],
                                 radar_ids: Dict[int, Optional[int]]):
-        """添加单路处理结果到缓冲区"""
-        self.matcher.add_result(camera_id, timestamp, local_targets, radar_ids)
+        """添加单路处理结果到缓冲区（存储已融合的GlobalTarget）"""
+        self.matcher.add_result(camera_id, timestamp, global_targets, radar_ids)
     
     def process_and_output(self) -> bool:
         """
@@ -227,24 +227,27 @@ class ResultOutputManager:
     def _perform_triple_matching(self, result1: Dict, result2: Dict, 
                                 result3: Dict) -> Dict:
         """
-        执行三路匹配和融合
+        执行三路结果合并（GlobalTarget已经在main.py中融合过了）
         
-        将三路结果的local_targets转换成可输出的JSON格式
+        将三路时间对齐后的GlobalTarget转换成可输出的JSON格式
         """
         from datetime import datetime
         from Basic import GeometryUtils
         
-        local_targets_c1 = result1['local_targets']
-        local_targets_c2 = result2['local_targets']
-        local_targets_c3 = result3['local_targets']
+        global_targets_c1 = result1['global_targets']
+        global_targets_c2 = result2['global_targets']
+        global_targets_c3 = result3['global_targets']
         
         # 获取雷达ID映射
         radar_ids_c1 = result1['radar_ids']
         radar_ids_c2 = result2['radar_ids']
         radar_ids_c3 = result3['radar_ids']
         
-        # 合并所有local_targets和radar_ids
-        all_local_targets = local_targets_c1 + local_targets_c2 + local_targets_c3
+        # 合并所有global_targets（按global_id去重）
+        unique_global_targets = {}
+        for gt in global_targets_c1 + global_targets_c2 + global_targets_c3:
+            if gt.global_id not in unique_global_targets:
+                unique_global_targets[gt.global_id] = gt
         
         # 合并雷达ID映射
         combined_radar_ids = {}
@@ -255,18 +258,27 @@ class ResultOutputManager:
         # 使用第一个摄像头的时间戳作为reportTime
         reportTime_ms = int(result1['timestamp'] * 1000)
         
-        # 从 local_targets 生成 participant 对象
+        # 从 global_targets 生成 participant 对象
         participants = []
         try:
-            for local_target in all_local_targets:
+            for global_target in unique_global_targets.values():
+                # 🔧 过滤：只输出起点在融合区域内的目标（should_output=True）
+                if not getattr(global_target, 'should_output', True):
+                    continue
+                
+                # 跳过没有轨迹或位置无效的目标
+                if not global_target.bev_trajectory:
+                    continue
+                
+                current_bev = global_target.bev_trajectory[-1]
+                if current_bev[0] == 0.0 and current_bev[1] == 0.0:
+                    continue
+                
                 # 获取该target的雷达ID（如果存在）
-                radar_id = combined_radar_ids.get(local_target.local_id)
+                radar_id = combined_radar_ids.get(global_target.global_id)
                 
                 # 将BEV坐标转换为地理坐标
-                geo_result = GeometryUtils.bev_to_geo(
-                    local_target.current_bev_pos[0], 
-                    local_target.current_bev_pos[1]
-                )
+                geo_result = GeometryUtils.bev_to_geo(current_bev[0], current_bev[1])
                 
                 if not geo_result:
                     # BEV转换失败，跳过此目标
@@ -274,20 +286,23 @@ class ResultOutputManager:
                 
                 lng, lat = geo_result
                 
+                # 获取置信度（使用最新的）
+                confidence = global_target.confidence_history[-1] if global_target.confidence_history else 0.0
+                
                 # 构建participant对象
                 participant = {
                     "timestamp": datetime.fromtimestamp(result1['timestamp']).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
-                    "cameraid": local_target.camera_id,
-                    "type": local_target.class_name,
-                    "confidence": local_target.confidence,
-                    "track_id": local_target.local_id,
+                    "cameraid": global_target.camera_id,
+                    "type": global_target.class_name,
+                    "confidence": confidence,
+                    "track_id": global_target.global_id,  # 使用global_id
                     "radar_id": radar_id,
                     "lon": lng,
                     "lat": lat
                 }
                 participants.append(participant)
         except Exception as e:
-            logger.error(f"三路匹配JSON生成失败: {e}")
+            logger.error(f"三路结果合并失败: {e}")
             import traceback
             traceback.print_exc()
             participants = []

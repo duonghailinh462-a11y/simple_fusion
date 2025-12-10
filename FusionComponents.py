@@ -117,12 +117,9 @@ class TargetManager:
         if perf_monitor:
             perf_monitor.add_counter('bev_conversions')
         
-        # 使用detection中的in_fusion_area标记（如果存在），否则从像素坐标判断
-        if 'in_fusion_area' in detection:
-            is_in_fusion_area = detection['in_fusion_area']
-        else:
-            # 备选方案：从像素坐标判断
-            is_in_fusion_area = GeometryUtils.is_in_radar_vision_fusion_area((center_x, center_y), camera_id)
+        # 🔧 修复：使用 is_in_public_area() 检查BEV坐标，与 GlobalTarget 保持一致
+        # 这样 LocalTarget 和 GlobalTarget 使用相同的融合区定义
+        is_in_fusion_area = GeometryUtils.is_in_public_area(bev_result)
         
         fusion_entry_frame = frame_count if is_in_fusion_area else -1
         
@@ -308,8 +305,11 @@ class TrajectoryMerger:
     - 更新置信度历史
     """
     
-    @staticmethod
-    def merge_trajectory(global_target: GlobalTarget, local_target: LocalTarget):
+    def __init__(self, fusion_debugger=None):
+        """初始化轨迹融合器"""
+        self.fusion_debugger = fusion_debugger
+    
+    def merge_trajectory(self, global_target: GlobalTarget, local_target: LocalTarget):
         """平滑地合并轨迹"""
         alpha = global_target.fusion_alpha
         
@@ -318,9 +318,22 @@ class TrajectoryMerger:
             last_bev = global_target.bev_trajectory[-1]
             new_bev_x = alpha * local_target.current_bev_pos[0] + (1 - alpha) * last_bev[0]
             new_bev_y = alpha * local_target.current_bev_pos[1] + (1 - alpha) * last_bev[1]
-            global_target.bev_trajectory.append((new_bev_x, new_bev_y))
+            merged_bev = (new_bev_x, new_bev_y)
+            global_target.bev_trajectory.append(merged_bev)
         else:
-            global_target.bev_trajectory.append(local_target.current_bev_pos)
+            merged_bev = local_target.current_bev_pos
+            global_target.bev_trajectory.append(merged_bev)
+        
+        # 🔍 记录轨迹融合详情
+        if self.fusion_debugger:
+            weights = {
+                'global': 1 - alpha,
+                'local': alpha,
+                'reason': f'fusion_alpha={alpha:.4f}'
+            }
+            self.fusion_debugger.log_trajectory_merge(
+                global_target, local_target, weights, merged_bev
+            )
         
         # 融合像素轨迹
         if global_target.pixel_trajectory:

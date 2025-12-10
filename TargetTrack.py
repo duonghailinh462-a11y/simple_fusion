@@ -99,6 +99,7 @@ class LocalTarget:
     matched_global_id: Optional[int] = None
     detection_box: List[int] = None
     fusion_entry_frame: int = -1
+    should_output: bool = True  # 是否应该输出（起点在融合区域内的目标才应该输出）
     
     def __post_init__(self):
         if self.detection_box is None:

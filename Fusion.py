@@ -28,6 +28,7 @@ from pycommon.dump_json import *
 from ByteTrack.optimized_byte_tracker import OptimizedBYTETracker as BYTETracker
 
 from Basic import Config, DetectionUtils, GeometryUtils, PerformanceMonitor, CAMERA_MATRICES
+from fusion_debug import FusionDebugger
 from TargetTrack import GlobalTarget, LocalTarget, LocalTrackBuffer, analyze_trajectory_for_global_assignment, FusionEntry
 
 # 导入新的融合组件
@@ -71,10 +72,13 @@ class CrossCameraFusion:
         # 使用全局Config实例
         pass
         
+        # 🔍 融合调试器 - 详细记录匹配和加权过程
+        self.fusion_debugger = FusionDebugger('fusion_debug.log')
+        
         # 使用新的组件
         self.target_manager = TargetManager()
         self.matching_engine = MatchingEngine()
-        self.trajectory_merger = TrajectoryMerger()
+        self.trajectory_merger = TrajectoryMerger(fusion_debugger=self.fusion_debugger)
         
         # 全局目标管理
         self.global_targets: Dict[int, GlobalTarget] = {}
@@ -177,6 +181,11 @@ class CrossCameraFusion:
                         global_target.confidence_history = global_target.confidence_history[-max_trajectory_length:]
                     
                     global_targets.append(global_target)
+                    
+                    # 🔧 添加：创建LocalTarget用于输出（应该输出，因为已经被分配了global_id）
+                    local_target = self.create_local_target(detection, camera_id, perf_monitor)
+                    local_target.should_output = True  # 已分配global_id的目标应该输出
+                    local_targets.append(local_target)
                 continue
             
             # ⬇️ ⬇️ ⬇️ [重构] GlobalID 分配逻辑 (参考main_1015) ⬇️ ⬇️ ⬇️
@@ -190,6 +199,10 @@ class CrossCameraFusion:
                 min_trajectory_length=3,
                 fusion_region=fusion_region
             )
+            
+            # 🐛 DEBUG: C3 的轨迹分析
+            if camera_id == 3 and len(pixel_track_history) >= 3:
+                logger.info(f"[DEBUG C3] Track {track_id}: pixel_history_len={len(pixel_track_history)}, start={pixel_track_history[0] if pixel_track_history else 'N/A'}, should_assign={should_assign_gid}")
 
             if should_assign_gid:
                 # 满足条件，分配 GlobalID
@@ -198,10 +211,16 @@ class CrossCameraFusion:
                 self.local_track_buffer.assign_global_id(camera_id, track_id, global_id) 
                 self.global_targets[global_id] = global_target
                 global_targets.append(global_target)
+                
+                # 🔧 添加：创建LocalTarget用于输出（应该输出，因为起点在融合区域内）
+                local_target = self.create_local_target(detection, camera_id, perf_monitor)
+                local_target.should_output = True  # 起点在融合区域内的目标应该输出
+                local_targets.append(local_target)
             
             else:
-                # 不满足条件，创建 LocalTarget
+                # 不满足条件，创建 LocalTarget（起点不在融合区域，不应该输出）
                 local_target = self.create_local_target(detection, camera_id, perf_monitor)
+                local_target.should_output = False  # 标记为不应该输出
                 local_targets.append(local_target)
         
         if perf_monitor:
@@ -227,6 +246,10 @@ class CrossCameraFusion:
         if perf_monitor:
             perf_monitor.start_timer('perform_matching')
         
+        # 🔍 记录帧开始
+        self.fusion_debugger.log_frame_start(self.frame_count)
+        matches_this_frame = 0
+        
         # 用于锁定本帧已匹配的 global_id，防止一对多
         locked_global_ids_this_frame = set()
 
@@ -241,6 +264,9 @@ class CrossCameraFusion:
                 gt.is_in_fusion_zone = is_now_in_zone
                 if is_now_in_zone and gt.fusion_entry_frame == -1:
                     gt.fusion_entry_frame = self.frame_count
+                    # 📊 调试日志：记录进入融合区
+                    if gt.camera_id == 2 and self.frame_count % 10 == 0:
+                        logger.debug(f"Frame {self.frame_count} C2_G{gt.global_id}: 进入融合区，fusion_entry_frame={gt.fusion_entry_frame}")
 
         time_window = Config.FUSION_TIME_WINDOW if hasattr(Config, 'FUSION_TIME_WINDOW') else 60
 
@@ -277,6 +303,12 @@ class CrossCameraFusion:
             elif local_target.camera_id == 3:
                 candidate_globals = [gt for gt in active_global_targets if gt.camera_id == 2]
             
+            # 📊 调试日志：camera3的匹配尝试
+            if local_target.camera_id == 3 and self.frame_count % 10 == 0:
+                logger.debug(f"Frame {self.frame_count} C3_L{local_target.local_id}: 尝试匹配C2的目标，候选数={len(candidate_globals)}")
+                for gt in candidate_globals:
+                    logger.debug(f"  候选 C{gt.camera_id}_G{gt.global_id}: in_zone={gt.is_in_fusion_zone}, fusion_entry={gt.fusion_entry_frame}, class={gt.class_name}")
+            
             # 筛选时，同时检查帧内锁和永久绑定状态
             fusion_candidates = [
                 gt for gt in candidate_globals 
@@ -285,27 +317,66 @@ class CrossCameraFusion:
                     gt.global_id not in permanently_bound_global_ids)
             ]
             
+            # 🔍 记录匹配尝试
+            self.fusion_debugger.log_matching_attempt(local_target, fusion_candidates)
+            
+            # 📊 调试日志：筛选后的候选
+            if local_target.camera_id == 3 and self.frame_count % 10 == 0:
+                logger.debug(f"  筛选后候选数={len(fusion_candidates)}")
+                for gt in fusion_candidates:
+                    logger.debug(f"    融合候选 C{gt.camera_id}_G{gt.global_id}: fusion_entry={gt.fusion_entry_frame}")
+            
             if not fusion_candidates:
+                # 🔍 记录匹配失败
+                self.fusion_debugger.log_matching_decision(local_target, None, None, time_window)
                 continue
             
             best_match = None
             best_time_diff = float('inf')
             
+            # 📊 调试日志：camera3的详细匹配过程
+            if local_target.camera_id == 3 and self.frame_count % 10 == 0:
+                logger.debug(f"  C3_L{local_target.local_id}: fusion_entry={local_target.fusion_entry_frame}, class={local_target.class_name}, time_window={time_window}")
+            
             for candidate in fusion_candidates:
                 if not DetectionUtils.is_class_compatible(local_target.class_name, candidate.class_name):
+                    if local_target.camera_id == 3 and self.frame_count % 10 == 0:
+                        logger.debug(f"    ❌ G{candidate.global_id}: 类别不兼容 ({local_target.class_name} vs {candidate.class_name})")
                     continue
                 if candidate.fusion_entry_frame == -1:
+                    if local_target.camera_id == 3 and self.frame_count % 10 == 0:
+                        logger.debug(f"    ❌ G{candidate.global_id}: fusion_entry_frame=-1")
                     continue
                 time_diff = abs(local_target.fusion_entry_frame - candidate.fusion_entry_frame)
+                if local_target.camera_id == 3 and self.frame_count % 10 == 0:
+                    logger.debug(f"    🔍 G{candidate.global_id}: time_diff={time_diff}, window={time_window}, match={time_diff <= time_window}")
                 if time_diff <= time_window and time_diff < best_time_diff:
                     best_time_diff = time_diff
                     best_match = candidate
             
             if best_match:
+                matches_this_frame += 1
+                # 🔍 记录匹配成功
+                self.fusion_debugger.log_matching_decision(local_target, best_match, best_time_diff, time_window)
+                
+                if local_target.camera_id == 3 and self.frame_count % 10 == 0:
+                    logger.info(f"✅ Frame {self.frame_count} C3_L{local_target.local_id} <-> C{best_match.camera_id}_G{best_match.global_id} (time_diff={best_time_diff})")
                 local_target.matched_global_id = best_match.global_id
                 self.local_to_global[lookup_key] = best_match.global_id
                 locked_global_ids_this_frame.add(best_match.global_id)
                 self._smoothly_merge_trajectory(best_match, local_target)
+            else:
+                # 🔍 记录匹配失败
+                self.fusion_debugger.log_matching_decision(local_target, None, None, time_window)
+                if local_target.camera_id == 3 and self.frame_count % 10 == 0:
+                    logger.warning(f"❌ Frame {self.frame_count} C3_L{local_target.local_id}: 无匹配（候选数={len(fusion_candidates)}）")
+        
+        # 🔍 记录帧总结
+        self.fusion_debugger.log_frame_summary(
+            len(active_global_targets),
+            len(local_targets_this_frame),
+            matches_this_frame
+        )
         
         if perf_monitor:
             perf_monitor.end_timer('perform_matching')

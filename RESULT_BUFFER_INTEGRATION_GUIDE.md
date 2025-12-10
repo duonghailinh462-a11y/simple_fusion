@@ -4,6 +4,25 @@
 
 这个指南说明如何在 `main.py` 中集成 `ResultBuffer.py` 模块，实现三路摄像头结果的时间对齐和匹配输出。
 
+## ⚠️ 重要更新（当前实现）
+
+**ResultBuffer 现在只负责时间对齐和输出，不再做融合！**
+
+- **融合已在 main.py 中完成**：
+  - `fusion_system._perform_matching()` 已经完成跨摄像头匹配
+  - `fusion_system.update_global_state()` 已经用三路观测更新了 GlobalTarget
+  - GlobalTarget 的位置已经是三路融合后的最终结果
+
+- **ResultBuffer 的作用**：
+  1. 按摄像头缓冲 GlobalTarget（已融合的最终结果）
+  2. 找到三路时间最接近的一组时间戳
+  3. 合并这三个时间点的 GlobalTarget（按 global_id 去重）
+  4. 输出这些去重后的 GlobalTarget
+
+- **只输出 GlobalTarget**：
+  - ✅ 输出：GlobalTarget（有 global_id）
+  - ❌ 不输出：LocalTarget（它的观测已经用来更新 GlobalTarget 了）
+
 ## 核心概念
 
 ### 当前问题
