@@ -20,15 +20,12 @@ from collections import defaultdict, deque
 from statistics import mean, median
 sys.path.append('/usr/local/lynxi/sdk/sdk-samples/python')
 
-# 配置logging - 只输出到文件，不输出到终端
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('fusion_system.log', mode='w', encoding='utf-8')  # mode='w' 每次运行时清空日志
-    ]
-)
-logger = logging.getLogger(__name__)
+# 导入统一的日志配置
+from core.logger_config import FusionLogger, get_logger
+
+# 初始化日志系统（必须在导入其他模块之前）
+FusionLogger.setup()
+logger = get_logger(__name__)
 
 import numpy as np
 import cv2
@@ -871,5 +868,11 @@ if __name__ == "__main__":
                 logger.info("MQTT连接已断开")
             except:
                 pass
+        
+        # 8. 记录程序结束信息
+        logger.info("=" * 70)
+        logger.info("融合系统已停止")
+        logger.info(f"日志文件: {os.path.abspath('logs/fusion_system.log')}")
+        logger.info("=" * 70)
                 
         logger.info("资源清理完成")
