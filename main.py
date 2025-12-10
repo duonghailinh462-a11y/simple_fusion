@@ -721,6 +721,27 @@ if __name__ == "__main__":
                     result = current_frame_results[camera_id]
                     original_timestamp = result.get('timestamp', time.time())
                     
+                    # 将字符串时间戳转换为浮点数
+                    if isinstance(original_timestamp, str):
+                        try:
+                            from datetime import datetime
+                            try:
+                                dt = datetime.strptime(original_timestamp, '%Y-%m-%d %H:%M:%S.%f')
+                            except ValueError:
+                                parts = original_timestamp.split('.')
+                                if len(parts) == 2:
+                                    second_part = parts[0]
+                                    ms_part = parts[1]
+                                    us_part = ms_part.ljust(6, '0')
+                                    ts_with_us = f"{second_part}.{us_part}"
+                                    dt = datetime.strptime(ts_with_us, '%Y-%m-%d %H:%M:%S.%f')
+                                else:
+                                    raise ValueError("时间戳格式错误")
+                            original_timestamp = dt.timestamp()
+                        except Exception as e:
+                            logger.warning(f"时间戳转换失败: {e}，使用当前时间")
+                            original_timestamp = time.time()
+                    
                     # 获取该摄像头的本地目标
                     camera_local_targets = [t for t in all_local_targets if t.camera_id == camera_id]
                     
@@ -734,7 +755,7 @@ if __name__ == "__main__":
             
             perf_monitor.end_timer('store_single_camera_results')
             
-            # D.2 每一帧都处理缓冲区中的结果（实时输出）
+            # D.2 每一帧都处理缓冲区中的结果（实时输出三路融合结果）
             perf_monitor.start_timer('result_buffer_processing')
             
             # 每一帧都尝试处理缓冲区中的结果
@@ -743,7 +764,7 @@ if __name__ == "__main__":
                 output_count += 1
             
             if output_count > 0:
-                logger.info(f"Frame {current_frame}: 输出 {output_count} 组结果")
+                logger.info(f"Frame {current_frame}: 输出 {output_count} 组三路融合结果")
             
             # 定期记录缓冲区状态（每100帧）
             if current_frame > 0 and current_frame % 100 == 0:
@@ -753,53 +774,15 @@ if __name__ == "__main__":
             
             perf_monitor.end_timer('result_buffer_processing')
             
-            # E. 生成JSON数据并尝试发送MQTT
+            # ✅ 关键修改：不再生成每帧的JSON
+            # 现在只通过 ResultBuffer 的三路匹配输出结果
+            # 之前的 generate_json_data() 流程已被替代
             perf_monitor.start_timer('json_mqtt_processing')
             
-            # 获取当前帧的时间戳（使用最新的摄像头时间戳）
-            frame_timestamp = None
-            for camera_id in [1, 2, 3]:
-                if camera_id in current_frame_results:
-                    result = current_frame_results[camera_id]
-                    ts = result.get('timestamp', None)
-                    if ts is not None:
-                        frame_timestamp = ts
-                        break
-            
-            perf_monitor.start_timer('json_generation')
-            json_data = fusion_system.generate_json_data(all_global_targets, all_local_targets, radar_id_map, frame_timestamp)
-            perf_monitor.end_timer('json_generation')
-            
-            # 检查是否为空帧（participants为空）
-            participants = json_data.get('participant', [])
-            if len(participants) == 0:
-                # 空帧不输出，跳过MQTT发送和JSON保存
-                perf_monitor.end_timer('json_mqtt_processing')
-                fusion_system.next_frame()
-                continue
-            
-            mqtt_sent = False
-            if mqtt_publisher:
-                perf_monitor.start_timer('mqtt_publish')
-                try:
-                    mqtt_sent = mqtt_publisher.publish_rsm(participants)
-                    if mqtt_sent:
-                        # 📊 性能监控：记录MQTT成功发送
-                        perf_monitor.add_counter('mqtt_sends')
-                    else:
-                        # 📊 性能监控：记录MQTT发送失败
-                        perf_monitor.add_counter('mqtt_failures')
-                except Exception as e:
-                    logger.error(f"MQTT发送异常: {e}")
-                    perf_monitor.add_counter('mqtt_failures')
-                finally:
-                    perf_monitor.end_timer('mqtt_publish')
-            
-            # 🔧 修复：无论MQTT是否成功，都保存JSON数据（用于调试和备份）
-            # 只保存非空帧
-            fusion_system.json_output_data.append(json_data)          
-            json_mqtt_time = perf_monitor.end_timer('json_mqtt_processing')       
+            # 保留 fusion_system.next_frame() 用于内部计数
             fusion_system.next_frame()
+            
+            json_mqtt_time = perf_monitor.end_timer('json_mqtt_processing')
 
             # D. 定期报告队列状态
             if current_frame > 0 and current_frame % 300 == 0:
