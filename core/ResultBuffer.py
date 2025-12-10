@@ -232,7 +232,7 @@ class ResultOutputManager:
         将三路时间对齐后的GlobalTarget转换成可输出的JSON格式
         """
         from datetime import datetime
-        from Basic import GeometryUtils
+        from core.Basic import GeometryUtils
         
         global_targets_c1 = result1['global_targets']
         global_targets_c2 = result2['global_targets']
