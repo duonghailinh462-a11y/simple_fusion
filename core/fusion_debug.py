@@ -8,24 +8,19 @@ logger = logging.getLogger(__name__)
 
 
 class FusionDebugger:
-    """融合过程调试器 - 记录匹配决策和融合详情"""
+    """融合过程调试器 - 记录匹配决策和融合详情（日志统一到fusion_system.log）"""
     
-    def __init__(self, log_file: str = 'fusion_debug.log'):
+    def __init__(self, log_file: str = None):
         """初始化调试器
         
         Args:
-            log_file: 调试日志文件路径
+            log_file: 已弃用（保留用于兼容性）
         """
         self.log_file = log_file
         self.frame_log = []
         self.matching_log = []
         
-        # 配置文件日志处理器
-        self.file_handler = logging.FileHandler(log_file, mode='w')
-        self.file_handler.setFormatter(
-            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        )
-        logger.addHandler(self.file_handler)
+        # 不再创建独立的文件处理器，改用统一的logger
     
     def log_frame_start(self, frame_count: int):
         """记录帧开始"""

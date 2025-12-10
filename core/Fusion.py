@@ -72,8 +72,8 @@ class CrossCameraFusion:
         # 使用全局Config实例
         pass
         
-        # 🔍 融合调试器 - 详细记录匹配和加权过程
-        self.fusion_debugger = FusionDebugger('fusion_debug.log')
+        # 🔍 融合调试器 - 详细记录匹配和加权过程（日志已统一到fusion_system.log）
+        self.fusion_debugger = FusionDebugger()  # 移除独立日志文件
         
         # 使用新的组件
         self.target_manager = TargetManager()
@@ -884,12 +884,23 @@ class CrossCameraFusion:
 
     def save_json_data(self, output_file: str):
         """保存JSON数据到文件"""
-        # ... (不变) [cite: 1024-1033]
         try:
+            import os
             self._flush_logs()
             
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(self.json_output_data, f, ensure_ascii=False, indent=2, cls=NumpyJSONEncoder)
-            logger.info(f"JSON数据已保存: {output_file}, 共{len(self.json_output_data)}帧")
+            
+            # 获取文件大小
+            file_size_kb = os.path.getsize(output_file) / 1024
+            abs_path = os.path.abspath(output_file)
+            
+            # 记录带路径的输出信息
+            logger.info("=" * 70)
+            logger.info(f"✅ JSON数据已保存")
+            logger.info(f"   文件路径: {abs_path}")
+            logger.info(f"   数据条目: {len(self.json_output_data)} 条")
+            logger.info(f"   文件大小: {file_size_kb:.2f} KB")
+            logger.info("=" * 70)
         except Exception as e:
             logger.error(f"保存JSON文件出错: {e}")
