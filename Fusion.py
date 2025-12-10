@@ -182,13 +182,13 @@ class CrossCameraFusion:
             # ⬇️ ⬇️ ⬇️ [重构] GlobalID 分配逻辑 (参考main_1015) ⬇️ ⬇️ ⬇️
             pixel_track_history = self.local_track_buffer.get_pixel_track_history(camera_id, track_id)
 
-            # 🔧 修改：基于像素Y值判断是否分配global_id（参考main_1015逻辑）
+            # 🔧 修改：基于融合区域多边形判断是否分配global_id
+            fusion_region = Config.RADAR_VISION_FUSION_AREAS.get(camera_id)
             should_assign_gid = analyze_trajectory_for_global_assignment(
                 pixel_track_history, 
                 camera_id,
                 min_trajectory_length=3,
-                pixel_bottom_threshold=Config.PIXEL_BOTTOM_THRESHOLD,
-                pixel_top_threshold=Config.PIXEL_TOP_THRESHOLD
+                fusion_region=fusion_region
             )
 
             if should_assign_gid:

@@ -222,19 +222,17 @@ class LocalTrackBuffer:
 
 def analyze_trajectory_for_global_assignment(pixel_track_history: List[Tuple[int, int]], 
                                             camera_id: int,
-                                            min_trajectory_length: int = 3,
-                                            pixel_bottom_threshold: float = 700,
-                                            pixel_top_threshold: float = 1080) -> bool:
+                                            min_trajectory_length: int = 5,
+                                            fusion_region: np.ndarray = None) -> bool:
     """
     分析轨迹是否值得分配global_id
-    基于像素Y值判断是否在底部区域（参考main_1015逻辑）
+    基于多边形融合区域判断起始点是否在该区域内
     
     Args:
         pixel_track_history: 像素轨迹历史
         camera_id: 摄像头ID
         min_trajectory_length: 最小轨迹长度
-        pixel_bottom_threshold: 像素Y值下限
-        pixel_top_threshold: 像素Y值上限
+        fusion_region: 融合区域多边形（numpy数组）
     
     Returns:
         是否应该分配global_id
@@ -242,11 +240,16 @@ def analyze_trajectory_for_global_assignment(pixel_track_history: List[Tuple[int
     if len(pixel_track_history) < min_trajectory_length:
         return False
     
-    # 检查起始点的Y值是否在底部区域
-    start_pos = pixel_track_history[0]
-    start_y = start_pos[1]
-    
-    if pixel_bottom_threshold <= start_y <= pixel_top_threshold:
+    # 如果没有提供融合区域，默认分配global_id（向后兼容）
+    if fusion_region is None:
         return True
     
-    return False
+    # 检查起始点是否在融合区域内
+    start_pos = pixel_track_history[0]
+    start_point = np.array([start_pos], dtype=np.int32)
+    
+    # 使用 pointPolygonTest 判断点是否在多边形内
+    # 返回值 > 0 表示点在多边形内，= 0 表示点在边界上，< 0 表示点在多边形外
+    result = cv2.pointPolygonTest(fusion_region, start_pos, False)
+    
+    return result >= 0  # 点在多边形内或边界上
