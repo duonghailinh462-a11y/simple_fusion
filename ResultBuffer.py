@@ -229,34 +229,78 @@ class ResultOutputManager:
         """
         执行三路匹配和融合
         
-        这里需要调用融合系统的核心逻辑，将三路结果进行匹配
+        将三路结果的local_targets转换成可输出的JSON格式
         """
-        # TODO: 实现三路匹配逻辑
-        # 这里是一个占位符，实际实现需要根据融合系统的API
-        
-        # 示例：
-        # 1. 提取三路的local_targets
-        # 2. 调用融合系统的匹配方法
-        # 3. 生成JSON输出
+        from datetime import datetime
+        from Basic import GeometryUtils
         
         local_targets_c1 = result1['local_targets']
         local_targets_c2 = result2['local_targets']
         local_targets_c3 = result3['local_targets']
         
-        # 合并所有local_targets
+        # 获取雷达ID映射
+        radar_ids_c1 = result1['radar_ids']
+        radar_ids_c2 = result2['radar_ids']
+        radar_ids_c3 = result3['radar_ids']
+        
+        # 合并所有local_targets和radar_ids
         all_local_targets = local_targets_c1 + local_targets_c2 + local_targets_c3
         
-        # 调用融合系统的JSON生成方法
-        # （这里需要根据实际的融合系统API进行调整）
+        # 合并雷达ID映射
+        combined_radar_ids = {}
+        combined_radar_ids.update(radar_ids_c1)
+        combined_radar_ids.update(radar_ids_c2)
+        combined_radar_ids.update(radar_ids_c3)
+        
+        # 使用第一个摄像头的时间戳作为reportTime
+        reportTime_ms = int(result1['timestamp'] * 1000)
+        
+        # 从 local_targets 生成 participant 对象
+        participants = []
+        try:
+            for local_target in all_local_targets:
+                # 获取该target的雷达ID（如果存在）
+                radar_id = combined_radar_ids.get(local_target.local_id)
+                
+                # 将BEV坐标转换为地理坐标
+                geo_result = GeometryUtils.bev_to_geo(
+                    local_target.current_bev_pos[0], 
+                    local_target.current_bev_pos[1]
+                )
+                
+                if not geo_result:
+                    # BEV转换失败，跳过此目标
+                    continue
+                
+                lng, lat = geo_result
+                
+                # 构建participant对象
+                participant = {
+                    "timestamp": datetime.fromtimestamp(result1['timestamp']).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                    "cameraid": local_target.camera_id,
+                    "type": local_target.class_name,
+                    "confidence": local_target.confidence,
+                    "track_id": local_target.local_id,
+                    "radar_id": radar_id,
+                    "lon": lng,
+                    "lat": lat
+                }
+                participants.append(participant)
+        except Exception as e:
+            logger.error(f"三路匹配JSON生成失败: {e}")
+            import traceback
+            traceback.print_exc()
+            participants = []
+        
         json_data = {
-            'reportTime': int(result1['timestamp'] * 1000),
-            'participant': []
+            'reportTime': reportTime_ms,
+            'participant': participants
         }
         
         return json_data
     
     def _output_result(self, json_data: Dict, ts1: float, ts2: float, ts3: float):
-        """输出结果到MQTT或文件"""
+        """输出结果到MQTT、融合系统和文件"""
         participants = json_data.get('participant', [])
         
         # 尝试发送MQTT
@@ -266,6 +310,13 @@ class ResultOutputManager:
                 mqtt_sent = self.mqtt_publisher.publish_rsm(participants)
             except Exception as e:
                 logger.error(f"MQTT发送异常: {e}")
+        
+        # 保存到融合系统的输出列表（用于最终的JSON文件保存）
+        if self.fusion_system:
+            try:
+                self.fusion_system.json_output_data.append(json_data)
+            except Exception as e:
+                logger.error(f"保存到融合系统输出列表失败: {e}")
         
         # 记录输出信息
         logger.info(f"输出结果 #{self.output_count}: "
