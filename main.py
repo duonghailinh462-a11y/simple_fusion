@@ -58,6 +58,7 @@ from core.Basic import Config, DetectionUtils, GeometryUtils, PerformanceMonitor
 from vision.TargetTrack import TargetBuffer
 from core.Fusion import CrossCameraFusion
 from core.RadarVisionFusion import RadarVisionFusionProcessor, RadarDataLoader, OutputObject
+from radar.RadarDataFilter import RadarDataFilter  # 新增：雷达地理过滤
 from vision.CameraManager import CameraManager
 from core.ResultBuffer import ResultOutputManager
 from config.region_config import get_lane_for_point
@@ -346,7 +347,12 @@ if __name__ == "__main__":
     camera_manager = CameraManager(video_paths, cancel_flag)
     queues = camera_manager.create_queues(maxsize=10)
 
-    # 2.1 初始化雷达融合模块
+    # 2.1 初始化雷达地理过滤器 (第一道关卡)
+    logger.info("初始化雷达地理过滤器")
+    radar_filter = RadarDataFilter()
+    logger.info("✓ RadarDataFilter初始化成功")
+    
+    # 2.2 初始化雷达融合模块 (第二道关卡：融合处理)
     logger.info("初始化雷达融合模块")
     radar_fusion_enabled = False
     radar_data_loader = None
@@ -388,6 +394,10 @@ if __name__ == "__main__":
         logger.warning(f"雷达融合模块初始化失败: {e}")
         logger.warning("将不使用雷达融合功能")
         radar_fusion_enabled = False
+    
+    # 初始化统计：直接输出的雷达数据
+    radar_direct_output_count = 0  # 区外直接输出
+    radar_fusion_count = 0  # 区内融合
     
     # DEBUG: 跟踪器输入统计
     tracker_input_stats = {1: {'total': 0, 'empty': 0, 'non_empty': 0, 'total_dets': 0}, 
@@ -595,8 +605,39 @@ if __name__ == "__main__":
 
             # D. 雷达融合处理 (按摄像头同步融合)
             radar_id_map = {}
+            direct_radar_outputs = []  # 用于存储直接输出的雷达数据
+            
             if radar_fusion_enabled and radar_fusion_processors:
                 perf_monitor.start_timer('radar_fusion_processing')
+                
+                # ===== 第一道关卡：地理区域过滤 (新增) =====
+                perf_monitor.start_timer('radar_filtering')
+                
+                # 从雷达数据加载器获取当前时间戳最近的雷达数据
+                radar_timestamps_list = list(radar_data_loader.radar_data.keys()) if radar_data_loader else []
+                if radar_timestamps_list and current_frame_results:
+                    # 取第一个摄像头的时间戳作为基准（因为它们应该同步）
+                    vision_timestamp = current_frame_results[1].get('timestamp', time.time()) if 1 in current_frame_results else time.time()
+                    
+                    # 找到最接近的雷达时间戳
+                    closest_radar_ts = min(radar_timestamps_list, 
+                                          key=lambda ts: abs(ts - (vision_timestamp if isinstance(vision_timestamp, (int, float)) else time.time())))
+                    
+                    if closest_radar_ts in radar_data_loader.radar_data:
+                        all_radar_data = radar_data_loader.radar_data[closest_radar_ts]
+                        
+                        # 执行过滤
+                        fusion_radar_data, direct_output_radar = radar_filter.batch_filter_radar_data(all_radar_data)
+                        
+                        logger.debug(f"Frame {current_frame}: 雷达过滤 总数={len(all_radar_data)}, "
+                                   f"融合区内={len(fusion_radar_data)}, 融合区外={len(direct_output_radar)}")
+                        
+                        # 统计直接输出的数据
+                        direct_radar_outputs.extend(direct_output_radar)
+                        radar_direct_output_count += len(direct_output_radar)
+                        radar_fusion_count += len(fusion_radar_data)
+                
+                perf_monitor.end_timer('radar_filtering')
                 
                 # 按摄像头进行雷达融合
                 for camera_id in [1, 2, 3]:
@@ -775,6 +816,10 @@ if __name__ == "__main__":
             # D.2 每一帧都处理缓冲区中的结果（实时输出三路融合结果）
             perf_monitor.start_timer('result_buffer_processing')
             
+            # 添加直接输出的雷达数据到处理器
+            if direct_radar_outputs:
+                result_output_manager.add_radar_data(direct_radar_outputs)
+            
             # 每一帧都尝试处理缓冲区中的结果
             output_count = 0
             while result_output_manager.process_and_output():
@@ -782,6 +827,10 @@ if __name__ == "__main__":
             
             if output_count > 0:
                 logger.info(f"Frame {current_frame}: 输出 {output_count} 组三路融合结果")
+            
+            # 独立输出融合区外的雷达数据（不依赖三路匹配）
+            if result_output_manager.output_pending_radar_data():
+                logger.info(f"Frame {current_frame}: 输出融合区外的雷达直接数据")
             
             # 定期记录缓冲区状态（每100帧）
             if current_frame > 0 and current_frame % 100 == 0:
@@ -829,6 +878,13 @@ if __name__ == "__main__":
         
         processed_frames_count = fusion_system.frame_count
         logger.info(f"成功处理的帧数: {processed_frames_count}帧")
+        
+        # 雷达数据统计
+        logger.info("="*60)
+        logger.info("雷达数据处理统计")
+        logger.info(f"直接输出的雷达数据: {radar_direct_output_count} 个")
+        logger.info(f"送入融合系统的雷达数据: {radar_fusion_count} 个")
+        logger.info(f"雷达数据总计: {radar_direct_output_count + radar_fusion_count} 个")
             
         logger.info("="*60)
         

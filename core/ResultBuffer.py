@@ -182,12 +182,144 @@ class ResultOutputManager:
         self.mqtt_publisher = mqtt_publisher
         self.matcher = TripleResultMatcher(time_threshold)
         self.output_count = 0
+        self.pending_radar_data = []  # 存储待输出的雷达数据
     
     def add_single_camera_result(self, camera_id: int, timestamp: float,
                                 global_targets: List[GlobalTarget],
                                 radar_ids: Dict[int, Optional[int]]):
         """添加单路处理结果到缓冲区（存储已融合的GlobalTarget）"""
         self.matcher.add_result(camera_id, timestamp, global_targets, radar_ids)
+    
+    def add_radar_data(self, radar_data_list):
+        """
+        添加雷达数据到待输出列表
+        Args:
+            radar_data_list: 直接输出的雷达数据列表（在融合区外的数据）
+        """
+        if radar_data_list:
+            logger.debug(f"📡 添加 {len(radar_data_list)} 条雷达数据到待输出列表 (当前待输出总数: {len(self.pending_radar_data) + len(radar_data_list)})")
+            self.pending_radar_data.extend(radar_data_list)
+        else:
+            logger.debug(f"📡 无雷达数据添加 (radar_data_list为空或为None)")
+    
+    def output_pending_radar_data(self) -> bool:
+        """
+        独立输出所有待处理的雷达数据（融合区外的数据）
+        不依赖三路匹配，直接输出
+        
+        Returns:
+            True 如果有雷达数据输出，False 如果没有待输出的雷达数据
+        """
+        if not self.pending_radar_data:
+            logger.debug("📡 待输出雷达数据为空，跳过")
+            return False
+        
+        logger.debug(f"📡 开始处理 {len(self.pending_radar_data)} 条待输出雷达数据")
+        
+        try:
+            from datetime import datetime
+            import math
+            
+            # 构建输出JSON
+            output_data = {
+                "reportTime": int(datetime.now().timestamp() * 1000),
+                "participant": []
+            }
+            
+            # 处理所有待输出的雷达数据
+            for radar_data in self.pending_radar_data:
+                try:
+                    # 支持字典格式的数据（由RadarDataFilter返回）
+                    if isinstance(radar_data, dict):
+                        # 从字典中获取经纬度
+                        lon = radar_data.get('lon')
+                        lat = radar_data.get('lat')
+                        
+                        if lon is not None and lat is not None:
+                            # 使用雷达数据本身的时间戳，如果没有则使用当前时间
+                            radar_timestamp = radar_data.get('time') or radar_data.get('timestamp')
+                            
+                            if radar_timestamp:
+                                # 如果时间戳是字符串格式，直接使用
+                                if isinstance(radar_timestamp, str):
+                                    timestamp_str = radar_timestamp
+                                else:
+                                    # 如果是数字时间戳，转换为字符串格式
+                                    timestamp_str = datetime.fromtimestamp(radar_timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                            else:
+                                # 如果没有时间戳，使用当前时间
+                                timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                            
+                            radar_participant = {
+                                "timestamp": timestamp_str,
+                                "source": "radar",
+                                "type": radar_data.get('type', 'vehicle'),
+                                "confidence": radar_data.get('confidence', radar_data.get('rcs', 0.0)),
+                                "track_id": radar_data.get('track_id', -1),
+                                "radar_id": radar_data.get('radar_id', -1),
+                                "lon": lon,
+                                "lat": lat
+                            }
+                            output_data['participant'].append(radar_participant)
+                    else:
+                        # 支持对象格式的数据（兼容旧版本）
+                        # 从雷达极坐标(距离、角度)转换为BEV坐标
+                        if hasattr(radar_data, 'distance') and hasattr(radar_data, 'angle'):
+                            x = radar_data.distance * math.cos(math.radians(radar_data.angle))
+                            y = radar_data.distance * math.sin(math.radians(radar_data.angle))
+                            
+                            # 转换为地理坐标
+                            from core.Basic import GeometryUtils
+                            geo_result = GeometryUtils.bev_to_geo(x, y)
+                            if geo_result:
+                                lng, lat = geo_result
+                                
+                                # 使用雷达数据本身的时间戳，如果没有则使用当前时间
+                                radar_timestamp = getattr(radar_data, 'time', None) or getattr(radar_data, 'timestamp', None)
+                                
+                                if radar_timestamp:
+                                    # 如果时间戳是字符串格式，直接使用
+                                    if isinstance(radar_timestamp, str):
+                                        timestamp_str = radar_timestamp
+                                    else:
+                                        # 如果是数字时间戳，转换为字符串格式
+                                        timestamp_str = datetime.fromtimestamp(radar_timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                                else:
+                                    # 如果没有时间戳，使用当前时间
+                                    timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                                
+                                radar_participant = {
+                                    "timestamp": timestamp_str,
+                                    "source": "radar",
+                                    "type": getattr(radar_data, 'type', 'vehicle'),
+                                    "confidence": getattr(radar_data, 'rcs', 0.0),
+                                    "track_id": getattr(radar_data, 'track_id', -1),
+                                    "radar_id": getattr(radar_data, 'id', -1),
+                                    "lon": lng,
+                                    "lat": lat
+                                }
+                                output_data['participant'].append(radar_participant)
+                except Exception as e:
+                    logger.debug(f"处理单个雷达数据失败: {e}")
+                    continue
+            
+            # 如果有有效的雷达数据，输出结果
+            if output_data['participant']:
+                self._output_result(output_data)
+                self.output_count += 1
+            
+            # 清空已处理的雷达数据
+            self.pending_radar_data.clear()
+            
+            return len(output_data['participant']) > 0
+            
+        except Exception as e:
+            logger.error(f"输出雷达数据异常: {e}")
+            import traceback
+            traceback.print_exc()
+            # 清空待输出数据，避免重复处理
+            self.pending_radar_data.clear()
+            return False
     
     def process_and_output(self) -> bool:
         """
@@ -292,6 +424,7 @@ class ResultOutputManager:
                 # 构建participant对象
                 participant = {
                     "timestamp": datetime.fromtimestamp(result1['timestamp']).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                    "source": "camera",  # 改为source字段，值为camera
                     "cameraid": global_target.camera_id,
                     "type": global_target.class_name,
                     "confidence": confidence,
@@ -307,6 +440,9 @@ class ResultOutputManager:
             traceback.print_exc()
             participants = []
         
+        # 注：直接输出的雷达数据不再添加到三路融合结果中
+        # 雷达数据由 output_pending_radar_data() 独立输出
+        
         json_data = {
             'reportTime': reportTime_ms,
             'participant': participants
@@ -314,9 +450,16 @@ class ResultOutputManager:
         
         return json_data
     
-    def _output_result(self, json_data: Dict, ts1: float, ts2: float, ts3: float):
-        """输出结果到MQTT、融合系统和文件"""
-        participants = json_data.get('participant', [])
+    def _output_result(self, json_data: Dict, ts1: float = None, ts2: float = None, ts3: float = None):
+        """
+        输出结果到MQTT、融合系统和文件
+        
+        Args:
+            json_data: 输出数据
+            ts1, ts2, ts3: 三路摄像头时间戳（可选，用于三路匹配结果日志）
+        """
+        # 支持两种格式：'participant' 或 'participants'
+        participants = json_data.get('participant', json_data.get('participants', []))
         
         # 尝试发送MQTT
         mqtt_sent = False
@@ -334,10 +477,19 @@ class ResultOutputManager:
                 logger.error(f"保存到融合系统输出列表失败: {e}")
         
         # 记录输出信息
-        logger.info(f"输出结果 #{self.output_count}: "
-                   f"C1({ts1:.3f}) C2({ts2:.3f}) C3({ts3:.3f}) | "
-                   f"参与者数: {len(participants)} | "
-                   f"MQTT: {'成功' if mqtt_sent else '失败/未配置'}")
+        if ts1 is not None and ts2 is not None and ts3 is not None:
+            # 三路匹配结果的日志
+            logger.info(f"输出结果 #{self.output_count}: "
+                       f"C1({ts1:.3f}) C2({ts2:.3f}) C3({ts3:.3f}) | "
+                       f"参与者数: {len(participants)} | "
+                       f"MQTT: {'成功' if mqtt_sent else '失败/未配置'}")
+        else:
+            # 雷达直接输出的日志
+            event = json_data.get('event', 'direct_radar_output')
+            logger.info(f"输出结果 #{self.output_count}: "
+                       f"事件类型: {event} | "
+                       f"参与者数: {len(participants)} | "
+                       f"MQTT: {'成功' if mqtt_sent else '失败/未配置'}")
     
     def get_buffer_status(self) -> Dict:
         """获取缓冲区状态"""
@@ -349,7 +501,15 @@ class ResultOutputManager:
         
         当程序结束时调用，确保所有结果都被输出
         """
+        # 首先输出所有三路匹配的结果
+        triple_match_count = 0
         while self.process_and_output():
-            pass
+            triple_match_count += 1
         
-        logger.info(f"缓冲区刷新完成，共输出 {self.output_count} 组结果")
+        # 然后输出所有剩余的雷达直接数据
+        radar_count = 0
+        while self.output_pending_radar_data():
+            radar_count += 1
+        
+        logger.info(f"缓冲区刷新完成，共输出 {self.output_count} 组结果 "
+                   f"(三路匹配: {triple_match_count}, 雷达直接: {radar_count})")
