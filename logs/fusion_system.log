@@ -1,942 +1,431 @@
-2025-12-10 15:03:03,577 - __main__ - INFO - ============================================================
-2025-12-10 15:03:03,577 - __main__ - INFO - 程序开始启动...
-2025-12-10 15:03:03,577 - __main__ - INFO - ============================================================
-2025-12-10 15:03:03,579 - __main__ - INFO - 摄像头1: Main Entrance - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
-2025-12-10 15:03:03,579 - __main__ - INFO - 摄像头2: Back Yard - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
-2025-12-10 15:03:03,579 - __main__ - INFO - 摄像头3: Side Gate - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
-2025-12-10 15:03:03,579 - __main__ - INFO - 使用RTSP流作为输入
-2025-12-10 15:03:03,580 - Basic - INFO - 性能监视器初始化完成
-2025-12-10 15:03:03,580 - CameraManager - INFO - CameraManager 初始化完成
-2025-12-10 15:03:03,582 - CameraManager - INFO - 已创建3个队列 (maxsize=10)
-2025-12-10 15:03:03,582 - __main__ - INFO - 初始化雷达融合模块
-2025-12-10 15:03:04,803 - __main__ - INFO - C1 雷达融合处理器初始化成功, 雷达数据帧数: 1768
-2025-12-10 15:03:04,809 - __main__ - INFO - C2 雷达融合处理器初始化成功, 雷达数据帧数: 1369
-2025-12-10 15:03:04,815 - __main__ - INFO - C3 雷达融合处理器初始化成功, 雷达数据帧数: 1312
-2025-12-10 15:03:04,815 - __main__ - INFO - 雷达融合模块初始化成功
-2025-12-10 15:03:09,827 - mqtt_publisher - ERROR - MQTT 连接失败: timed out
-2025-12-10 15:03:09,828 - __main__ - WARNING - MQTT连接失败: timed out, 将使用JSON文件保存
-2025-12-10 15:03:09,829 - FusionComponents - INFO - TargetManager 初始化完成
-2025-12-10 15:03:09,829 - FusionComponents - INFO - MatchingEngine 初始化完成
-2025-12-10 15:03:09,829 - Fusion - INFO - CrossCameraFusion初始化完成 (重构版)
-2025-12-10 15:03:09,829 - __main__ - INFO - 结果输出管理器已初始化 - 三路缓冲和时间对齐模式
-2025-12-10 15:03:09,830 - __main__ - INFO - 已启用优化版ByteTracker - 交替跟踪模式
-2025-12-10 15:03:09,830 - CameraManager - INFO - 测试RTSP连接 (使用PyAV/OpenCV)
-2025-12-10 15:03:09,830 - CameraManager - INFO - Camera1 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
-2025-12-10 15:03:09,830 - CameraManager - INFO - Camera2 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
-2025-12-10 15:03:09,830 - CameraManager - INFO - Camera3 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
-2025-12-10 15:03:09,830 - CameraManager - INFO - 启动SDK版多摄像头融合系统
-2025-12-10 15:03:09,841 - CameraManager - INFO - 启动Camera1 SDK推理进程
-2025-12-10 15:03:09,851 - CameraManager - INFO - 启动Camera2 SDK推理进程
-2025-12-10 15:03:09,861 - CameraManager - INFO - 启动Camera3 SDK推理进程
-2025-12-10 15:03:09,862 - CameraManager - INFO - 所有SDK推理进程已启动
-2025-12-10 15:03:09,862 - CameraManager - INFO - 进入预热阶段，等待所有摄像头推送第一帧数据
-2025-12-10 15:03:09,890 - __main__ - INFO - Camera1 子进程启动
-2025-12-10 15:03:09,890 - __main__ - INFO - Camera1 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
-2025-12-10 15:03:09,892 - __main__ - INFO - Camera1 初始化yolov5_SDK
-2025-12-10 15:03:09,892 - __main__ - INFO - Camera1 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
-2025-12-10 15:03:09,901 - __main__ - INFO - Camera2 子进程启动
-2025-12-10 15:03:09,902 - __main__ - INFO - Camera2 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
-2025-12-10 15:03:09,911 - __main__ - INFO - Camera3 子进程启动
-2025-12-10 15:03:09,912 - __main__ - INFO - Camera3 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
-2025-12-10 15:03:09,914 - __main__ - INFO - Camera2 初始化yolov5_SDK
-2025-12-10 15:03:09,915 - __main__ - INFO - Camera2 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
-2025-12-10 15:03:09,913 - __main__ - INFO - Camera3 初始化yolov5_SDK
-2025-12-10 15:03:09,920 - __main__ - INFO - Camera3 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
-2025-12-10 15:03:10,880 - SDKinfer - INFO - Camera1 时间戳初始化: 起始时间=2025-11-21 11:59:12.135, FPS=25
-2025-12-10 15:03:10,886 - __main__ - INFO - Camera1 yolov5_SDK初始化成功
-2025-12-10 15:03:10,922 - SDKinfer - INFO - Camera1 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
-2025-12-10 15:03:10,923 - __main__ - INFO - Camera1 类别名称已更新
-2025-12-10 15:03:10,923 - __main__ - INFO - Camera1 开始运行SDK推理...
-2025-12-10 15:03:10,972 - SDKinfer - INFO - Camera1 SDK线程已启动
-2025-12-10 15:03:10,982 - SDKinfer - DEBUG - C1 尺寸: 1280x720 -> 640x640
-2025-12-10 15:03:11,037 - SDKinfer - DEBUG - C1 F0: 19 boxes
-2025-12-10 15:03:11,360 - SDKinfer - INFO - Camera2 时间戳初始化: 起始时间=2025-11-21 11:59:12.150, FPS=25
-2025-12-10 15:03:11,361 - __main__ - INFO - Camera2 yolov5_SDK初始化成功
-2025-12-10 15:03:11,366 - CameraManager - INFO - 摄像头 C1 已就绪
-2025-12-10 15:03:11,382 - SDKinfer - INFO - Camera2 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
-2025-12-10 15:03:11,382 - __main__ - INFO - Camera2 类别名称已更新
-2025-12-10 15:03:11,383 - __main__ - INFO - Camera2 开始运行SDK推理...
-2025-12-10 15:03:11,414 - SDKinfer - INFO - Camera2 SDK线程已启动
-2025-12-10 15:03:11,427 - SDKinfer - DEBUG - C2 尺寸: 1280x720 -> 640x640
-2025-12-10 15:03:11,461 - SDKinfer - DEBUG - C2 F0: 21 boxes
-2025-12-10 15:03:11,754 - SDKinfer - INFO - Camera3 时间戳初始化: 起始时间=2025-11-21 11:59:12.143, FPS=25
-2025-12-10 15:03:11,755 - __main__ - INFO - Camera3 yolov5_SDK初始化成功
-2025-12-10 15:03:11,763 - SDKinfer - INFO - Camera3 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
-2025-12-10 15:03:11,763 - __main__ - INFO - Camera3 类别名称已更新
-2025-12-10 15:03:11,764 - __main__ - INFO - Camera3 开始运行SDK推理...
-2025-12-10 15:03:11,768 - SDKinfer - INFO - Camera3 SDK线程已启动
-2025-12-10 15:03:11,788 - SDKinfer - DEBUG - C3 尺寸: 1280x720 -> 640x640
-2025-12-10 15:03:11,813 - SDKinfer - DEBUG - C3 F0: 27 boxes
-2025-12-10 15:03:11,867 - CameraManager - INFO - 摄像头 C2 已就绪
-2025-12-10 15:03:11,868 - CameraManager - INFO - 摄像头 C3 已就绪
-2025-12-10 15:03:11,868 - CameraManager - INFO - 所有摄像头均已就绪，预热完成
-2025-12-10 15:03:11,868 - __main__ - INFO - 同步方式: 纯时间戳同步 (不依赖帧号)
-2025-12-10 15:03:11,868 - __main__ - INFO - 融合主循环启动 - 单路处理模式
-2025-12-10 15:03:11,868 - __main__ - INFO - 处理模式: 单路独立处理 + 后期三路匹配
-2025-12-10 15:03:11,868 - __main__ - INFO - ============================================================
-2025-12-10 15:03:11,883 - ResultBuffer - INFO - 输出结果 #0: C1(1763697552.135) C2(1763697552.150) C3(1763697552.143) | 参与者数: 0 | MQTT: 失败/未配置
-2025-12-10 15:03:11,884 - __main__ - INFO - Frame 1: 输出 1 组三路融合结果
-2025-12-10 15:03:11,895 - ResultBuffer - INFO - 输出结果 #1: C1(1763697552.175) C2(1763697552.190) C3(1763697552.183) | 参与者数: 0 | MQTT: 失败/未配置
-2025-12-10 15:03:11,895 - __main__ - INFO - Frame 2: 输出 1 组三路融合结果
-2025-12-10 15:03:11,902 - Fusion - INFO - [DEBUG C3] Track 4: pixel_history_len=3, start=(344, 719), should_assign=True
-2025-12-10 15:03:11,902 - Fusion - INFO - [DEBUG C3] Track 5: pixel_history_len=3, start=(630, 598), should_assign=True
-2025-12-10 15:03:11,903 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=3, start=(441, 268), should_assign=False
-2025-12-10 15:03:11,903 - Fusion - INFO - [DEBUG C3] Track 7: pixel_history_len=3, start=(421, 543), should_assign=True
-2025-12-10 15:03:11,913 - ResultBuffer - INFO - 输出结果 #2: C1(1763697552.215) C2(1763697552.230) C3(1763697552.223) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:11,913 - __main__ - INFO - Frame 3: 输出 1 组三路融合结果
-2025-12-10 15:03:11,923 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=4, start=(441, 268), should_assign=False
-2025-12-10 15:03:11,927 - ResultBuffer - INFO - 输出结果 #3: C1(1763697552.255) C2(1763697552.270) C3(1763697552.263) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:11,928 - __main__ - INFO - Frame 4: 输出 1 组三路融合结果
-2025-12-10 15:03:11,934 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=5, start=(441, 268), should_assign=False
-2025-12-10 15:03:11,938 - ResultBuffer - INFO - 输出结果 #4: C1(1763697552.295) C2(1763697552.310) C3(1763697552.303) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:11,938 - __main__ - INFO - Frame 5: 输出 1 组三路融合结果
-2025-12-10 15:03:11,979 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=6, start=(441, 268), should_assign=False
-2025-12-10 15:03:11,984 - ResultBuffer - INFO - 输出结果 #5: C1(1763697552.335) C2(1763697552.350) C3(1763697552.343) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:11,984 - __main__ - INFO - Frame 11: 输出 1 组三路融合结果
-2025-12-10 15:03:12,020 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=7, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,025 - ResultBuffer - INFO - 输出结果 #6: C1(1763697552.375) C2(1763697552.390) C3(1763697552.383) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,025 - __main__ - INFO - Frame 17: 输出 1 组三路融合结果
-2025-12-10 15:03:12,061 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=8, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,065 - ResultBuffer - INFO - 输出结果 #7: C1(1763697552.415) C2(1763697552.430) C3(1763697552.423) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,065 - __main__ - INFO - Frame 20: 输出 1 组三路融合结果
-2025-12-10 15:03:12,097 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=9, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,100 - ResultBuffer - INFO - 输出结果 #8: C1(1763697552.455) C2(1763697552.470) C3(1763697552.463) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,100 - __main__ - INFO - Frame 24: 输出 1 组三路融合结果
-2025-12-10 15:03:12,149 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=10, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,152 - ResultBuffer - INFO - 输出结果 #9: C1(1763697552.495) C2(1763697552.510) C3(1763697552.503) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,152 - __main__ - INFO - Frame 27: 输出 1 组三路融合结果
-2025-12-10 15:03:12,185 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=11, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,188 - ResultBuffer - INFO - 输出结果 #10: C1(1763697552.535) C2(1763697552.550) C3(1763697552.543) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,188 - __main__ - INFO - Frame 29: 输出 1 组三路融合结果
-2025-12-10 15:03:12,219 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=12, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,222 - ResultBuffer - INFO - 输出结果 #11: C1(1763697552.575) C2(1763697552.590) C3(1763697552.583) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,222 - __main__ - INFO - Frame 31: 输出 1 组三路融合结果
-2025-12-10 15:03:12,256 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=13, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,260 - ResultBuffer - INFO - 输出结果 #12: C1(1763697552.615) C2(1763697552.630) C3(1763697552.623) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,260 - __main__ - INFO - Frame 33: 输出 1 组三路融合结果
-2025-12-10 15:03:12,296 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=14, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,299 - ResultBuffer - INFO - 输出结果 #13: C1(1763697552.655) C2(1763697552.670) C3(1763697552.663) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,299 - __main__ - INFO - Frame 37: 输出 1 组三路融合结果
-2025-12-10 15:03:12,343 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=15, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,347 - ResultBuffer - INFO - 输出结果 #14: C1(1763697552.695) C2(1763697552.710) C3(1763697552.703) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,348 - __main__ - INFO - Frame 39: 输出 1 组三路融合结果
-2025-12-10 15:03:12,378 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=16, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,382 - ResultBuffer - INFO - 输出结果 #15: C1(1763697552.735) C2(1763697552.750) C3(1763697552.743) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,382 - __main__ - INFO - Frame 41: 输出 1 组三路融合结果
-2025-12-10 15:03:12,405 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=17, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,408 - ResultBuffer - INFO - 输出结果 #16: C1(1763697552.775) C2(1763697552.790) C3(1763697552.783) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,408 - __main__ - INFO - Frame 44: 输出 1 组三路融合结果
-2025-12-10 15:03:12,441 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=18, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,444 - ResultBuffer - INFO - 输出结果 #17: C1(1763697552.815) C2(1763697552.830) C3(1763697552.823) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,444 - __main__ - INFO - Frame 47: 输出 1 组三路融合结果
-2025-12-10 15:03:12,488 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=19, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,491 - ResultBuffer - INFO - 输出结果 #18: C1(1763697552.855) C2(1763697552.870) C3(1763697552.863) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,491 - __main__ - INFO - Frame 49: 输出 1 组三路融合结果
-2025-12-10 15:03:12,524 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=20, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,527 - ResultBuffer - INFO - 输出结果 #19: C1(1763697552.895) C2(1763697552.910) C3(1763697552.903) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,527 - __main__ - INFO - Frame 51: 输出 1 组三路融合结果
-2025-12-10 15:03:12,563 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=21, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,567 - ResultBuffer - INFO - 输出结果 #20: C1(1763697552.935) C2(1763697552.950) C3(1763697552.943) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,567 - __main__ - INFO - Frame 53: 输出 1 组三路融合结果
-2025-12-10 15:03:12,613 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=22, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,615 - ResultBuffer - INFO - 输出结果 #21: C1(1763697552.975) C2(1763697552.990) C3(1763697552.983) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,616 - __main__ - INFO - Frame 55: 输出 1 组三路融合结果
-2025-12-10 15:03:12,635 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=23, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,638 - ResultBuffer - INFO - 输出结果 #22: C1(1763697553.015) C2(1763697553.030) C3(1763697553.023) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,638 - __main__ - INFO - Frame 57: 输出 1 组三路融合结果
-2025-12-10 15:03:12,673 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=24, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,676 - ResultBuffer - INFO - 输出结果 #23: C1(1763697553.055) C2(1763697553.070) C3(1763697553.063) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,676 - __main__ - INFO - Frame 60: 输出 1 组三路融合结果
-2025-12-10 15:03:12,718 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=25, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,721 - ResultBuffer - INFO - 输出结果 #24: C1(1763697553.095) C2(1763697553.110) C3(1763697553.103) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,722 - __main__ - INFO - Frame 62: 输出 1 组三路融合结果
-2025-12-10 15:03:12,763 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=26, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,766 - ResultBuffer - INFO - 输出结果 #25: C1(1763697553.135) C2(1763697553.150) C3(1763697553.143) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,766 - __main__ - INFO - Frame 66: 输出 1 组三路融合结果
-2025-12-10 15:03:12,799 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=27, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,802 - ResultBuffer - INFO - 输出结果 #26: C1(1763697553.175) C2(1763697553.190) C3(1763697553.183) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,802 - __main__ - INFO - Frame 69: 输出 1 组三路融合结果
-2025-12-10 15:03:12,847 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=28, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,850 - ResultBuffer - INFO - 输出结果 #27: C1(1763697553.215) C2(1763697553.230) C3(1763697553.223) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,851 - __main__ - INFO - Frame 73: 输出 1 组三路融合结果
-2025-12-10 15:03:12,889 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=29, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,892 - ResultBuffer - INFO - 输出结果 #28: C1(1763697553.255) C2(1763697553.270) C3(1763697553.263) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,893 - __main__ - INFO - Frame 77: 输出 1 组三路融合结果
-2025-12-10 15:03:12,939 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(441, 268), should_assign=False
-2025-12-10 15:03:12,942 - ResultBuffer - INFO - 输出结果 #29: C1(1763697553.295) C2(1763697553.310) C3(1763697553.303) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,942 - __main__ - INFO - Frame 80: 输出 1 组三路融合结果
-2025-12-10 15:03:12,972 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(437, 268), should_assign=False
-2025-12-10 15:03:12,975 - ResultBuffer - INFO - 输出结果 #30: C1(1763697553.335) C2(1763697553.350) C3(1763697553.343) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:12,975 - __main__ - INFO - Frame 83: 输出 1 组三路融合结果
-2025-12-10 15:03:13,014 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(437, 269), should_assign=False
-2025-12-10 15:03:13,019 - ResultBuffer - INFO - 输出结果 #31: C1(1763697553.375) C2(1763697553.390) C3(1763697553.383) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,019 - __main__ - INFO - Frame 86: 输出 1 组三路融合结果
-2025-12-10 15:03:13,054 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(430, 271), should_assign=False
-2025-12-10 15:03:13,057 - ResultBuffer - INFO - 输出结果 #32: C1(1763697553.415) C2(1763697553.430) C3(1763697553.423) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,057 - __main__ - INFO - Frame 89: 输出 1 组三路融合结果
-2025-12-10 15:03:13,102 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(428, 272), should_assign=False
-2025-12-10 15:03:13,105 - ResultBuffer - INFO - 输出结果 #33: C1(1763697553.455) C2(1763697553.470) C3(1763697553.463) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,105 - __main__ - INFO - Frame 92: 输出 1 组三路融合结果
-2025-12-10 15:03:13,154 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(422, 273), should_assign=False
-2025-12-10 15:03:13,157 - ResultBuffer - INFO - 输出结果 #34: C1(1763697553.495) C2(1763697553.510) C3(1763697553.503) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,157 - __main__ - INFO - Frame 96: 输出 1 组三路融合结果
-2025-12-10 15:03:13,181 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(419, 274), should_assign=False
-2025-12-10 15:03:13,184 - ResultBuffer - INFO - 输出结果 #35: C1(1763697553.535) C2(1763697553.550) C3(1763697553.543) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,184 - __main__ - INFO - Frame 99: 输出 1 组三路融合结果
-2025-12-10 15:03:13,197 - __main__ - DEBUG - C1 Frame 100: 4 tracked objects
-2025-12-10 15:03:13,199 - __main__ - DEBUG - Frame 100 C1: 雷达ID映射 track_id=1 -> radar_id=00000060-5e1c-4083-bd10-e37f00073c12
-2025-12-10 15:03:13,200 - __main__ - DEBUG - Frame 100 C1: 雷达ID映射 track_id=2 -> radar_id=00000086-5e1c-4083-bd10-e3900002988d
-2025-12-10 15:03:13,200 - __main__ - INFO - Frame 100 C1: 雷达匹配 2/2 个目标，radar_id_map大小=2
-2025-12-10 15:03:13,200 - __main__ - INFO - 缓冲区状态: C1=19 C2=17 C3=0
-2025-12-10 15:03:13,231 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(414, 276), should_assign=False
-2025-12-10 15:03:13,235 - ResultBuffer - INFO - 输出结果 #36: C1(1763697553.575) C2(1763697553.590) C3(1763697553.583) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,236 - __main__ - INFO - Frame 102: 输出 1 组三路融合结果
-2025-12-10 15:03:13,269 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(411, 277), should_assign=False
-2025-12-10 15:03:13,273 - ResultBuffer - INFO - 输出结果 #37: C1(1763697553.615) C2(1763697553.630) C3(1763697553.623) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,273 - __main__ - INFO - Frame 105: 输出 1 组三路融合结果
-2025-12-10 15:03:13,295 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(407, 278), should_assign=False
-2025-12-10 15:03:13,297 - ResultBuffer - INFO - 输出结果 #38: C1(1763697553.655) C2(1763697553.670) C3(1763697553.663) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,298 - __main__ - INFO - Frame 108: 输出 1 组三路融合结果
-2025-12-10 15:03:13,346 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(403, 279), should_assign=False
-2025-12-10 15:03:13,349 - ResultBuffer - INFO - 输出结果 #39: C1(1763697553.695) C2(1763697553.710) C3(1763697553.703) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,350 - __main__ - INFO - Frame 112: 输出 1 组三路融合结果
-2025-12-10 15:03:13,379 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(398, 280), should_assign=False
-2025-12-10 15:03:13,382 - ResultBuffer - INFO - 输出结果 #40: C1(1763697553.735) C2(1763697553.750) C3(1763697553.743) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,383 - __main__ - INFO - Frame 114: 输出 1 组三路融合结果
-2025-12-10 15:03:13,418 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(395, 281), should_assign=False
-2025-12-10 15:03:13,422 - ResultBuffer - INFO - 输出结果 #41: C1(1763697553.775) C2(1763697553.790) C3(1763697553.783) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,423 - __main__ - INFO - Frame 116: 输出 1 组三路融合结果
-2025-12-10 15:03:13,453 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(390, 282), should_assign=False
-2025-12-10 15:03:13,458 - ResultBuffer - INFO - 输出结果 #42: C1(1763697553.815) C2(1763697553.830) C3(1763697553.823) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,458 - __main__ - INFO - Frame 118: 输出 1 组三路融合结果
-2025-12-10 15:03:13,491 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(386, 283), should_assign=False
-2025-12-10 15:03:13,493 - ResultBuffer - INFO - 输出结果 #43: C1(1763697553.855) C2(1763697553.870) C3(1763697553.863) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,494 - __main__ - INFO - Frame 120: 输出 1 组三路融合结果
-2025-12-10 15:03:13,529 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(383, 284), should_assign=False
-2025-12-10 15:03:13,533 - ResultBuffer - INFO - 输出结果 #44: C1(1763697553.895) C2(1763697553.910) C3(1763697553.903) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,534 - __main__ - INFO - Frame 123: 输出 1 组三路融合结果
-2025-12-10 15:03:13,580 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(379, 285), should_assign=False
-2025-12-10 15:03:13,583 - ResultBuffer - INFO - 输出结果 #45: C1(1763697553.935) C2(1763697553.950) C3(1763697553.943) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,583 - __main__ - INFO - Frame 126: 输出 1 组三路融合结果
-2025-12-10 15:03:13,618 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(375, 286), should_assign=False
-2025-12-10 15:03:13,622 - ResultBuffer - INFO - 输出结果 #46: C1(1763697553.975) C2(1763697553.990) C3(1763697553.983) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,623 - __main__ - INFO - Frame 129: 输出 1 组三路融合结果
-2025-12-10 15:03:13,654 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(371, 287), should_assign=False
-2025-12-10 15:03:13,657 - ResultBuffer - INFO - 输出结果 #47: C1(1763697554.015) C2(1763697554.030) C3(1763697554.023) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,657 - __main__ - INFO - Frame 131: 输出 1 组三路融合结果
-2025-12-10 15:03:13,691 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(367, 288), should_assign=False
-2025-12-10 15:03:13,695 - ResultBuffer - INFO - 输出结果 #48: C1(1763697554.055) C2(1763697554.070) C3(1763697554.063) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,695 - __main__ - INFO - Frame 134: 输出 1 组三路融合结果
-2025-12-10 15:03:13,734 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(363, 289), should_assign=False
-2025-12-10 15:03:13,737 - ResultBuffer - INFO - 输出结果 #49: C1(1763697554.095) C2(1763697554.110) C3(1763697554.103) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,737 - __main__ - INFO - Frame 138: 输出 1 组三路融合结果
-2025-12-10 15:03:13,767 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(359, 290), should_assign=False
-2025-12-10 15:03:13,770 - ResultBuffer - INFO - 输出结果 #50: C1(1763697554.135) C2(1763697554.150) C3(1763697554.143) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,771 - __main__ - INFO - Frame 140: 输出 1 组三路融合结果
-2025-12-10 15:03:13,821 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(355, 292), should_assign=False
-2025-12-10 15:03:13,826 - ResultBuffer - INFO - 输出结果 #51: C1(1763697554.175) C2(1763697554.190) C3(1763697554.183) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,826 - __main__ - INFO - Frame 143: 输出 1 组三路融合结果
-2025-12-10 15:03:13,858 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(351, 293), should_assign=False
-2025-12-10 15:03:13,863 - ResultBuffer - INFO - 输出结果 #52: C1(1763697554.215) C2(1763697554.230) C3(1763697554.223) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,863 - __main__ - INFO - Frame 146: 输出 1 组三路融合结果
-2025-12-10 15:03:13,895 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(347, 294), should_assign=False
-2025-12-10 15:03:13,898 - ResultBuffer - INFO - 输出结果 #53: C1(1763697554.255) C2(1763697554.270) C3(1763697554.263) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,899 - __main__ - INFO - Frame 148: 输出 1 组三路融合结果
-2025-12-10 15:03:13,934 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(343, 295), should_assign=False
-2025-12-10 15:03:13,937 - ResultBuffer - INFO - 输出结果 #54: C1(1763697554.295) C2(1763697554.310) C3(1763697554.303) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,937 - __main__ - INFO - Frame 152: 输出 1 组三路融合结果
-2025-12-10 15:03:13,977 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(339, 296), should_assign=False
-2025-12-10 15:03:13,980 - ResultBuffer - INFO - 输出结果 #55: C1(1763697554.335) C2(1763697554.350) C3(1763697554.343) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:13,981 - __main__ - INFO - Frame 156: 输出 1 组三路融合结果
-2025-12-10 15:03:14,012 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(335, 298), should_assign=False
-2025-12-10 15:03:14,015 - ResultBuffer - INFO - 输出结果 #56: C1(1763697554.375) C2(1763697554.390) C3(1763697554.383) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,015 - __main__ - INFO - Frame 160: 输出 1 组三路融合结果
-2025-12-10 15:03:14,066 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(331, 299), should_assign=False
-2025-12-10 15:03:14,071 - ResultBuffer - INFO - 输出结果 #57: C1(1763697554.415) C2(1763697554.430) C3(1763697554.423) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,072 - __main__ - INFO - Frame 163: 输出 1 组三路融合结果
-2025-12-10 15:03:14,094 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(327, 300), should_assign=False
-2025-12-10 15:03:14,097 - ResultBuffer - INFO - 输出结果 #58: C1(1763697554.455) C2(1763697554.470) C3(1763697554.463) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,098 - __main__ - INFO - Frame 166: 输出 1 组三路融合结果
-2025-12-10 15:03:14,142 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(323, 302), should_assign=False
-2025-12-10 15:03:14,145 - ResultBuffer - INFO - 输出结果 #59: C1(1763697554.495) C2(1763697554.510) C3(1763697554.503) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,146 - __main__ - INFO - Frame 169: 输出 1 组三路融合结果
-2025-12-10 15:03:14,182 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(319, 304), should_assign=False
-2025-12-10 15:03:14,187 - ResultBuffer - INFO - 输出结果 #60: C1(1763697554.535) C2(1763697554.550) C3(1763697554.543) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,187 - __main__ - INFO - Frame 172: 输出 1 组三路融合结果
-2025-12-10 15:03:14,233 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(315, 305), should_assign=False
-2025-12-10 15:03:14,236 - ResultBuffer - INFO - 输出结果 #61: C1(1763697554.575) C2(1763697554.590) C3(1763697554.583) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,237 - __main__ - INFO - Frame 175: 输出 1 组三路融合结果
-2025-12-10 15:03:14,271 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(311, 308), should_assign=False
-2025-12-10 15:03:14,276 - ResultBuffer - INFO - 输出结果 #62: C1(1763697554.615) C2(1763697554.630) C3(1763697554.623) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,277 - __main__ - INFO - Frame 178: 输出 1 组三路融合结果
-2025-12-10 15:03:14,322 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(307, 310), should_assign=False
-2025-12-10 15:03:14,325 - ResultBuffer - INFO - 输出结果 #63: C1(1763697554.655) C2(1763697554.670) C3(1763697554.663) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,326 - __main__ - INFO - Frame 181: 输出 1 组三路融合结果
-2025-12-10 15:03:14,361 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(303, 311), should_assign=False
-2025-12-10 15:03:14,366 - ResultBuffer - INFO - 输出结果 #64: C1(1763697554.695) C2(1763697554.710) C3(1763697554.703) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,366 - __main__ - INFO - Frame 183: 输出 1 组三路融合结果
-2025-12-10 15:03:14,402 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(299, 312), should_assign=False
-2025-12-10 15:03:14,405 - ResultBuffer - INFO - 输出结果 #65: C1(1763697554.735) C2(1763697554.750) C3(1763697554.743) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,405 - __main__ - INFO - Frame 186: 输出 1 组三路融合结果
-2025-12-10 15:03:14,435 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(294, 314), should_assign=False
-2025-12-10 15:03:14,438 - ResultBuffer - INFO - 输出结果 #66: C1(1763697554.775) C2(1763697554.790) C3(1763697554.783) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,438 - __main__ - INFO - Frame 188: 输出 1 组三路融合结果
-2025-12-10 15:03:14,489 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(290, 316), should_assign=False
-2025-12-10 15:03:14,492 - ResultBuffer - INFO - 输出结果 #67: C1(1763697554.815) C2(1763697554.830) C3(1763697554.823) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,492 - __main__ - INFO - Frame 192: 输出 1 组三路融合结果
-2025-12-10 15:03:14,524 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(286, 317), should_assign=False
-2025-12-10 15:03:14,527 - ResultBuffer - INFO - 输出结果 #68: C1(1763697554.855) C2(1763697554.870) C3(1763697554.863) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,527 - __main__ - INFO - Frame 194: 输出 1 组三路融合结果
-2025-12-10 15:03:14,527 - SDKinfer - DEBUG - C1 F100: 20 boxes
-2025-12-10 15:03:14,551 - SDKinfer - DEBUG - C2 F100: 18 boxes
-2025-12-10 15:03:14,561 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(282, 319), should_assign=False
-2025-12-10 15:03:14,565 - ResultBuffer - INFO - 输出结果 #69: C1(1763697554.895) C2(1763697554.910) C3(1763697554.903) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,566 - __main__ - INFO - Frame 197: 输出 1 组三路融合结果
-2025-12-10 15:03:14,615 - __main__ - DEBUG - C3 Frame 200: 4 tracked objects
-2025-12-10 15:03:14,616 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(278, 321), should_assign=False
-2025-12-10 15:03:14,620 - ResultBuffer - INFO - 输出结果 #70: C1(1763697554.935) C2(1763697554.950) C3(1763697554.943) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,620 - __main__ - INFO - Frame 200: 输出 1 组三路融合结果
-2025-12-10 15:03:14,620 - __main__ - INFO - 缓冲区状态: C1=32 C2=31 C3=0
-2025-12-10 15:03:14,657 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(274, 323), should_assign=False
-2025-12-10 15:03:14,660 - ResultBuffer - INFO - 输出结果 #71: C1(1763697554.975) C2(1763697554.990) C3(1763697554.983) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,661 - __main__ - INFO - Frame 203: 输出 1 组三路融合结果
-2025-12-10 15:03:14,708 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(271, 324), should_assign=False
-2025-12-10 15:03:14,713 - ResultBuffer - INFO - 输出结果 #72: C1(1763697555.015) C2(1763697555.030) C3(1763697555.023) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,714 - __main__ - INFO - Frame 206: 输出 1 组三路融合结果
-2025-12-10 15:03:14,747 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(267, 326), should_assign=False
-2025-12-10 15:03:14,752 - ResultBuffer - INFO - 输出结果 #73: C1(1763697555.055) C2(1763697555.070) C3(1763697555.063) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,752 - __main__ - INFO - Frame 208: 输出 1 组三路融合结果
-2025-12-10 15:03:14,787 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(263, 328), should_assign=False
-2025-12-10 15:03:14,791 - ResultBuffer - INFO - 输出结果 #74: C1(1763697555.095) C2(1763697555.110) C3(1763697555.103) | 参与者数: 5 | MQTT: 失败/未配置
-2025-12-10 15:03:14,791 - __main__ - INFO - Frame 210: 输出 1 组三路融合结果
-2025-12-10 15:03:14,839 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(259, 329), should_assign=False
-2025-12-10 15:03:14,840 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=3, start=(550, 173), should_assign=False
-2025-12-10 15:03:14,844 - ResultBuffer - INFO - 输出结果 #75: C1(1763697555.135) C2(1763697555.150) C3(1763697555.143) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:14,845 - __main__ - INFO - Frame 213: 输出 1 组三路融合结果
-2025-12-10 15:03:14,861 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(255, 331), should_assign=False
-2025-12-10 15:03:14,861 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=4, start=(550, 173), should_assign=False
-2025-12-10 15:03:14,864 - ResultBuffer - INFO - 输出结果 #76: C1(1763697555.175) C2(1763697555.190) C3(1763697555.183) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:14,865 - __main__ - INFO - Frame 215: 输出 1 组三路融合结果
-2025-12-10 15:03:14,906 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(251, 333), should_assign=False
-2025-12-10 15:03:14,907 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=5, start=(550, 173), should_assign=False
-2025-12-10 15:03:14,910 - ResultBuffer - INFO - 输出结果 #77: C1(1763697555.215) C2(1763697555.230) C3(1763697555.223) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:14,910 - __main__ - INFO - Frame 219: 输出 1 组三路融合结果
-2025-12-10 15:03:14,960 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(248, 334), should_assign=False
-2025-12-10 15:03:14,961 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=6, start=(550, 173), should_assign=False
-2025-12-10 15:03:14,964 - ResultBuffer - INFO - 输出结果 #78: C1(1763697555.255) C2(1763697555.270) C3(1763697555.263) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:14,964 - __main__ - INFO - Frame 222: 输出 1 组三路融合结果
-2025-12-10 15:03:15,000 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(244, 335), should_assign=False
-2025-12-10 15:03:15,000 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=7, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,003 - ResultBuffer - INFO - 输出结果 #79: C1(1763697555.295) C2(1763697555.310) C3(1763697555.303) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,003 - __main__ - INFO - Frame 224: 输出 1 组三路融合结果
-2025-12-10 15:03:15,047 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(241, 337), should_assign=False
-2025-12-10 15:03:15,048 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=8, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,051 - ResultBuffer - INFO - 输出结果 #80: C1(1763697555.335) C2(1763697555.350) C3(1763697555.343) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,051 - __main__ - INFO - Frame 227: 输出 1 组三路融合结果
-2025-12-10 15:03:15,088 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(237, 339), should_assign=False
-2025-12-10 15:03:15,089 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=9, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,092 - ResultBuffer - INFO - 输出结果 #81: C1(1763697555.375) C2(1763697555.390) C3(1763697555.383) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,092 - __main__ - INFO - Frame 229: 输出 1 组三路融合结果
-2025-12-10 15:03:15,131 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(234, 341), should_assign=False
-2025-12-10 15:03:15,132 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=10, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,138 - ResultBuffer - INFO - 输出结果 #82: C1(1763697555.415) C2(1763697555.430) C3(1763697555.423) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,138 - __main__ - INFO - Frame 231: 输出 1 组三路融合结果
-2025-12-10 15:03:15,175 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(230, 342), should_assign=False
-2025-12-10 15:03:15,175 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=11, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,178 - ResultBuffer - INFO - 输出结果 #83: C1(1763697555.455) C2(1763697555.470) C3(1763697555.463) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,179 - __main__ - INFO - Frame 234: 输出 1 组三路融合结果
-2025-12-10 15:03:15,216 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(226, 346), should_assign=False
-2025-12-10 15:03:15,216 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=12, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,221 - ResultBuffer - INFO - 输出结果 #84: C1(1763697555.495) C2(1763697555.510) C3(1763697555.503) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,221 - __main__ - INFO - Frame 237: 输出 1 组三路融合结果
-2025-12-10 15:03:15,254 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(222, 348), should_assign=False
-2025-12-10 15:03:15,258 - ResultBuffer - INFO - 输出结果 #85: C1(1763697555.535) C2(1763697555.550) C3(1763697555.543) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,259 - __main__ - INFO - Frame 239: 输出 1 组三路融合结果
-2025-12-10 15:03:15,290 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(219, 350), should_assign=False
-2025-12-10 15:03:15,293 - ResultBuffer - INFO - 输出结果 #86: C1(1763697555.575) C2(1763697555.590) C3(1763697555.583) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,293 - __main__ - INFO - Frame 243: 输出 1 组三路融合结果
-2025-12-10 15:03:15,343 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(215, 351), should_assign=False
-2025-12-10 15:03:15,348 - ResultBuffer - INFO - 输出结果 #87: C1(1763697555.615) C2(1763697555.630) C3(1763697555.623) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,348 - __main__ - INFO - Frame 246: 输出 1 组三路融合结果
-2025-12-10 15:03:15,380 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(212, 353), should_assign=False
-2025-12-10 15:03:15,383 - ResultBuffer - INFO - 输出结果 #88: C1(1763697555.655) C2(1763697555.670) C3(1763697555.663) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,384 - __main__ - INFO - Frame 249: 输出 1 组三路融合结果
-2025-12-10 15:03:15,413 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(208, 355), should_assign=False
-2025-12-10 15:03:15,418 - ResultBuffer - INFO - 输出结果 #89: C1(1763697555.695) C2(1763697555.710) C3(1763697555.703) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,419 - __main__ - INFO - Frame 252: 输出 1 组三路融合结果
-2025-12-10 15:03:15,455 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(204, 357), should_assign=False
-2025-12-10 15:03:15,458 - ResultBuffer - INFO - 输出结果 #90: C1(1763697555.735) C2(1763697555.750) C3(1763697555.743) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,459 - __main__ - INFO - Frame 255: 输出 1 组三路融合结果
-2025-12-10 15:03:15,497 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(200, 359), should_assign=False
-2025-12-10 15:03:15,500 - ResultBuffer - INFO - 输出结果 #91: C1(1763697555.775) C2(1763697555.790) C3(1763697555.783) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,500 - __main__ - INFO - Frame 258: 输出 1 组三路融合结果
-2025-12-10 15:03:15,535 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(196, 362), should_assign=False
-2025-12-10 15:03:15,539 - ResultBuffer - INFO - 输出结果 #92: C1(1763697555.815) C2(1763697555.830) C3(1763697555.823) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,539 - __main__ - INFO - Frame 260: 输出 1 组三路融合结果
-2025-12-10 15:03:15,573 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(192, 364), should_assign=False
-2025-12-10 15:03:15,576 - ResultBuffer - INFO - 输出结果 #93: C1(1763697555.855) C2(1763697555.870) C3(1763697555.863) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,577 - __main__ - INFO - Frame 262: 输出 1 组三路融合结果
-2025-12-10 15:03:15,618 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(189, 366), should_assign=False
-2025-12-10 15:03:15,622 - ResultBuffer - INFO - 输出结果 #94: C1(1763697555.895) C2(1763697555.910) C3(1763697555.903) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,622 - __main__ - INFO - Frame 266: 输出 1 组三路融合结果
-2025-12-10 15:03:15,649 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(186, 368), should_assign=False
-2025-12-10 15:03:15,652 - ResultBuffer - INFO - 输出结果 #95: C1(1763697555.935) C2(1763697555.950) C3(1763697555.943) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,652 - __main__ - INFO - Frame 268: 输出 1 组三路融合结果
-2025-12-10 15:03:15,685 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(183, 371), should_assign=False
-2025-12-10 15:03:15,688 - ResultBuffer - INFO - 输出结果 #96: C1(1763697555.975) C2(1763697555.990) C3(1763697555.983) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,689 - __main__ - INFO - Frame 270: 输出 1 组三路融合结果
-2025-12-10 15:03:15,743 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(180, 373), should_assign=False
-2025-12-10 15:03:15,744 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=13, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,747 - ResultBuffer - INFO - 输出结果 #97: C1(1763697556.015) C2(1763697556.030) C3(1763697556.023) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,747 - __main__ - INFO - Frame 273: 输出 1 组三路融合结果
-2025-12-10 15:03:15,787 - Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(177, 375), should_assign=False
-2025-12-10 15:03:15,787 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=14, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,793 - ResultBuffer - INFO - 输出结果 #98: C1(1763697556.055) C2(1763697556.070) C3(1763697556.063) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,794 - __main__ - INFO - Frame 275: 输出 1 组三路融合结果
-2025-12-10 15:03:15,829 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=15, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,835 - ResultBuffer - INFO - 输出结果 #99: C1(1763697556.095) C2(1763697556.110) C3(1763697556.103) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,835 - __main__ - INFO - Frame 276: 输出 1 组三路融合结果
-2025-12-10 15:03:15,852 - SDKinfer - DEBUG - C3 F100: 32 boxes
-2025-12-10 15:03:15,869 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=16, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,873 - ResultBuffer - INFO - 输出结果 #100: C1(1763697556.135) C2(1763697556.150) C3(1763697556.143) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,873 - __main__ - INFO - Frame 278: 输出 1 组三路融合结果
-2025-12-10 15:03:15,903 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=17, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,908 - ResultBuffer - INFO - 输出结果 #101: C1(1763697556.175) C2(1763697556.190) C3(1763697556.183) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,908 - __main__ - INFO - Frame 281: 输出 1 组三路融合结果
-2025-12-10 15:03:15,948 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=18, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,951 - ResultBuffer - INFO - 输出结果 #102: C1(1763697556.215) C2(1763697556.230) C3(1763697556.223) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,951 - __main__ - INFO - Frame 284: 输出 1 组三路融合结果
-2025-12-10 15:03:15,985 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=19, start=(550, 173), should_assign=False
-2025-12-10 15:03:15,989 - ResultBuffer - INFO - 输出结果 #103: C1(1763697556.255) C2(1763697556.270) C3(1763697556.263) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:15,989 - __main__ - INFO - Frame 286: 输出 1 组三路融合结果
-2025-12-10 15:03:16,032 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=20, start=(550, 173), should_assign=False
-2025-12-10 15:03:16,035 - ResultBuffer - INFO - 输出结果 #104: C1(1763697556.295) C2(1763697556.310) C3(1763697556.303) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:16,036 - __main__ - INFO - Frame 291: 输出 1 组三路融合结果
-2025-12-10 15:03:16,076 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=21, start=(550, 173), should_assign=False
-2025-12-10 15:03:16,081 - ResultBuffer - INFO - 输出结果 #105: C1(1763697556.335) C2(1763697556.350) C3(1763697556.343) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:16,081 - __main__ - INFO - Frame 294: 输出 1 组三路融合结果
-2025-12-10 15:03:16,114 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=22, start=(550, 173), should_assign=False
-2025-12-10 15:03:16,119 - ResultBuffer - INFO - 输出结果 #106: C1(1763697556.375) C2(1763697556.390) C3(1763697556.383) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:16,119 - __main__ - INFO - Frame 296: 输出 1 组三路融合结果
-2025-12-10 15:03:16,159 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=23, start=(550, 173), should_assign=False
-2025-12-10 15:03:16,163 - ResultBuffer - INFO - 输出结果 #107: C1(1763697556.415) C2(1763697556.430) C3(1763697556.423) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:16,163 - __main__ - INFO - Frame 299: 输出 1 组三路融合结果
-2025-12-10 15:03:16,176 - __main__ - DEBUG - C2 Frame 300: 2 tracked objects
-2025-12-10 15:03:16,178 - __main__ - DEBUG - Frame 300 C2: 雷达ID映射 track_id=8 -> radar_id=000000b5-6e1c-4106-bd10-e387000f36e7
-2025-12-10 15:03:16,178 - __main__ - INFO - Frame 300 C2: 雷达匹配 1/2 个目标，radar_id_map大小=1
-2025-12-10 15:03:16,179 - __main__ - INFO - 缓冲区状态: C1=45 C2=48 C3=0
-2025-12-10 15:03:16,179 - __main__ - INFO - 队列状态 (截至帧 300)
-2025-12-10 15:03:16,179 - __main__ - INFO - C1: 队列大小 1
-2025-12-10 15:03:16,179 - __main__ - INFO - C2: 队列大小 1
-2025-12-10 15:03:16,179 - __main__ - INFO - C3: 队列大小 1
-2025-12-10 15:03:16,187 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=24, start=(550, 173), should_assign=False
-2025-12-10 15:03:16,192 - ResultBuffer - INFO - 输出结果 #108: C1(1763697556.455) C2(1763697556.470) C3(1763697556.463) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:16,192 - __main__ - INFO - Frame 301: 输出 1 组三路融合结果
-2025-12-10 15:03:16,224 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=25, start=(550, 173), should_assign=False
-2025-12-10 15:03:16,230 - ResultBuffer - INFO - 输出结果 #109: C1(1763697556.495) C2(1763697556.510) C3(1763697556.503) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:16,230 - __main__ - INFO - Frame 303: 输出 1 组三路融合结果
-2025-12-10 15:03:16,258 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=26, start=(550, 173), should_assign=False
-2025-12-10 15:03:16,262 - ResultBuffer - INFO - 输出结果 #110: C1(1763697556.535) C2(1763697556.550) C3(1763697556.543) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:16,262 - __main__ - INFO - Frame 307: 输出 1 组三路融合结果
-2025-12-10 15:03:16,298 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=27, start=(550, 173), should_assign=False
-2025-12-10 15:03:16,302 - ResultBuffer - INFO - 输出结果 #111: C1(1763697556.575) C2(1763697556.590) C3(1763697556.583) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:16,302 - __main__ - INFO - Frame 309: 输出 1 组三路融合结果
-2025-12-10 15:03:16,338 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=28, start=(550, 173), should_assign=False
-2025-12-10 15:03:16,343 - ResultBuffer - INFO - 输出结果 #112: C1(1763697556.615) C2(1763697556.630) C3(1763697556.623) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:16,344 - __main__ - INFO - Frame 312: 输出 1 组三路融合结果
-2025-12-10 15:03:16,386 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=29, start=(550, 173), should_assign=False
-2025-12-10 15:03:16,391 - ResultBuffer - INFO - 输出结果 #113: C1(1763697556.655) C2(1763697556.670) C3(1763697556.663) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:16,392 - __main__ - INFO - Frame 315: 输出 1 组三路融合结果
-2025-12-10 15:03:16,427 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(550, 173), should_assign=False
-2025-12-10 15:03:16,433 - ResultBuffer - INFO - 输出结果 #114: C1(1763697556.695) C2(1763697556.710) C3(1763697556.703) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:16,434 - __main__ - INFO - Frame 317: 输出 1 组三路融合结果
-2025-12-10 15:03:16,469 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(549, 174), should_assign=False
-2025-12-10 15:03:16,473 - ResultBuffer - INFO - 输出结果 #115: C1(1763697556.735) C2(1763697556.750) C3(1763697556.743) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,473 - __main__ - INFO - Frame 320: 输出 1 组三路融合结果
-2025-12-10 15:03:16,510 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(546, 178), should_assign=False
-2025-12-10 15:03:16,517 - ResultBuffer - INFO - 输出结果 #116: C1(1763697556.775) C2(1763697556.790) C3(1763697556.783) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,517 - __main__ - INFO - Frame 322: 输出 1 组三路融合结果
-2025-12-10 15:03:16,545 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(544, 180), should_assign=False
-2025-12-10 15:03:16,548 - ResultBuffer - INFO - 输出结果 #117: C1(1763697556.815) C2(1763697556.830) C3(1763697556.823) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,549 - __main__ - INFO - Frame 325: 输出 1 组三路融合结果
-2025-12-10 15:03:16,597 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(547, 170), should_assign=False
-2025-12-10 15:03:16,601 - ResultBuffer - INFO - 输出结果 #118: C1(1763697556.855) C2(1763697556.870) C3(1763697556.863) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,602 - __main__ - INFO - Frame 328: 输出 1 组三路融合结果
-2025-12-10 15:03:16,642 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(546, 169), should_assign=False
-2025-12-10 15:03:16,649 - ResultBuffer - INFO - 输出结果 #119: C1(1763697556.895) C2(1763697556.910) C3(1763697556.903) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,649 - __main__ - INFO - Frame 330: 输出 1 组三路融合结果
-2025-12-10 15:03:16,683 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(551, 166), should_assign=False
-2025-12-10 15:03:16,687 - ResultBuffer - INFO - 输出结果 #120: C1(1763697556.935) C2(1763697556.950) C3(1763697556.943) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,687 - __main__ - INFO - Frame 332: 输出 1 组三路融合结果
-2025-12-10 15:03:16,725 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(551, 165), should_assign=False
-2025-12-10 15:03:16,730 - ResultBuffer - INFO - 输出结果 #121: C1(1763697556.975) C2(1763697556.990) C3(1763697556.983) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,731 - __main__ - INFO - Frame 335: 输出 1 组三路融合结果
-2025-12-10 15:03:16,769 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 165), should_assign=False
-2025-12-10 15:03:16,773 - ResultBuffer - INFO - 输出结果 #122: C1(1763697557.015) C2(1763697557.030) C3(1763697557.023) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,773 - __main__ - INFO - Frame 338: 输出 1 组三路融合结果
-2025-12-10 15:03:16,817 - ResultBuffer - INFO - 输出结果 #123: C1(1763697557.055) C2(1763697557.070) C3(1763697557.063) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,818 - __main__ - INFO - Frame 341: 输出 1 组三路融合结果
-2025-12-10 15:03:16,858 - ResultBuffer - INFO - 输出结果 #124: C1(1763697557.095) C2(1763697557.110) C3(1763697557.103) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,859 - __main__ - INFO - Frame 344: 输出 1 组三路融合结果
-2025-12-10 15:03:16,899 - ResultBuffer - INFO - 输出结果 #125: C1(1763697557.135) C2(1763697557.150) C3(1763697557.143) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,899 - __main__ - INFO - Frame 346: 输出 1 组三路融合结果
-2025-12-10 15:03:16,942 - ResultBuffer - INFO - 输出结果 #126: C1(1763697557.175) C2(1763697557.190) C3(1763697557.183) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,942 - __main__ - INFO - Frame 349: 输出 1 组三路融合结果
-2025-12-10 15:03:16,981 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 164), should_assign=False
-2025-12-10 15:03:16,985 - ResultBuffer - INFO - 输出结果 #127: C1(1763697557.215) C2(1763697557.230) C3(1763697557.223) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:16,985 - __main__ - INFO - Frame 353: 输出 1 组三路融合结果
-2025-12-10 15:03:17,022 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(551, 165), should_assign=False
-2025-12-10 15:03:17,027 - ResultBuffer - INFO - 输出结果 #128: C1(1763697557.255) C2(1763697557.270) C3(1763697557.263) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,028 - __main__ - INFO - Frame 356: 输出 1 组三路融合结果
-2025-12-10 15:03:17,060 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(551, 165), should_assign=False
-2025-12-10 15:03:17,064 - ResultBuffer - INFO - 输出结果 #129: C1(1763697557.295) C2(1763697557.310) C3(1763697557.303) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,065 - __main__ - INFO - Frame 360: 输出 1 组三路融合结果
-2025-12-10 15:03:17,113 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(556, 165), should_assign=False
-2025-12-10 15:03:17,119 - ResultBuffer - INFO - 输出结果 #130: C1(1763697557.335) C2(1763697557.350) C3(1763697557.343) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,119 - __main__ - INFO - Frame 362: 输出 1 组三路融合结果
-2025-12-10 15:03:17,157 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(556, 165), should_assign=False
-2025-12-10 15:03:17,163 - ResultBuffer - INFO - 输出结果 #131: C1(1763697557.375) C2(1763697557.390) C3(1763697557.383) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,163 - __main__ - INFO - Frame 365: 输出 1 组三路融合结果
-2025-12-10 15:03:17,189 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(554, 166), should_assign=False
-2025-12-10 15:03:17,194 - ResultBuffer - INFO - 输出结果 #132: C1(1763697557.415) C2(1763697557.430) C3(1763697557.423) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,194 - __main__ - INFO - Frame 368: 输出 1 组三路融合结果
-2025-12-10 15:03:17,244 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(554, 166), should_assign=False
-2025-12-10 15:03:17,250 - ResultBuffer - INFO - 输出结果 #133: C1(1763697557.455) C2(1763697557.470) C3(1763697557.463) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,250 - __main__ - INFO - Frame 371: 输出 1 组三路融合结果
-2025-12-10 15:03:17,273 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 167), should_assign=False
-2025-12-10 15:03:17,277 - ResultBuffer - INFO - 输出结果 #134: C1(1763697557.495) C2(1763697557.510) C3(1763697557.503) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,277 - __main__ - INFO - Frame 374: 输出 1 组三路融合结果
-2025-12-10 15:03:17,313 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 167), should_assign=False
-2025-12-10 15:03:17,317 - ResultBuffer - INFO - 输出结果 #135: C1(1763697557.535) C2(1763697557.550) C3(1763697557.543) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,318 - __main__ - INFO - Frame 376: 输出 1 组三路融合结果
-2025-12-10 15:03:17,353 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 167), should_assign=False
-2025-12-10 15:03:17,359 - ResultBuffer - INFO - 输出结果 #136: C1(1763697557.575) C2(1763697557.590) C3(1763697557.583) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,359 - __main__ - INFO - Frame 378: 输出 1 组三路融合结果
-2025-12-10 15:03:17,401 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 167), should_assign=False
-2025-12-10 15:03:17,401 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=3, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,405 - ResultBuffer - INFO - 输出结果 #137: C1(1763697557.615) C2(1763697557.630) C3(1763697557.623) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,405 - __main__ - INFO - Frame 382: 输出 1 组三路融合结果
-2025-12-10 15:03:17,442 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 168), should_assign=False
-2025-12-10 15:03:17,442 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=4, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,448 - ResultBuffer - INFO - 输出结果 #138: C1(1763697557.655) C2(1763697557.670) C3(1763697557.663) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,448 - __main__ - INFO - Frame 385: 输出 1 组三路融合结果
-2025-12-10 15:03:17,470 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 168), should_assign=False
-2025-12-10 15:03:17,470 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=5, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,476 - ResultBuffer - INFO - 输出结果 #139: C1(1763697557.695) C2(1763697557.710) C3(1763697557.703) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,476 - __main__ - INFO - Frame 387: 输出 1 组三路融合结果
-2025-12-10 15:03:17,510 - SDKinfer - DEBUG - C1 F200: 15 boxes
-2025-12-10 15:03:17,513 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(554, 171), should_assign=False
-2025-12-10 15:03:17,513 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=6, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,518 - ResultBuffer - INFO - 输出结果 #140: C1(1763697557.735) C2(1763697557.750) C3(1763697557.743) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,519 - __main__ - INFO - Frame 390: 输出 1 组三路融合结果
-2025-12-10 15:03:17,561 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(554, 171), should_assign=False
-2025-12-10 15:03:17,561 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=7, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,565 - ResultBuffer - INFO - 输出结果 #141: C1(1763697557.775) C2(1763697557.790) C3(1763697557.783) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,565 - __main__ - INFO - Frame 394: 输出 1 组三路融合结果
-2025-12-10 15:03:17,560 - SDKinfer - DEBUG - C2 F200: 22 boxes
-2025-12-10 15:03:17,601 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 169), should_assign=False
-2025-12-10 15:03:17,602 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=8, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,607 - ResultBuffer - INFO - 输出结果 #142: C1(1763697557.815) C2(1763697557.830) C3(1763697557.823) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,608 - __main__ - INFO - Frame 397: 输出 1 组三路融合结果
-2025-12-10 15:03:17,629 - __main__ - DEBUG - C2 Frame 400: 2 tracked objects
-2025-12-10 15:03:17,631 - __main__ - INFO - 缓冲区状态: C1=62 C2=60 C3=0
-2025-12-10 15:03:17,649 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 169), should_assign=False
-2025-12-10 15:03:17,649 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=9, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,653 - ResultBuffer - INFO - 输出结果 #143: C1(1763697557.855) C2(1763697557.870) C3(1763697557.863) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,653 - __main__ - INFO - Frame 401: 输出 1 组三路融合结果
-2025-12-10 15:03:17,679 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(554, 168), should_assign=False
-2025-12-10 15:03:17,679 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=10, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,683 - ResultBuffer - INFO - 输出结果 #144: C1(1763697557.895) C2(1763697557.910) C3(1763697557.903) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:17,683 - __main__ - INFO - Frame 404: 输出 1 组三路融合结果
-2025-12-10 15:03:17,737 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=11, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,742 - ResultBuffer - INFO - 输出结果 #145: C1(1763697557.935) C2(1763697557.950) C3(1763697557.943) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:17,743 - __main__ - INFO - Frame 407: 输出 1 组三路融合结果
-2025-12-10 15:03:17,780 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=12, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,785 - ResultBuffer - INFO - 输出结果 #146: C1(1763697557.975) C2(1763697557.990) C3(1763697557.983) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:17,785 - __main__ - INFO - Frame 410: 输出 1 组三路融合结果
-2025-12-10 15:03:17,824 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=13, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,830 - ResultBuffer - INFO - 输出结果 #147: C1(1763697558.015) C2(1763697558.030) C3(1763697558.023) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:17,831 - __main__ - INFO - Frame 413: 输出 1 组三路融合结果
-2025-12-10 15:03:17,853 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=14, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,858 - ResultBuffer - INFO - 输出结果 #148: C1(1763697558.055) C2(1763697558.070) C3(1763697558.063) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:17,858 - __main__ - INFO - Frame 416: 输出 1 组三路融合结果
-2025-12-10 15:03:17,912 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=15, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,918 - ResultBuffer - INFO - 输出结果 #149: C1(1763697558.095) C2(1763697558.110) C3(1763697558.103) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:17,918 - __main__ - INFO - Frame 420: 输出 1 组三路融合结果
-2025-12-10 15:03:17,943 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=16, start=(876, 195), should_assign=False
-2025-12-10 15:03:17,947 - ResultBuffer - INFO - 输出结果 #150: C1(1763697558.135) C2(1763697558.150) C3(1763697558.143) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:17,947 - __main__ - INFO - Frame 423: 输出 1 组三路融合结果
-2025-12-10 15:03:18,002 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=17, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,007 - ResultBuffer - INFO - 输出结果 #151: C1(1763697558.175) C2(1763697558.190) C3(1763697558.183) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:18,008 - __main__ - INFO - Frame 428: 输出 1 组三路融合结果
-2025-12-10 15:03:18,029 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=18, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,033 - ResultBuffer - INFO - 输出结果 #152: C1(1763697558.215) C2(1763697558.230) C3(1763697558.223) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:18,034 - __main__ - INFO - Frame 430: 输出 1 组三路融合结果
-2025-12-10 15:03:18,060 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=19, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,064 - ResultBuffer - INFO - 输出结果 #153: C1(1763697558.255) C2(1763697558.270) C3(1763697558.263) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:18,065 - __main__ - INFO - Frame 432: 输出 1 组三路融合结果
-2025-12-10 15:03:18,114 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=20, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,118 - ResultBuffer - INFO - 输出结果 #154: C1(1763697558.295) C2(1763697558.310) C3(1763697558.303) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:18,118 - __main__ - INFO - Frame 435: 输出 1 组三路融合结果
-2025-12-10 15:03:18,174 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=21, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,180 - ResultBuffer - INFO - 输出结果 #155: C1(1763697558.335) C2(1763697558.350) C3(1763697558.343) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:18,180 - __main__ - INFO - Frame 438: 输出 1 组三路融合结果
-2025-12-10 15:03:18,205 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=22, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,209 - ResultBuffer - INFO - 输出结果 #156: C1(1763697558.375) C2(1763697558.390) C3(1763697558.383) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:18,209 - __main__ - INFO - Frame 441: 输出 1 组三路融合结果
-2025-12-10 15:03:18,248 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=23, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,252 - ResultBuffer - INFO - 输出结果 #157: C1(1763697558.415) C2(1763697558.430) C3(1763697558.423) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:18,253 - __main__ - INFO - Frame 445: 输出 1 组三路融合结果
-2025-12-10 15:03:18,292 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=24, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,296 - ResultBuffer - INFO - 输出结果 #158: C1(1763697558.455) C2(1763697558.470) C3(1763697558.463) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:18,297 - __main__ - INFO - Frame 448: 输出 1 组三路融合结果
-2025-12-10 15:03:18,335 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=25, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,336 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(554, 168), should_assign=False
-2025-12-10 15:03:18,340 - ResultBuffer - INFO - 输出结果 #159: C1(1763697558.495) C2(1763697558.510) C3(1763697558.503) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:18,341 - __main__ - INFO - Frame 451: 输出 1 组三路融合结果
-2025-12-10 15:03:18,378 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=26, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,378 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(550, 172), should_assign=False
-2025-12-10 15:03:18,384 - ResultBuffer - INFO - 输出结果 #160: C1(1763697558.535) C2(1763697558.550) C3(1763697558.543) | 参与者数: 8 | MQTT: 失败/未配置
-2025-12-10 15:03:18,384 - __main__ - INFO - Frame 454: 输出 1 组三路融合结果
-2025-12-10 15:03:18,412 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=27, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,412 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(550, 173), should_assign=False
-2025-12-10 15:03:18,417 - ResultBuffer - INFO - 输出结果 #161: C1(1763697558.575) C2(1763697558.590) C3(1763697558.583) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,418 - __main__ - INFO - Frame 457: 输出 1 组三路融合结果
-2025-12-10 15:03:18,457 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=28, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,458 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(544, 175), should_assign=False
-2025-12-10 15:03:18,462 - ResultBuffer - INFO - 输出结果 #162: C1(1763697558.615) C2(1763697558.630) C3(1763697558.623) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,462 - __main__ - INFO - Frame 460: 输出 1 组三路融合结果
-2025-12-10 15:03:18,499 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=29, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,500 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(544, 176), should_assign=False
-2025-12-10 15:03:18,504 - ResultBuffer - INFO - 输出结果 #163: C1(1763697558.655) C2(1763697558.670) C3(1763697558.663) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,505 - __main__ - INFO - Frame 463: 输出 1 组三路融合结果
-2025-12-10 15:03:18,545 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(876, 195), should_assign=False
-2025-12-10 15:03:18,546 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(548, 173), should_assign=False
-2025-12-10 15:03:18,551 - ResultBuffer - INFO - 输出结果 #164: C1(1763697558.695) C2(1763697558.710) C3(1763697558.703) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,551 - __main__ - INFO - Frame 467: 输出 1 组三路融合结果
-2025-12-10 15:03:18,592 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(868, 196), should_assign=False
-2025-12-10 15:03:18,593 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(548, 173), should_assign=False
-2025-12-10 15:03:18,600 - ResultBuffer - INFO - 输出结果 #165: C1(1763697558.735) C2(1763697558.750) C3(1763697558.743) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,600 - __main__ - INFO - Frame 470: 输出 1 组三路融合结果
-2025-12-10 15:03:18,637 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(838, 194), should_assign=False
-2025-12-10 15:03:18,637 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(551, 174), should_assign=False
-2025-12-10 15:03:18,643 - ResultBuffer - INFO - 输出结果 #166: C1(1763697558.775) C2(1763697558.790) C3(1763697558.783) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,644 - __main__ - INFO - Frame 472: 输出 1 组三路融合结果
-2025-12-10 15:03:18,669 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(822, 193), should_assign=False
-2025-12-10 15:03:18,670 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(551, 175), should_assign=False
-2025-12-10 15:03:18,674 - ResultBuffer - INFO - 输出结果 #167: C1(1763697558.815) C2(1763697558.830) C3(1763697558.823) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,675 - __main__ - INFO - Frame 475: 输出 1 组三路融合结果
-2025-12-10 15:03:18,726 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(802, 193), should_assign=False
-2025-12-10 15:03:18,726 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 168), should_assign=False
-2025-12-10 15:03:18,733 - ResultBuffer - INFO - 输出结果 #168: C1(1763697558.855) C2(1763697558.870) C3(1763697558.863) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,733 - __main__ - INFO - Frame 478: 输出 1 组三路融合结果
-2025-12-10 15:03:18,760 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(786, 192), should_assign=False
-2025-12-10 15:03:18,761 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 168), should_assign=False
-2025-12-10 15:03:18,765 - ResultBuffer - INFO - 输出结果 #169: C1(1763697558.895) C2(1763697558.910) C3(1763697558.903) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,766 - __main__ - INFO - Frame 481: 输出 1 组三路融合结果
-2025-12-10 15:03:18,819 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(766, 192), should_assign=False
-2025-12-10 15:03:18,819 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 167), should_assign=False
-2025-12-10 15:03:18,825 - ResultBuffer - INFO - 输出结果 #170: C1(1763697558.935) C2(1763697558.950) C3(1763697558.943) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,826 - __main__ - INFO - Frame 485: 输出 1 组三路融合结果
-2025-12-10 15:03:18,850 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(749, 192), should_assign=False
-2025-12-10 15:03:18,850 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 166), should_assign=False
-2025-12-10 15:03:18,856 - ResultBuffer - INFO - 输出结果 #171: C1(1763697558.975) C2(1763697558.990) C3(1763697558.983) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,856 - __main__ - INFO - Frame 487: 输出 1 组三路融合结果
-2025-12-10 15:03:18,893 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(727, 192), should_assign=False
-2025-12-10 15:03:18,894 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 166), should_assign=False
-2025-12-10 15:03:18,900 - ResultBuffer - INFO - 输出结果 #172: C1(1763697559.015) C2(1763697559.030) C3(1763697559.023) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,900 - __main__ - INFO - Frame 490: 输出 1 组三路融合结果
-2025-12-10 15:03:18,932 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(710, 192), should_assign=False
-2025-12-10 15:03:18,933 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 166), should_assign=False
-2025-12-10 15:03:18,938 - ResultBuffer - INFO - 输出结果 #173: C1(1763697559.055) C2(1763697559.070) C3(1763697559.063) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,938 - __main__ - INFO - Frame 494: 输出 1 组三路融合结果
-2025-12-10 15:03:18,972 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(688, 192), should_assign=False
-2025-12-10 15:03:18,972 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 166), should_assign=False
-2025-12-10 15:03:18,977 - ResultBuffer - INFO - 输出结果 #174: C1(1763697559.095) C2(1763697559.110) C3(1763697559.103) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:18,977 - __main__ - INFO - Frame 496: 输出 1 组三路融合结果
-2025-12-10 15:03:19,018 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(670, 191), should_assign=False
-2025-12-10 15:03:19,019 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 166), should_assign=False
-2025-12-10 15:03:19,027 - ResultBuffer - INFO - 输出结果 #175: C1(1763697559.135) C2(1763697559.150) C3(1763697559.143) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,027 - __main__ - INFO - Frame 499: 输出 1 组三路融合结果
-2025-12-10 15:03:19,028 - __main__ - DEBUG - C1 F500 跟踪前: 原始=13, NMS=13, 过滤=4, 输入=4
-2025-12-10 15:03:19,031 - __main__ - DEBUG - C1 Frame 500: 3 tracked objects
-2025-12-10 15:03:19,034 - __main__ - DEBUG - Frame 500 C1: 雷达ID映射 track_id=9 -> radar_id=0000007c-5e1c-4083-bd10-e38a000d39c5
-2025-12-10 15:03:19,034 - __main__ - INFO - Frame 500 C1: 雷达匹配 1/3 个目标，radar_id_map大小=1
-2025-12-10 15:03:19,034 - __main__ - INFO - 缓冲区状态: C1=80 C2=70 C3=0
-2025-12-10 15:03:19,064 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(650, 191), should_assign=False
-2025-12-10 15:03:19,065 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 166), should_assign=False
-2025-12-10 15:03:19,071 - ResultBuffer - INFO - 输出结果 #176: C1(1763697559.175) C2(1763697559.190) C3(1763697559.183) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,072 - __main__ - INFO - Frame 502: 输出 1 组三路融合结果
-2025-12-10 15:03:19,101 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(632, 191), should_assign=False
-2025-12-10 15:03:19,106 - ResultBuffer - INFO - 输出结果 #177: C1(1763697559.215) C2(1763697559.230) C3(1763697559.223) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,107 - __main__ - INFO - Frame 505: 输出 1 组三路融合结果
-2025-12-10 15:03:19,144 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(614, 191), should_assign=False
-2025-12-10 15:03:19,150 - ResultBuffer - INFO - 输出结果 #178: C1(1763697559.255) C2(1763697559.270) C3(1763697559.263) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,151 - __main__ - INFO - Frame 508: 输出 1 组三路融合结果
-2025-12-10 15:03:19,208 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(596, 190), should_assign=False
-2025-12-10 15:03:19,213 - ResultBuffer - INFO - 输出结果 #179: C1(1763697559.295) C2(1763697559.310) C3(1763697559.303) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,214 - __main__ - INFO - Frame 512: 输出 1 组三路融合结果
-2025-12-10 15:03:19,240 - Fusion - INFO - [DEBUG C3] Track 14: pixel_history_len=30, start=(577, 191), should_assign=False
-2025-12-10 15:03:19,247 - ResultBuffer - INFO - 输出结果 #180: C1(1763697559.335) C2(1763697559.350) C3(1763697559.343) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,247 - __main__ - INFO - Frame 514: 输出 1 组三路融合结果
-2025-12-10 15:03:19,293 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=3, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,299 - ResultBuffer - INFO - 输出结果 #181: C1(1763697559.375) C2(1763697559.390) C3(1763697559.383) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,299 - __main__ - INFO - Frame 518: 输出 1 组三路融合结果
-2025-12-10 15:03:19,336 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=4, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,343 - ResultBuffer - INFO - 输出结果 #182: C1(1763697559.415) C2(1763697559.430) C3(1763697559.423) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,343 - __main__ - INFO - Frame 520: 输出 1 组三路融合结果
-2025-12-10 15:03:19,397 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=5, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,404 - ResultBuffer - INFO - 输出结果 #183: C1(1763697559.455) C2(1763697559.470) C3(1763697559.463) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,404 - __main__ - INFO - Frame 524: 输出 1 组三路融合结果
-2025-12-10 15:03:19,417 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=6, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,423 - ResultBuffer - INFO - 输出结果 #184: C1(1763697559.495) C2(1763697559.510) C3(1763697559.503) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,423 - __main__ - INFO - Frame 526: 输出 1 组三路融合结果
-2025-12-10 15:03:19,472 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=7, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,479 - ResultBuffer - INFO - 输出结果 #185: C1(1763697559.535) C2(1763697559.550) C3(1763697559.543) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,480 - __main__ - INFO - Frame 528: 输出 1 组三路融合结果
-2025-12-10 15:03:19,514 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=8, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,519 - ResultBuffer - INFO - 输出结果 #186: C1(1763697559.575) C2(1763697559.590) C3(1763697559.583) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,519 - __main__ - INFO - Frame 533: 输出 1 组三路融合结果
-2025-12-10 15:03:19,557 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=9, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,562 - ResultBuffer - INFO - 输出结果 #187: C1(1763697559.615) C2(1763697559.630) C3(1763697559.623) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,562 - __main__ - INFO - Frame 535: 输出 1 组三路融合结果
-2025-12-10 15:03:19,600 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=10, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,605 - ResultBuffer - INFO - 输出结果 #188: C1(1763697559.655) C2(1763697559.670) C3(1763697559.663) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,605 - __main__ - INFO - Frame 538: 输出 1 组三路融合结果
-2025-12-10 15:03:19,631 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=11, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,631 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 166), should_assign=False
-2025-12-10 15:03:19,636 - ResultBuffer - INFO - 输出结果 #189: C1(1763697559.695) C2(1763697559.710) C3(1763697559.703) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,637 - __main__ - INFO - Frame 540: 输出 1 组三路融合结果
-2025-12-10 15:03:19,674 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=12, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,675 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 166), should_assign=False
-2025-12-10 15:03:19,682 - ResultBuffer - INFO - 输出结果 #190: C1(1763697559.735) C2(1763697559.750) C3(1763697559.743) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,682 - __main__ - INFO - Frame 543: 输出 1 组三路融合结果
-2025-12-10 15:03:19,724 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=13, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,725 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 165), should_assign=False
-2025-12-10 15:03:19,732 - ResultBuffer - INFO - 输出结果 #191: C1(1763697559.775) C2(1763697559.790) C3(1763697559.783) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,732 - __main__ - INFO - Frame 545: 输出 1 组三路融合结果
-2025-12-10 15:03:19,757 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=14, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,758 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 165), should_assign=False
-2025-12-10 15:03:19,763 - ResultBuffer - INFO - 输出结果 #192: C1(1763697559.815) C2(1763697559.830) C3(1763697559.823) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,763 - __main__ - INFO - Frame 548: 输出 1 组三路融合结果
-2025-12-10 15:03:19,803 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=15, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,810 - ResultBuffer - INFO - 输出结果 #193: C1(1763697559.855) C2(1763697559.870) C3(1763697559.863) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,811 - __main__ - INFO - Frame 551: 输出 1 组三路融合结果
-2025-12-10 15:03:19,851 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=16, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,858 - ResultBuffer - INFO - 输出结果 #194: C1(1763697559.895) C2(1763697559.910) C3(1763697559.903) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,858 - __main__ - INFO - Frame 554: 输出 1 组三路融合结果
-2025-12-10 15:03:19,887 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=17, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,888 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 165), should_assign=False
-2025-12-10 15:03:19,894 - ResultBuffer - INFO - 输出结果 #195: C1(1763697559.935) C2(1763697559.950) C3(1763697559.943) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,894 - __main__ - INFO - Frame 556: 输出 1 组三路融合结果
-2025-12-10 15:03:19,932 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=18, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,932 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 165), should_assign=False
-2025-12-10 15:03:19,938 - ResultBuffer - INFO - 输出结果 #196: C1(1763697559.975) C2(1763697559.990) C3(1763697559.983) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,939 - __main__ - INFO - Frame 559: 输出 1 组三路融合结果
-2025-12-10 15:03:19,982 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=19, start=(908, 205), should_assign=False
-2025-12-10 15:03:19,990 - ResultBuffer - INFO - 输出结果 #197: C1(1763697560.015) C2(1763697560.030) C3(1763697560.023) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:19,990 - __main__ - INFO - Frame 562: 输出 1 组三路融合结果
-2025-12-10 15:03:20,052 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=20, start=(908, 205), should_assign=False
-2025-12-10 15:03:20,060 - ResultBuffer - INFO - 输出结果 #198: C1(1763697560.055) C2(1763697560.070) C3(1763697560.063) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:20,061 - __main__ - INFO - Frame 565: 输出 1 组三路融合结果
-2025-12-10 15:03:20,081 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=21, start=(908, 205), should_assign=False
-2025-12-10 15:03:20,088 - ResultBuffer - INFO - 输出结果 #199: C1(1763697560.095) C2(1763697560.110) C3(1763697560.103) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:20,089 - __main__ - INFO - Frame 567: 输出 1 组三路融合结果
-2025-12-10 15:03:20,121 - SDKinfer - DEBUG - C3 F200: 29 boxes
-2025-12-10 15:03:20,131 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=22, start=(908, 205), should_assign=False
-2025-12-10 15:03:20,137 - ResultBuffer - INFO - 输出结果 #200: C1(1763697560.135) C2(1763697560.150) C3(1763697560.143) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:20,142 - __main__ - INFO - Frame 571: 输出 1 组三路融合结果
-2025-12-10 15:03:20,183 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=23, start=(908, 205), should_assign=False
-2025-12-10 15:03:20,184 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 165), should_assign=False
-2025-12-10 15:03:20,191 - ResultBuffer - INFO - 输出结果 #201: C1(1763697560.175) C2(1763697560.190) C3(1763697560.183) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:20,191 - __main__ - INFO - Frame 573: 输出 1 组三路融合结果
-2025-12-10 15:03:20,218 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=24, start=(908, 205), should_assign=False
-2025-12-10 15:03:20,218 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 165), should_assign=False
-2025-12-10 15:03:20,225 - ResultBuffer - INFO - 输出结果 #202: C1(1763697560.215) C2(1763697560.230) C3(1763697560.223) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:20,225 - __main__ - INFO - Frame 576: 输出 1 组三路融合结果
-2025-12-10 15:03:20,263 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=25, start=(908, 205), should_assign=False
-2025-12-10 15:03:20,263 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 165), should_assign=False
-2025-12-10 15:03:20,271 - ResultBuffer - INFO - 输出结果 #203: C1(1763697560.255) C2(1763697560.270) C3(1763697560.263) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:20,272 - __main__ - INFO - Frame 578: 输出 1 组三路融合结果
-2025-12-10 15:03:20,273 - SDKinfer - DEBUG - C1 F300: 16 boxes
-2025-12-10 15:03:20,309 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=26, start=(908, 205), should_assign=False
-2025-12-10 15:03:20,310 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 165), should_assign=False
-2025-12-10 15:03:20,317 - ResultBuffer - INFO - 输出结果 #204: C1(1763697560.295) C2(1763697560.310) C3(1763697560.303) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:20,317 - __main__ - INFO - Frame 580: 输出 1 组三路融合结果
-2025-12-10 15:03:20,341 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=27, start=(908, 205), should_assign=False
-2025-12-10 15:03:20,342 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 165), should_assign=False
-2025-12-10 15:03:20,347 - ResultBuffer - INFO - 输出结果 #205: C1(1763697560.335) C2(1763697560.350) C3(1763697560.343) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:20,348 - __main__ - INFO - Frame 582: 输出 1 组三路融合结果
-2025-12-10 15:03:20,386 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=28, start=(908, 205), should_assign=False
-2025-12-10 15:03:20,387 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 167), should_assign=False
-2025-12-10 15:03:20,395 - ResultBuffer - INFO - 输出结果 #206: C1(1763697560.375) C2(1763697560.390) C3(1763697560.383) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:20,395 - __main__ - INFO - Frame 584: 输出 1 组三路融合结果
-2025-12-10 15:03:20,435 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=29, start=(908, 205), should_assign=False
-2025-12-10 15:03:20,441 - ResultBuffer - INFO - 输出结果 #207: C1(1763697560.415) C2(1763697560.430) C3(1763697560.423) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:20,441 - __main__ - INFO - Frame 587: 输出 1 组三路融合结果
-2025-12-10 15:03:20,463 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(908, 205), should_assign=False
-2025-12-10 15:03:20,469 - ResultBuffer - INFO - 输出结果 #208: C1(1763697560.455) C2(1763697560.470) C3(1763697560.463) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:20,469 - __main__ - INFO - Frame 590: 输出 1 组三路融合结果
-2025-12-10 15:03:20,494 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(905, 204), should_assign=False
-2025-12-10 15:03:20,501 - ResultBuffer - INFO - 输出结果 #209: C1(1763697560.495) C2(1763697560.510) C3(1763697560.503) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,501 - __main__ - INFO - Frame 592: 输出 1 组三路融合结果
-2025-12-10 15:03:20,539 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(882, 205), should_assign=False
-2025-12-10 15:03:20,546 - ResultBuffer - INFO - 输出结果 #210: C1(1763697560.535) C2(1763697560.550) C3(1763697560.543) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,546 - __main__ - INFO - Frame 595: 输出 1 组三路融合结果
-2025-12-10 15:03:20,571 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(872, 205), should_assign=False
-2025-12-10 15:03:20,572 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(551, 168), should_assign=False
-2025-12-10 15:03:20,577 - ResultBuffer - INFO - 输出结果 #211: C1(1763697560.575) C2(1763697560.590) C3(1763697560.583) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,577 - __main__ - INFO - Frame 598: 输出 1 组三路融合结果
-2025-12-10 15:03:20,596 - __main__ - DEBUG - C1 Frame 600: 3 tracked objects
-2025-12-10 15:03:20,598 - __main__ - DEBUG - C2 Frame 600: 1 tracked objects
-2025-12-10 15:03:20,601 - __main__ - INFO - 缓冲区状态: C1=101 C2=79 C3=0
-2025-12-10 15:03:20,602 - __main__ - INFO - 队列状态 (截至帧 600)
-2025-12-10 15:03:20,602 - __main__ - INFO - C1: 队列大小 0
-2025-12-10 15:03:20,602 - __main__ - INFO - C2: 队列大小 0
-2025-12-10 15:03:20,602 - __main__ - INFO - C3: 队列大小 1
-2025-12-10 15:03:20,616 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(856, 205), should_assign=False
-2025-12-10 15:03:20,617 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 166), should_assign=False
-2025-12-10 15:03:20,622 - ResultBuffer - INFO - 输出结果 #212: C1(1763697560.615) C2(1763697560.630) C3(1763697560.623) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,622 - __main__ - INFO - Frame 601: 输出 1 组三路融合结果
-2025-12-10 15:03:20,664 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(845, 204), should_assign=False
-2025-12-10 15:03:20,672 - ResultBuffer - INFO - 输出结果 #213: C1(1763697560.655) C2(1763697560.670) C3(1763697560.663) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,672 - __main__ - INFO - Frame 604: 输出 1 组三路融合结果
-2025-12-10 15:03:20,693 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(834, 204), should_assign=False
-2025-12-10 15:03:20,701 - ResultBuffer - INFO - 输出结果 #214: C1(1763697560.695) C2(1763697560.710) C3(1763697560.703) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,701 - __main__ - INFO - Frame 606: 输出 1 组三路融合结果
-2025-12-10 15:03:20,740 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(822, 203), should_assign=False
-2025-12-10 15:03:20,741 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 166), should_assign=False
-2025-12-10 15:03:20,747 - ResultBuffer - INFO - 输出结果 #215: C1(1763697560.735) C2(1763697560.750) C3(1763697560.743) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,748 - __main__ - INFO - Frame 609: 输出 1 组三路融合结果
-2025-12-10 15:03:20,775 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(811, 203), should_assign=False
-2025-12-10 15:03:20,775 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(552, 166), should_assign=False
-2025-12-10 15:03:20,782 - ResultBuffer - INFO - 输出结果 #216: C1(1763697560.775) C2(1763697560.790) C3(1763697560.783) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,783 - __main__ - INFO - Frame 612: 输出 1 组三路融合结果
-2025-12-10 15:03:20,808 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(800, 203), should_assign=False
-2025-12-10 15:03:20,814 - ResultBuffer - INFO - 输出结果 #217: C1(1763697560.815) C2(1763697560.830) C3(1763697560.823) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,814 - __main__ - INFO - Frame 614: 输出 1 组三路融合结果
-2025-12-10 15:03:20,843 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(789, 203), should_assign=False
-2025-12-10 15:03:20,849 - ResultBuffer - INFO - 输出结果 #218: C1(1763697560.855) C2(1763697560.870) C3(1763697560.863) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,849 - __main__ - INFO - Frame 618: 输出 1 组三路融合结果
-2025-12-10 15:03:20,883 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(778, 203), should_assign=False
-2025-12-10 15:03:20,884 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 165), should_assign=False
-2025-12-10 15:03:20,891 - ResultBuffer - INFO - 输出结果 #219: C1(1763697560.895) C2(1763697560.910) C3(1763697560.903) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,891 - __main__ - INFO - Frame 620: 输出 1 组三路融合结果
-2025-12-10 15:03:20,922 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(767, 203), should_assign=False
-2025-12-10 15:03:20,922 - Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=30, start=(553, 165), should_assign=False
-2025-12-10 15:03:20,928 - ResultBuffer - INFO - 输出结果 #220: C1(1763697560.935) C2(1763697560.950) C3(1763697560.943) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,928 - __main__ - INFO - Frame 623: 输出 1 组三路融合结果
-2025-12-10 15:03:20,951 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(755, 203), should_assign=False
-2025-12-10 15:03:20,940 - SDKinfer - DEBUG - C2 F300: 24 boxes
-2025-12-10 15:03:20,957 - ResultBuffer - INFO - 输出结果 #221: C1(1763697560.975) C2(1763697560.990) C3(1763697560.983) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:20,957 - __main__ - INFO - Frame 625: 输出 1 组三路融合结果
-2025-12-10 15:03:20,993 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(743, 203), should_assign=False
-2025-12-10 15:03:21,000 - ResultBuffer - INFO - 输出结果 #222: C1(1763697561.015) C2(1763697561.030) C3(1763697561.023) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:21,001 - __main__ - INFO - Frame 628: 输出 1 组三路融合结果
-2025-12-10 15:03:21,029 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(732, 203), should_assign=False
-2025-12-10 15:03:21,029 - Fusion - DEBUG - Frame 630 C3_L16: 尝试匹配C2的目标，候选数=2
-2025-12-10 15:03:21,029 - Fusion - DEBUG -   候选 C2_G8: in_zone=False, fusion_entry=-1, class=van
-2025-12-10 15:03:21,029 - Fusion - DEBUG -   候选 C2_G10: in_zone=False, fusion_entry=-1, class=car
-2025-12-10 15:03:21,030 - Fusion - DEBUG -   筛选后候选数=0
-2025-12-10 15:03:21,035 - ResultBuffer - INFO - 输出结果 #223: C1(1763697561.055) C2(1763697561.070) C3(1763697561.063) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:21,036 - __main__ - INFO - Frame 631: 输出 1 组三路融合结果
-2025-12-10 15:03:21,060 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(720, 202), should_assign=False
-2025-12-10 15:03:21,066 - ResultBuffer - INFO - 输出结果 #224: C1(1763697561.095) C2(1763697561.110) C3(1763697561.103) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:21,067 - __main__ - INFO - Frame 634: 输出 1 组三路融合结果
-2025-12-10 15:03:21,108 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(709, 202), should_assign=False
-2025-12-10 15:03:21,109 - Fusion - INFO - [DEBUG C3] Track 19: pixel_history_len=3, start=(376, 169), should_assign=False
-2025-12-10 15:03:21,121 - ResultBuffer - INFO - 输出结果 #225: C1(1763697561.135) C2(1763697561.150) C3(1763697561.143) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:21,122 - __main__ - INFO - Frame 637: 输出 1 组三路融合结果
-2025-12-10 15:03:21,146 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(698, 201), should_assign=False
-2025-12-10 15:03:21,146 - Fusion - INFO - [DEBUG C3] Track 19: pixel_history_len=4, start=(376, 169), should_assign=False
-2025-12-10 15:03:21,152 - ResultBuffer - INFO - 输出结果 #226: C1(1763697561.175) C2(1763697561.190) C3(1763697561.183) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:21,153 - __main__ - INFO - Frame 640: 输出 1 组三路融合结果
-2025-12-10 15:03:21,193 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(687, 201), should_assign=False
-2025-12-10 15:03:21,193 - Fusion - INFO - [DEBUG C3] Track 19: pixel_history_len=5, start=(376, 169), should_assign=False
-2025-12-10 15:03:21,201 - ResultBuffer - INFO - 输出结果 #227: C1(1763697561.215) C2(1763697561.230) C3(1763697561.223) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:21,201 - __main__ - INFO - Frame 642: 输出 1 组三路融合结果
-2025-12-10 15:03:21,217 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(675, 201), should_assign=False
-2025-12-10 15:03:21,217 - Fusion - INFO - [DEBUG C3] Track 19: pixel_history_len=6, start=(376, 169), should_assign=False
-2025-12-10 15:03:21,223 - ResultBuffer - INFO - 输出结果 #228: C1(1763697561.255) C2(1763697561.270) C3(1763697561.263) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:21,223 - __main__ - INFO - Frame 645: 输出 1 组三路融合结果
-2025-12-10 15:03:21,258 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(664, 200), should_assign=False
-2025-12-10 15:03:21,258 - Fusion - INFO - [DEBUG C3] Track 19: pixel_history_len=7, start=(376, 169), should_assign=False
-2025-12-10 15:03:21,264 - ResultBuffer - INFO - 输出结果 #229: C1(1763697561.295) C2(1763697561.310) C3(1763697561.303) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:21,265 - __main__ - INFO - Frame 647: 输出 1 组三路融合结果
-2025-12-10 15:03:21,289 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(652, 200), should_assign=False
-2025-12-10 15:03:21,289 - Fusion - INFO - [DEBUG C3] Track 19: pixel_history_len=8, start=(376, 169), should_assign=False
-2025-12-10 15:03:21,295 - ResultBuffer - INFO - 输出结果 #230: C1(1763697561.335) C2(1763697561.350) C3(1763697561.343) | 参与者数: 6 | MQTT: 失败/未配置
-2025-12-10 15:03:21,295 - __main__ - INFO - Frame 649: 输出 1 组三路融合结果
-2025-12-10 15:03:21,336 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(641, 200), should_assign=False
-2025-12-10 15:03:21,343 - ResultBuffer - INFO - 输出结果 #231: C1(1763697561.375) C2(1763697561.390) C3(1763697561.383) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:21,343 - __main__ - INFO - Frame 653: 输出 1 组三路融合结果
-2025-12-10 15:03:21,380 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(629, 200), should_assign=False
-2025-12-10 15:03:21,388 - ResultBuffer - INFO - 输出结果 #232: C1(1763697561.415) C2(1763697561.430) C3(1763697561.423) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:21,388 - __main__ - INFO - Frame 655: 输出 1 组三路融合结果
-2025-12-10 15:03:21,413 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(618, 200), should_assign=False
-2025-12-10 15:03:21,422 - ResultBuffer - INFO - 输出结果 #233: C1(1763697561.455) C2(1763697561.470) C3(1763697561.463) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:21,422 - __main__ - INFO - Frame 657: 输出 1 组三路融合结果
-2025-12-10 15:03:21,447 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(605, 200), should_assign=False
-2025-12-10 15:03:21,453 - ResultBuffer - INFO - 输出结果 #234: C1(1763697561.495) C2(1763697561.510) C3(1763697561.503) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:21,453 - __main__ - INFO - Frame 660: 输出 1 组三路融合结果
-2025-12-10 15:03:21,493 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(594, 200), should_assign=False
-2025-12-10 15:03:21,501 - ResultBuffer - INFO - 输出结果 #235: C1(1763697561.535) C2(1763697561.550) C3(1763697561.543) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:21,502 - __main__ - INFO - Frame 663: 输出 1 组三路融合结果
-2025-12-10 15:03:21,524 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(583, 200), should_assign=False
-2025-12-10 15:03:21,530 - ResultBuffer - INFO - 输出结果 #236: C1(1763697561.575) C2(1763697561.590) C3(1763697561.583) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:21,530 - __main__ - INFO - Frame 665: 输出 1 组三路融合结果
-2025-12-10 15:03:21,569 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(571, 200), should_assign=False
-2025-12-10 15:03:21,577 - ResultBuffer - INFO - 输出结果 #237: C1(1763697561.615) C2(1763697561.630) C3(1763697561.623) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:21,577 - __main__ - INFO - Frame 667: 输出 1 组三路融合结果
-2025-12-10 15:03:21,601 - Fusion - INFO - [DEBUG C3] Track 16: pixel_history_len=30, start=(559, 201), should_assign=False
-2025-12-10 15:03:21,607 - ResultBuffer - INFO - 输出结果 #238: C1(1763697561.655) C2(1763697561.670) C3(1763697561.663) | 参与者数: 7 | MQTT: 失败/未配置
-2025-12-10 15:03:21,607 - __main__ - INFO - Frame 670: 输出 1 组三路融合结果
-2025-12-10 15:03:21,619 - __main__ - INFO - 收到停止信号，正在退出...
-2025-12-10 15:03:21,619 - __main__ - INFO - 收到停止信号，正在退出...
-2025-12-10 15:03:21,620 - __main__ - INFO - 收到停止信号，正在退出...
-2025-12-10 15:03:21,622 - __main__ - INFO - 所有处理完成
-2025-12-10 15:03:21,623 - __main__ - INFO - 准备保存 239 帧的JSON数据
-2025-12-10 15:03:21,626 - __main__ - INFO - 收到停止信号，正在退出...
-2025-12-10 15:03:21,735 - Fusion - INFO - JSON数据已保存: output_fusion_refactored.json, 共239帧
-2025-12-10 15:03:21,736 - __main__ - INFO - ============================================================
-2025-12-10 15:03:21,736 - __main__ - INFO - 最终处理统计报告
-2025-12-10 15:03:21,736 - __main__ - INFO - 成功处理的帧数: 671帧
-2025-12-10 15:03:21,736 - __main__ - INFO - ============================================================
-2025-12-10 15:03:21,736 - __main__ - INFO - 最终ByteTracker优化统计
-2025-12-10 15:03:21,736 - __main__ - INFO - DEBUG - 跟踪器输入统计:
-2025-12-10 15:03:21,736 - __main__ - INFO - C1: 调用350次, 空输入0次, 非空350次, 总检测数1261, 平均3.6个/帧
-2025-12-10 15:03:21,736 - __main__ - INFO - C2: 调用320次, 空输入112次, 非空208次, 总检测数286, 平均0.9个/帧
-2025-12-10 15:03:21,736 - __main__ - INFO - C3: 调用239次, 空输入0次, 非空239次, 总检测数1156, 平均4.8个/帧
-2025-12-10 15:03:21,737 - __main__ - INFO - C1:
-2025-12-10 15:03:21,737 - __main__ - INFO -   总帧数: 350
-2025-12-10 15:03:21,737 - __main__ - INFO -   跟踪帧: 176 (50.3%)
-2025-12-10 15:03:21,737 - __main__ - INFO -   预测帧: 174 (49.7%)
-2025-12-10 15:03:21,737 - __main__ - INFO -   性能提升: 1.00x
-2025-12-10 15:03:21,737 - __main__ - INFO -   平均跟踪耗时: 0.003s
-2025-12-10 15:03:21,737 - __main__ - INFO -   平均预测耗时: 0.001s
-2025-12-10 15:03:21,737 - __main__ - INFO - C2:
-2025-12-10 15:03:21,737 - __main__ - INFO -   总帧数: 320
-2025-12-10 15:03:21,737 - __main__ - INFO -   跟踪帧: 217 (67.8%)
-2025-12-10 15:03:21,737 - __main__ - INFO -   预测帧: 103 (32.2%)
-2025-12-10 15:03:21,738 - __main__ - INFO -   性能提升: 1.00x
-2025-12-10 15:03:21,738 - __main__ - INFO -   平均跟踪耗时: 0.001s
-2025-12-10 15:03:21,738 - __main__ - INFO -   平均预测耗时: 0.001s
-2025-12-10 15:03:21,738 - __main__ - INFO - C3:
-2025-12-10 15:03:21,738 - __main__ - INFO -   总帧数: 239
-2025-12-10 15:03:21,738 - __main__ - INFO -   跟踪帧: 120 (50.2%)
-2025-12-10 15:03:21,738 - __main__ - INFO -   预测帧: 119 (49.8%)
-2025-12-10 15:03:21,738 - __main__ - INFO -   性能提升: 1.00x
-2025-12-10 15:03:21,738 - __main__ - INFO -   平均跟踪耗时: 0.003s
-2025-12-10 15:03:21,738 - __main__ - INFO -   平均预测耗时: 0.001s
-2025-12-10 15:03:21,738 - __main__ - INFO - ============================================================
-2025-12-10 15:03:21,738 - __main__ - INFO - 程序结束，刷新缓冲区...
-2025-12-10 15:03:21,739 - ResultBuffer - INFO - 缓冲区刷新完成，共输出 239 组结果
-2025-12-10 15:03:21,739 - __main__ - INFO - 正在保存JSON数据
-2025-12-10 15:03:21,739 - __main__ - INFO - 准备保存 239 帧的JSON数据
-2025-12-10 15:03:21,861 - Fusion - INFO - JSON数据已保存: output_fusion_refactored.json, 共239帧
-2025-12-10 15:03:21,861 - CameraManager - INFO - 停止所有摄像头进程
-2025-12-10 15:03:21,861 - CameraManager - INFO - 终止Camera1进程
-2025-12-10 15:03:22,417 - CameraManager - INFO - 终止Camera2进程
-2025-12-10 15:03:22,963 - CameraManager - INFO - 终止Camera3进程
-2025-12-10 15:03:23,513 - CameraManager - INFO - 所有摄像头进程已停止
-2025-12-10 15:03:23,514 - __main__ - INFO - 资源清理完成
+2025-12-11 11:46:46 - core.logger_config - INFO - ======================================================================
+2025-12-11 11:46:46 - core.logger_config - INFO - 融合系统启动
+2025-12-11 11:46:46 - core.logger_config - INFO - ======================================================================
+2025-12-11 11:46:46 - core.logger_config - INFO - 日志文件: /zhw/no-frame-sync/logs/fusion_system.log
+2025-12-11 11:46:46 - core.logger_config - INFO - 启动时间: 2025-12-11 11:46:46
+2025-12-11 11:46:46 - core.logger_config - INFO - ======================================================================
+2025-12-11 11:46:51 - __main__ - INFO - ============================================================
+2025-12-11 11:46:51 - __main__ - INFO - 程序开始启动...
+2025-12-11 11:46:51 - __main__ - INFO - ============================================================
+2025-12-11 11:46:51 - __main__ - INFO - 摄像头1: Main Entrance - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
+2025-12-11 11:46:51 - __main__ - INFO - 摄像头2: Back Yard - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
+2025-12-11 11:46:51 - __main__ - INFO - 摄像头3: Side Gate - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
+2025-12-11 11:46:51 - __main__ - INFO - 使用RTSP流作为输入
+2025-12-11 11:46:51 - core.Basic - INFO - 性能监视器初始化完成
+2025-12-11 11:46:51 - vision.CameraManager - INFO - CameraManager 初始化完成
+2025-12-11 11:46:51 - vision.CameraManager - INFO - 已创建3个队列 (maxsize=10)
+2025-12-11 11:46:51 - __main__ - INFO - 初始化雷达融合模块
+2025-12-11 11:46:53 - __main__ - INFO - C1 雷达融合处理器初始化成功, 雷达数据帧数: 1768
+2025-12-11 11:46:53 - __main__ - INFO - C2 雷达融合处理器初始化成功, 雷达数据帧数: 1369
+2025-12-11 11:46:53 - __main__ - INFO - C3 雷达融合处理器初始化成功, 雷达数据帧数: 1312
+2025-12-11 11:46:53 - __main__ - INFO - 雷达融合模块初始化成功
+2025-12-11 11:46:58 - core.mqtt_publisher - ERROR - MQTT 连接失败: timed out
+2025-12-11 11:46:58 - __main__ - WARNING - MQTT连接失败: timed out, 将使用JSON文件保存
+2025-12-11 11:46:58 - core.FusionComponents - INFO - TargetManager 初始化完成
+2025-12-11 11:46:58 - core.FusionComponents - INFO - MatchingEngine 初始化完成
+2025-12-11 11:46:58 - core.Fusion - INFO - CrossCameraFusion初始化完成 (重构版)
+2025-12-11 11:46:58 - __main__ - INFO - 结果输出管理器已初始化 - 三路缓冲和时间对齐模式
+2025-12-11 11:46:58 - __main__ - INFO - 已启用优化版ByteTracker - 交替跟踪模式
+2025-12-11 11:46:58 - vision.CameraManager - INFO - 测试RTSP连接 (使用PyAV/OpenCV)
+2025-12-11 11:46:58 - vision.CameraManager - INFO - Camera1 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
+2025-12-11 11:46:58 - vision.CameraManager - INFO - Camera2 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
+2025-12-11 11:46:58 - vision.CameraManager - INFO - Camera3 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
+2025-12-11 11:46:58 - vision.CameraManager - INFO - 启动SDK版多摄像头融合系统
+2025-12-11 11:46:58 - vision.CameraManager - INFO - 启动Camera1 SDK推理进程
+2025-12-11 11:46:58 - vision.CameraManager - INFO - 启动Camera2 SDK推理进程
+2025-12-11 11:46:58 - __main__ - INFO - Camera1 子进程启动
+2025-12-11 11:46:58 - __main__ - INFO - Camera1 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
+2025-12-11 11:46:58 - __main__ - INFO - Camera1 初始化yolov5_SDK
+2025-12-11 11:46:58 - __main__ - INFO - Camera1 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
+2025-12-11 11:46:58 - vision.CameraManager - INFO - 启动Camera3 SDK推理进程
+2025-12-11 11:46:58 - vision.CameraManager - INFO - 所有SDK推理进程已启动
+2025-12-11 11:46:58 - vision.CameraManager - INFO - 进入预热阶段，等待所有摄像头推送第一帧数据
+2025-12-11 11:46:58 - __main__ - INFO - Camera3 子进程启动
+2025-12-11 11:46:58 - __main__ - INFO - Camera3 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
+2025-12-11 11:46:58 - __main__ - INFO - Camera3 初始化yolov5_SDK
+2025-12-11 11:46:58 - __main__ - INFO - Camera3 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
+2025-12-11 11:46:58 - __main__ - INFO - Camera2 子进程启动
+2025-12-11 11:46:58 - __main__ - INFO - Camera2 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
+2025-12-11 11:46:58 - __main__ - INFO - Camera2 初始化yolov5_SDK
+2025-12-11 11:46:58 - __main__ - INFO - Camera2 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
+2025-12-11 11:46:59 - vision.SDKinfer - INFO - Camera1 时间戳初始化: 起始时间=2025-11-21 11:59:12.135, FPS=25
+2025-12-11 11:46:59 - __main__ - INFO - Camera1 yolov5_SDK初始化成功
+2025-12-11 11:46:59 - vision.SDKinfer - INFO - Camera1 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
+2025-12-11 11:46:59 - __main__ - INFO - Camera1 类别名称已更新
+2025-12-11 11:46:59 - __main__ - INFO - Camera1 开始运行SDK推理...
+2025-12-11 11:46:59 - vision.SDKinfer - INFO - Camera1 SDK线程已启动
+2025-12-11 11:46:59 - vision.SDKinfer - DEBUG - C1 尺寸: 1280x720 -> 640x640
+2025-12-11 11:46:59 - vision.SDKinfer - DEBUG - C1 F0: 19 boxes
+2025-12-11 11:46:59 - vision.SDKinfer - INFO - Camera3 时间戳初始化: 起始时间=2025-11-21 11:59:12.143, FPS=25
+2025-12-11 11:46:59 - __main__ - INFO - Camera3 yolov5_SDK初始化成功
+2025-12-11 11:46:59 - vision.SDKinfer - INFO - Camera3 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
+2025-12-11 11:46:59 - __main__ - INFO - Camera3 类别名称已更新
+2025-12-11 11:46:59 - __main__ - INFO - Camera3 开始运行SDK推理...
+2025-12-11 11:46:59 - vision.SDKinfer - INFO - Camera3 SDK线程已启动
+2025-12-11 11:46:59 - vision.CameraManager - INFO - 摄像头 C1 已就绪
+2025-12-11 11:46:59 - vision.SDKinfer - DEBUG - C3 尺寸: 1280x720 -> 640x640
+2025-12-11 11:46:59 - vision.SDKinfer - DEBUG - C3 F0: 27 boxes
+2025-12-11 11:47:00 - vision.SDKinfer - INFO - Camera2 时间戳初始化: 起始时间=2025-11-21 11:59:12.150, FPS=25
+2025-12-11 11:47:00 - __main__ - INFO - Camera2 yolov5_SDK初始化成功
+2025-12-11 11:47:00 - vision.SDKinfer - INFO - Camera2 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
+2025-12-11 11:47:00 - __main__ - INFO - Camera2 类别名称已更新
+2025-12-11 11:47:00 - __main__ - INFO - Camera2 开始运行SDK推理...
+2025-12-11 11:47:00 - vision.SDKinfer - INFO - Camera2 SDK线程已启动
+2025-12-11 11:47:00 - vision.SDKinfer - DEBUG - C2 尺寸: 1280x720 -> 640x640
+2025-12-11 11:47:00 - vision.SDKinfer - DEBUG - C2 F0: 21 boxes
+2025-12-11 11:47:00 - vision.CameraManager - INFO - 摄像头 C2 已就绪
+2025-12-11 11:47:00 - vision.CameraManager - INFO - 摄像头 C3 已就绪
+2025-12-11 11:47:00 - vision.CameraManager - INFO - 所有摄像头均已就绪，预热完成
+2025-12-11 11:47:00 - __main__ - INFO - 同步方式: 纯时间戳同步 (不依赖帧号)
+2025-12-11 11:47:00 - __main__ - INFO - 融合主循环启动 - 单路处理模式
+2025-12-11 11:47:00 - __main__ - INFO - 处理模式: 单路独立处理 + 后期三路匹配
+2025-12-11 11:47:00 - __main__ - INFO - ============================================================
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #0: C1(1763697552.135) C2(1763697552.150) C3(1763697552.143) | 参与者数: 0 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 1: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #1: C1(1763697552.175) C2(1763697552.190) C3(1763697552.183) | 参与者数: 0 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 2: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 4: pixel_history_len=3, start=(344, 719), should_assign=True
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 5: pixel_history_len=3, start=(630, 598), should_assign=True
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=3, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 7: pixel_history_len=3, start=(421, 543), should_assign=True
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #2: C1(1763697552.215) C2(1763697552.230) C3(1763697552.223) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 3: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=4, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #3: C1(1763697552.255) C2(1763697552.270) C3(1763697552.263) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 4: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=5, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #4: C1(1763697552.295) C2(1763697552.310) C3(1763697552.303) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 5: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=6, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #5: C1(1763697552.335) C2(1763697552.350) C3(1763697552.343) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 6: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=7, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #6: C1(1763697552.375) C2(1763697552.390) C3(1763697552.383) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 7: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=8, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #7: C1(1763697552.415) C2(1763697552.430) C3(1763697552.423) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 8: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=9, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #8: C1(1763697552.455) C2(1763697552.470) C3(1763697552.463) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 9: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=10, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #9: C1(1763697552.495) C2(1763697552.510) C3(1763697552.503) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 10: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=11, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #10: C1(1763697552.535) C2(1763697552.550) C3(1763697552.543) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 11: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=12, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=13, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #11: C1(1763697552.575) C2(1763697552.590) C3(1763697552.583) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 13: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=14, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=15, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=16, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #12: C1(1763697552.615) C2(1763697552.630) C3(1763697552.623) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 16: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=17, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #13: C1(1763697552.655) C2(1763697552.670) C3(1763697552.663) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 20: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #14: C1(1763697552.695) C2(1763697552.710) C3(1763697552.703) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 22: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=18, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #15: C1(1763697552.735) C2(1763697552.750) C3(1763697552.743) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 25: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=19, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #16: C1(1763697552.775) C2(1763697552.790) C3(1763697552.783) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 27: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=20, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #17: C1(1763697552.815) C2(1763697552.830) C3(1763697552.823) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 29: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #18: C1(1763697552.855) C2(1763697552.870) C3(1763697552.863) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 31: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=21, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #19: C1(1763697552.895) C2(1763697552.910) C3(1763697552.903) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 34: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=22, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #20: C1(1763697552.935) C2(1763697552.950) C3(1763697552.943) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 37: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=23, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #21: C1(1763697552.975) C2(1763697552.990) C3(1763697552.983) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 40: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #22: C1(1763697553.015) C2(1763697553.030) C3(1763697553.023) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 41: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=24, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #23: C1(1763697553.055) C2(1763697553.070) C3(1763697553.063) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 44: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=25, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #24: C1(1763697553.095) C2(1763697553.110) C3(1763697553.103) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 46: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=26, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #25: C1(1763697553.135) C2(1763697553.150) C3(1763697553.143) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 48: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=27, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #26: C1(1763697553.175) C2(1763697553.190) C3(1763697553.183) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 51: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=28, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #27: C1(1763697553.215) C2(1763697553.230) C3(1763697553.223) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 54: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=29, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #28: C1(1763697553.255) C2(1763697553.270) C3(1763697553.263) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 57: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(441, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #29: C1(1763697553.295) C2(1763697553.310) C3(1763697553.303) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 61: 输出 1 组三路融合结果
+2025-12-11 11:47:00 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(437, 268), should_assign=False
+2025-12-11 11:47:00 - core.ResultBuffer - INFO - 输出结果 #30: C1(1763697553.335) C2(1763697553.350) C3(1763697553.343) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:00 - __main__ - INFO - Frame 63: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(437, 269), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #31: C1(1763697553.375) C2(1763697553.390) C3(1763697553.383) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 67: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(430, 271), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #32: C1(1763697553.415) C2(1763697553.430) C3(1763697553.423) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 71: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(428, 272), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #33: C1(1763697553.455) C2(1763697553.470) C3(1763697553.463) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 75: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(422, 273), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #34: C1(1763697553.495) C2(1763697553.510) C3(1763697553.503) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 77: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(419, 274), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #35: C1(1763697553.535) C2(1763697553.550) C3(1763697553.543) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 79: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(414, 276), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #36: C1(1763697553.575) C2(1763697553.590) C3(1763697553.583) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 81: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(411, 277), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #37: C1(1763697553.615) C2(1763697553.630) C3(1763697553.623) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 85: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(407, 278), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #38: C1(1763697553.655) C2(1763697553.670) C3(1763697553.663) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 87: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(403, 279), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #39: C1(1763697553.695) C2(1763697553.710) C3(1763697553.703) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 89: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(398, 280), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #40: C1(1763697553.735) C2(1763697553.750) C3(1763697553.743) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 91: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(395, 281), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #41: C1(1763697553.775) C2(1763697553.790) C3(1763697553.783) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 94: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(390, 282), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #42: C1(1763697553.815) C2(1763697553.830) C3(1763697553.823) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 97: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(386, 283), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #43: C1(1763697553.855) C2(1763697553.870) C3(1763697553.863) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 99: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - __main__ - INFO - 缓冲区状态: C1=11 C2=6 C3=0
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(383, 284), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #44: C1(1763697553.895) C2(1763697553.910) C3(1763697553.903) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 101: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(379, 285), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #45: C1(1763697553.935) C2(1763697553.950) C3(1763697553.943) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 103: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(375, 286), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #46: C1(1763697553.975) C2(1763697553.990) C3(1763697553.983) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 106: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(371, 287), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #47: C1(1763697554.015) C2(1763697554.030) C3(1763697554.023) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 109: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(367, 288), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #48: C1(1763697554.055) C2(1763697554.070) C3(1763697554.063) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 112: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(363, 289), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #49: C1(1763697554.095) C2(1763697554.110) C3(1763697554.103) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 116: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(359, 290), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #50: C1(1763697554.135) C2(1763697554.150) C3(1763697554.143) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 118: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(355, 292), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #51: C1(1763697554.175) C2(1763697554.190) C3(1763697554.183) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 120: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(351, 293), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #52: C1(1763697554.215) C2(1763697554.230) C3(1763697554.223) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 123: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(347, 294), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #53: C1(1763697554.255) C2(1763697554.270) C3(1763697554.263) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 126: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(343, 295), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #54: C1(1763697554.295) C2(1763697554.310) C3(1763697554.303) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 129: 输出 1 组三路融合结果
+2025-12-11 11:47:01 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(339, 296), should_assign=False
+2025-12-11 11:47:01 - core.ResultBuffer - INFO - 输出结果 #55: C1(1763697554.335) C2(1763697554.350) C3(1763697554.343) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:01 - __main__ - INFO - Frame 133: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(335, 298), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #56: C1(1763697554.375) C2(1763697554.390) C3(1763697554.383) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 136: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(331, 299), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #57: C1(1763697554.415) C2(1763697554.430) C3(1763697554.423) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 138: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(327, 300), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #58: C1(1763697554.455) C2(1763697554.470) C3(1763697554.463) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 142: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(323, 302), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #59: C1(1763697554.495) C2(1763697554.510) C3(1763697554.503) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 144: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(319, 304), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #60: C1(1763697554.535) C2(1763697554.550) C3(1763697554.543) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 148: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(315, 305), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #61: C1(1763697554.575) C2(1763697554.590) C3(1763697554.583) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 151: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(311, 308), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #62: C1(1763697554.615) C2(1763697554.630) C3(1763697554.623) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 155: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(307, 310), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #63: C1(1763697554.655) C2(1763697554.670) C3(1763697554.663) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 158: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(303, 311), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #64: C1(1763697554.695) C2(1763697554.710) C3(1763697554.703) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 160: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(299, 312), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #65: C1(1763697554.735) C2(1763697554.750) C3(1763697554.743) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 165: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(294, 314), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #66: C1(1763697554.775) C2(1763697554.790) C3(1763697554.783) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 168: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(290, 316), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #67: C1(1763697554.815) C2(1763697554.830) C3(1763697554.823) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 170: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(286, 317), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #68: C1(1763697554.855) C2(1763697554.870) C3(1763697554.863) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 172: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(282, 319), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #69: C1(1763697554.895) C2(1763697554.910) C3(1763697554.903) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 176: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(278, 321), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #70: C1(1763697554.935) C2(1763697554.950) C3(1763697554.943) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 178: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(274, 323), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #71: C1(1763697554.975) C2(1763697554.990) C3(1763697554.983) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 181: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(271, 324), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #72: C1(1763697555.015) C2(1763697555.030) C3(1763697555.023) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 184: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(267, 326), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #73: C1(1763697555.055) C2(1763697555.070) C3(1763697555.063) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 186: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(263, 328), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #74: C1(1763697555.095) C2(1763697555.110) C3(1763697555.103) | 参与者数: 5 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 190: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(259, 329), should_assign=False
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=3, start=(550, 173), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #75: C1(1763697555.135) C2(1763697555.150) C3(1763697555.143) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 192: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - vision.SDKinfer - DEBUG - C1 F100: 20 boxes
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(255, 331), should_assign=False
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=4, start=(550, 173), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #76: C1(1763697555.175) C2(1763697555.190) C3(1763697555.183) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 196: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(251, 333), should_assign=False
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=5, start=(550, 173), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #77: C1(1763697555.215) C2(1763697555.230) C3(1763697555.223) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 199: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - __main__ - DEBUG - C1 Frame 200: 3 tracked objects
+2025-12-11 11:47:02 - __main__ - INFO - 缓冲区状态: C1=25 C2=20 C3=0
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(248, 334), should_assign=False
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=6, start=(550, 173), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #78: C1(1763697555.255) C2(1763697555.270) C3(1763697555.263) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 201: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - vision.SDKinfer - DEBUG - C2 F100: 18 boxes
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(244, 335), should_assign=False
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=7, start=(550, 173), should_assign=False
+2025-12-11 11:47:02 - core.ResultBuffer - INFO - 输出结果 #79: C1(1763697555.295) C2(1763697555.310) C3(1763697555.303) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:02 - __main__ - INFO - Frame 205: 输出 1 组三路融合结果
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(241, 337), should_assign=False
+2025-12-11 11:47:02 - core.Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=8, start=(550, 173), should_assign=False
+2025-12-11 11:47:03 - core.ResultBuffer - INFO - 输出结果 #80: C1(1763697555.335) C2(1763697555.350) C3(1763697555.343) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:03 - __main__ - INFO - Frame 207: 输出 1 组三路融合结果
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(237, 339), should_assign=False
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=9, start=(550, 173), should_assign=False
+2025-12-11 11:47:03 - core.ResultBuffer - INFO - 输出结果 #81: C1(1763697555.375) C2(1763697555.390) C3(1763697555.383) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:03 - __main__ - INFO - Frame 210: 输出 1 组三路融合结果
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(234, 341), should_assign=False
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=10, start=(550, 173), should_assign=False
+2025-12-11 11:47:03 - core.ResultBuffer - INFO - 输出结果 #82: C1(1763697555.415) C2(1763697555.430) C3(1763697555.423) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:03 - __main__ - INFO - Frame 214: 输出 1 组三路融合结果
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(230, 342), should_assign=False
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=11, start=(550, 173), should_assign=False
+2025-12-11 11:47:03 - core.ResultBuffer - INFO - 输出结果 #83: C1(1763697555.455) C2(1763697555.470) C3(1763697555.463) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:03 - __main__ - INFO - Frame 217: 输出 1 组三路融合结果
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(226, 346), should_assign=False
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 10: pixel_history_len=12, start=(550, 173), should_assign=False
+2025-12-11 11:47:03 - core.ResultBuffer - INFO - 输出结果 #84: C1(1763697555.495) C2(1763697555.510) C3(1763697555.503) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:03 - __main__ - INFO - Frame 219: 输出 1 组三路融合结果
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(222, 348), should_assign=False
+2025-12-11 11:47:03 - core.ResultBuffer - INFO - 输出结果 #85: C1(1763697555.535) C2(1763697555.550) C3(1763697555.543) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:03 - __main__ - INFO - Frame 223: 输出 1 组三路融合结果
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(219, 350), should_assign=False
+2025-12-11 11:47:03 - core.ResultBuffer - INFO - 输出结果 #86: C1(1763697555.575) C2(1763697555.590) C3(1763697555.583) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:03 - __main__ - INFO - Frame 225: 输出 1 组三路融合结果
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(215, 351), should_assign=False
+2025-12-11 11:47:03 - core.ResultBuffer - INFO - 输出结果 #87: C1(1763697555.615) C2(1763697555.630) C3(1763697555.623) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:03 - __main__ - INFO - Frame 228: 输出 1 组三路融合结果
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(212, 353), should_assign=False
+2025-12-11 11:47:03 - core.ResultBuffer - INFO - 输出结果 #88: C1(1763697555.655) C2(1763697555.670) C3(1763697555.663) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:03 - __main__ - INFO - Frame 231: 输出 1 组三路融合结果
+2025-12-11 11:47:03 - core.Fusion - INFO - [DEBUG C3] Track 6: pixel_history_len=30, start=(208, 355), should_assign=False
+2025-12-11 11:47:03 - core.ResultBuffer - INFO - 输出结果 #89: C1(1763697555.695) C2(1763697555.710) C3(1763697555.703) | 参与者数: 6 | MQTT: 失败/未配置
+2025-12-11 11:47:03 - __main__ - INFO - Frame 235: 输出 1 组三路融合结果
+2025-12-11 11:47:03 - __main__ - INFO - 收到停止信号，正在退出...
+2025-12-11 11:47:03 - __main__ - INFO - 收到停止信号，正在退出...
+2025-12-11 11:47:03 - __main__ - INFO - 收到停止信号，正在退出...
+2025-12-11 11:47:03 - __main__ - INFO - 所有处理完成
+2025-12-11 11:47:03 - __main__ - INFO - 准备保存 90 帧的JSON数据
+2025-12-11 11:47:03 - __main__ - INFO - 收到停止信号，正在退出...
+2025-12-11 11:47:03 - core.Fusion - INFO - ======================================================================
+2025-12-11 11:47:03 - core.Fusion - INFO - ✅ JSON数据已保存
+2025-12-11 11:47:03 - core.Fusion - INFO -    文件路径: /zhw/no-frame-sync/output_fusion_refactored.json
+2025-12-11 11:47:03 - core.Fusion - INFO -    数据条目: 90 条
+2025-12-11 11:47:03 - core.Fusion - INFO -    文件大小: 126.92 KB
+2025-12-11 11:47:03 - core.Fusion - INFO - ======================================================================
+2025-12-11 11:47:03 - __main__ - INFO - ============================================================
+2025-12-11 11:47:03 - __main__ - INFO - 最终处理统计报告
+2025-12-11 11:47:03 - __main__ - INFO - 成功处理的帧数: 236帧
+2025-12-11 11:47:03 - __main__ - INFO - ============================================================
+2025-12-11 11:47:03 - __main__ - INFO - 最终ByteTracker优化统计
+2025-12-11 11:47:03 - __main__ - INFO - DEBUG - 跟踪器输入统计:
+2025-12-11 11:47:03 - __main__ - INFO - C1: 调用120次, 空输入0次, 非空120次, 总检测数451, 平均3.8个/帧
+2025-12-11 11:47:03 - __main__ - INFO - C2: 调用117次, 空输入112次, 非空5次, 总检测数5, 平均0.0个/帧
+2025-12-11 11:47:03 - __main__ - INFO - C3: 调用90次, 空输入0次, 非空90次, 总检测数406, 平均4.5个/帧
+2025-12-11 11:47:03 - __main__ - INFO - C1:
+2025-12-11 11:47:03 - __main__ - INFO -   总帧数: 120
+2025-12-11 11:47:03 - __main__ - INFO -   跟踪帧: 61 (50.8%)
+2025-12-11 11:47:03 - __main__ - INFO -   预测帧: 59 (49.2%)
+2025-12-11 11:47:03 - __main__ - INFO -   性能提升: 1.00x
+2025-12-11 11:47:03 - __main__ - INFO -   平均跟踪耗时: 0.003s
+2025-12-11 11:47:03 - __main__ - INFO -   平均预测耗时: 0.001s
+2025-12-11 11:47:03 - __main__ - INFO - C2:
+2025-12-11 11:47:03 - __main__ - INFO -   总帧数: 117
+2025-12-11 11:47:03 - __main__ - INFO -   跟踪帧: 115 (98.3%)
+2025-12-11 11:47:03 - __main__ - INFO -   预测帧: 2 (1.7%)
+2025-12-11 11:47:03 - __main__ - INFO -   性能提升: 1.00x
+2025-12-11 11:47:03 - __main__ - INFO -   平均跟踪耗时: 0.000s
+2025-12-11 11:47:03 - __main__ - INFO -   平均预测耗时: 0.000s
+2025-12-11 11:47:03 - __main__ - INFO - C3:
+2025-12-11 11:47:03 - __main__ - INFO -   总帧数: 90
+2025-12-11 11:47:03 - __main__ - INFO -   跟踪帧: 46 (51.1%)
+2025-12-11 11:47:03 - __main__ - INFO -   预测帧: 44 (48.9%)
+2025-12-11 11:47:03 - __main__ - INFO -   性能提升: 1.00x
+2025-12-11 11:47:03 - __main__ - INFO -   平均跟踪耗时: 0.003s
+2025-12-11 11:47:03 - __main__ - INFO -   平均预测耗时: 0.001s
+2025-12-11 11:47:03 - __main__ - INFO - ============================================================
+2025-12-11 11:47:03 - __main__ - INFO - 程序结束，刷新缓冲区...
+2025-12-11 11:47:03 - core.ResultBuffer - INFO - 缓冲区刷新完成，共输出 90 组结果
+2025-12-11 11:47:03 - __main__ - INFO - 正在保存JSON数据
+2025-12-11 11:47:03 - __main__ - INFO - 准备保存 90 帧的JSON数据
+2025-12-11 11:47:03 - core.Fusion - INFO - ======================================================================
+2025-12-11 11:47:03 - core.Fusion - INFO - ✅ JSON数据已保存
+2025-12-11 11:47:03 - core.Fusion - INFO -    文件路径: /zhw/no-frame-sync/output_fusion_refactored.json
+2025-12-11 11:47:03 - core.Fusion - INFO -    数据条目: 90 条
+2025-12-11 11:47:03 - core.Fusion - INFO -    文件大小: 126.92 KB
+2025-12-11 11:47:03 - core.Fusion - INFO - ======================================================================
+2025-12-11 11:47:03 - vision.CameraManager - INFO - 停止所有摄像头进程
+2025-12-11 11:47:03 - vision.CameraManager - INFO - 终止Camera1进程
+2025-12-11 11:47:04 - vision.CameraManager - INFO - 终止Camera2进程
+2025-12-11 11:47:04 - vision.CameraManager - INFO - 终止Camera3进程
+2025-12-11 11:47:05 - vision.CameraManager - INFO - 所有摄像头进程已停止
+2025-12-11 11:47:05 - __main__ - INFO - ======================================================================
+2025-12-11 11:47:05 - __main__ - INFO - 融合系统已停止
+2025-12-11 11:47:05 - __main__ - INFO - 日志文件: /zhw/no-frame-sync/logs/fusion_system.log
+2025-12-11 11:47:05 - __main__ - INFO - ======================================================================
+2025-12-11 11:47:05 - __main__ - INFO - 资源清理完成
