@@ -134,81 +134,6 @@ class VehicleConfig:
                 'bus': ['truck', 'van', 'car'],
             }
 
-@dataclass
-class CameraLaneConfig:
-    """单个摄像头的车道配置 - 用于雷视融合的车道过滤"""
-    camera_id: int                                       # 摄像头ID (1, 2, 3)
-    num_lanes: int                                       # 车道数
-    lane_pixel_ranges: Dict[int, Tuple[int, int]] = None # 车道ID → (像素x_min, 像素x_max)
-    
-    def get_lane_from_pixel(self, pixel_x: int) -> Optional[int]:
-        """根据像素x坐标获取车道ID，返回None如果不在任何车道内"""
-        if self.lane_pixel_ranges is None:
-            return None
-        for lane_id, (x_min, x_max) in self.lane_pixel_ranges.items():
-            if x_min <= pixel_x <= x_max:
-                return lane_id
-        return None
-
-
-@dataclass
-class RadarVisionLaneConfig:
-    """雷视融合的车道配置管理器"""
-    camera_configs: Dict[int, CameraLaneConfig] = None  # 摄像头ID → CameraLaneConfig
-    
-    def __post_init__(self):
-        if self.camera_configs is None:
-            # ⚠️ 这些是默认值，需要用户根据实际摄像头的车道像素范围进行调整！
-            self.camera_configs = {
-                # camera1: 5车道，每个车道约256像素
-                1: CameraLaneConfig(
-                    camera_id=1,
-                    num_lanes=5,
-                    lane_pixel_ranges={
-                        1: (0, 256),
-                        2: (256, 512),
-                        3: (512, 768),
-                        4: (768, 1024),
-                        5: (1024, 1280),
-                    }
-                ),
-                # camera2: 5车道，每个车道约256像素
-                2: CameraLaneConfig(
-                    camera_id=2,
-                    num_lanes=5,
-                    lane_pixel_ranges={
-                        1: (0, 256),
-                        2: (256, 512),
-                        3: (512, 768),
-                        4: (768, 1024),
-                        5: (1024, 1280),
-                    }
-                ),
-                # camera3: 3车道，每个车道约427像素
-                3: CameraLaneConfig(
-                    camera_id=3,
-                    num_lanes=3,
-                    lane_pixel_ranges={
-                        1: (0, 427),
-                        2: (427, 853),
-                        3: (853, 1280),
-                    }
-                ),
-            }
-    
-    def get_camera_config(self, camera_id: int) -> Optional[CameraLaneConfig]:
-        """获取摄像头的车道配置"""
-        if self.camera_configs is None:
-            return None
-        return self.camera_configs.get(camera_id)
-    
-    def get_vision_lane(self, camera_id: int, pixel_x: int) -> Optional[int]:
-        """获取视觉目标所在的车道"""
-        config = self.get_camera_config(camera_id)
-        if config is None:
-            return None
-        return config.get_lane_from_pixel(pixel_x)
-
 
 @dataclass
 class FusionConfig:
@@ -224,12 +149,8 @@ class FusionConfig:
     TIME_WINDOW_STRICT: int = 30
     TIME_WINDOW_FLEXIBLE: int = 60
     
-    # 🔧 新增：融合时间窗口（参考main_1015）
+    # 🔧 融合时间窗口
     FUSION_TIME_WINDOW: int = 60
-    
-    # 🔧 新增：像素Y值阈值（用于判断是否在底部区域，参考main_1015）
-    PIXEL_BOTTOM_THRESHOLD: float = 700
-    PIXEL_TOP_THRESHOLD: float = 1080
     
     # C2 出口区域 (BEV坐标)
     C2_EXIT_REGION_C3: np.ndarray = None
@@ -238,8 +159,6 @@ class FusionConfig:
     # 雷视融合区域 (像素坐标) - 用于标记可进行雷视融合的区域
     RADAR_VISION_FUSION_AREAS: Dict[int, np.ndarray] = None
     
-    # 🔧 新增：雷视融合的车道配置
-    RADAR_VISION_LANE_CONFIG: RadarVisionLaneConfig = None
     
     def __post_init__(self):
         if self.C2_EXIT_REGION_C3 is None:
@@ -256,8 +175,6 @@ class FusionConfig:
                 2: np.array([[0, 720], [1280, 720], [1280, 418], [109, 432]], dtype=np.int32),
                 3: np.array([[328, 472], [186, 720], [1033, 720], [985, 468]], dtype=np.int32),
             }
-        if self.RADAR_VISION_LANE_CONFIG is None:
-            self.RADAR_VISION_LANE_CONFIG = RadarVisionLaneConfig()
 
 @dataclass
 class TimestampConfig:
