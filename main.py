@@ -60,6 +60,7 @@ from core.Fusion import CrossCameraFusion
 from core.RadarVisionFusion import RadarVisionFusionProcessor, RadarDataLoader, OutputObject
 from vision.CameraManager import CameraManager
 from core.ResultBuffer import ResultOutputManager
+from config.region_config import get_lane_for_point
 
 # 创建共享布尔值用于停止运行线程
 cancel_flag = multiprocessing.Value('b', False)
@@ -208,6 +209,9 @@ def batch_convert_track_results(tracked_objects: List, result: dict, camera_id: 
         center_y = int(tlbr[3])
         pixel_point = (center_x, center_y)
         
+        # 判断车道所属
+        lane = get_lane_for_point(camera_id, center_x, center_y)
+        
         # 检查是否在雷视融合区域内
         in_fusion_area = GeometryUtils.is_in_radar_vision_fusion_area(pixel_point, camera_id)
         
@@ -220,6 +224,7 @@ def batch_convert_track_results(tracked_objects: List, result: dict, camera_id: 
             'center_point': [(tlbr[0] + tlbr[2]) / 2, (tlbr[1] + tlbr[3]) / 2],
             'timestamp': result.get('timestamp', time.time()),
             'camera_id': camera_id,
+            'lane': lane,  # 新增：车道信息
             'in_fusion_area': in_fusion_area  # 新增：标记是否在融合区域内
         }
         tracked_detections.append(detection)
@@ -360,7 +365,8 @@ if __name__ == "__main__":
                     radar_fusion_processors[camera_id] = RadarVisionFusionProcessor(
                         fusion_area_geo=None,  # 使用融合区域判断已在GlobalID分配时完成
                         lat_offset=-0.00000165,
-                        lon_offset=0.0000450
+                        lon_offset=0.0000450,
+                        enable_lane_filtering=True  # 启用三层过滤（象限 + S-L + 车道）
                     )
                     
                     # 将该摄像头的雷达数据添加到对应的处理器
@@ -617,6 +623,12 @@ if __name__ == "__main__":
                         lng, lat = geo_result
                         confidence = global_target.confidence_history[-1] if global_target.confidence_history else 0.0
                         
+                        # 获取车道信息（从最后一个像素位置）
+                        lane = None
+                        if global_target.pixel_trajectory:
+                            pixel_x, pixel_y = global_target.pixel_trajectory[-1]
+                            lane = get_lane_for_point(camera_id, pixel_x, pixel_y)
+                        
                         vision_obj = OutputObject(
                             timestamp="",
                             cameraid=global_target.camera_id,
@@ -624,7 +636,9 @@ if __name__ == "__main__":
                             confidence=confidence,
                             track_id=global_target.global_id,
                             lon=lng,
-                            lat=lat
+                            lat=lat,
+                            pixel_x=pixel_x if global_target.pixel_trajectory else None,
+                            lane=lane
                         )
                         vision_objects.append(vision_obj)
                     
@@ -646,6 +660,10 @@ if __name__ == "__main__":
                         
                         # 检查是否已经添加过这个 global_id
                         if not any(v.track_id == local_target.matched_global_id for v in vision_objects):
+                            # 获取车道信息
+                            pixel_x, pixel_y = local_target.current_pixel_pos
+                            lane = get_lane_for_point(camera_id, pixel_x, pixel_y)
+                            
                             vision_obj = OutputObject(
                                 timestamp="",
                                 cameraid=local_target.camera_id,
@@ -653,7 +671,9 @@ if __name__ == "__main__":
                                 confidence=local_target.confidence,
                                 track_id=local_target.matched_global_id,
                                 lon=lng,
-                                lat=lat
+                                lat=lat,
+                                pixel_x=pixel_x,
+                                lane=lane
                             )
                             vision_objects.append(vision_obj)
                     

@@ -5,6 +5,7 @@
 2. 与摄像头融合结果进行时间戳匹配
 3. 基于地理坐标进行目标匹配
 4. 更新输出对象的 radar_id 字段
+5. 集成三层过滤：象限过滤 + 距离阈值 (S-L) + 车道过滤
 """
 
 import json
@@ -14,6 +15,14 @@ import numpy as np
 from collections import defaultdict, deque
 from datetime import datetime
 from typing import List, Dict, Tuple, Optional
+
+# 导入车道配置
+try:
+    from config.region_config import LANE_CONFIG, get_lane_for_point
+    LANE_CONFIG_AVAILABLE = True
+except ImportError:
+    LANE_CONFIG_AVAILABLE = False
+    print("⚠️ 警告: 无法导入车道配置 (config.region_config)，将禁用车道过滤")
 
 
 # ==========================================
@@ -144,17 +153,18 @@ class Track:
 # ==========================================
 class RadarObject:
     """雷达目标"""
-    def __init__(self, radar_id, latitude, longitude, speed=0.0, azimuth=0.0):
+    def __init__(self, radar_id, latitude, longitude, speed=0.0, azimuth=0.0, lane=None):
         self.id = radar_id
         self.latitude = latitude
         self.longitude = longitude
         self.speed = float(speed or 0)
         self.azimuth = float(azimuth or 0)
+        self.lane = lane  # 雷达的车道信息 (1-5对应lane_1到lane_5)
 
 
 class OutputObject:
     """输出对象"""
-    def __init__(self, timestamp, cameraid, type_name, confidence, track_id, lon, lat):
+    def __init__(self, timestamp, cameraid, type_name, confidence, track_id, lon, lat, pixel_x=None, lane=None):
         self.timestamp = timestamp
         self.cameraid = cameraid
         self.type = type_name
@@ -163,6 +173,8 @@ class OutputObject:
         self.radar_id = None  # 初始为None，由融合模块填充
         self.lon = lon
         self.lat = lat
+        self.pixel_x = pixel_x  # 像素x坐标，用于车道判断
+        self.lane = lane  # 车道信息（如 'lane_1', 'lane_2' 等）
 
     def to_dict(self):
         """转换为字典"""
@@ -173,6 +185,7 @@ class OutputObject:
             'confidence': self.confidence,
             'track_id': self.track_id,
             'radar_id': self.radar_id,
+            'lane': self.lane,
             'lon': self.lon,
             'lat': self.lat
         }
@@ -192,14 +205,15 @@ class RadarVisionFusionProcessor:
     4. 更新输出对象的 radar_id 字段
     """
 
-    def __init__(self, fusion_area_geo=None, lat_offset=0.0, lon_offset=0.0):
+    def __init__(self, fusion_area_geo=None, lat_offset=0.0, lon_offset=0.0, enable_lane_filtering=True):
         """
-        初始化雷达融合处理器 - 集成高级融合逻辑
+        初始化雷达融合处理器 - 集成高级融合逻辑（三层过滤）
         
         Args:
             fusion_area_geo: 融合区域 (地理坐标多边形)
             lat_offset: 纬度偏移
             lon_offset: 经度偏移
+            enable_lane_filtering: 是否启用车道过滤 (需要车道配置可用)
         """
         # 融合参数
         self.MAX_LANE_DIFF = 5.0      # 横向距离阈值 (米) - 放宽以提高匹配率
@@ -216,6 +230,16 @@ class RadarVisionFusionProcessor:
         self.fusion_area_geo = fusion_area_geo
         self.lat_offset = lat_offset
         self.lon_offset = lon_offset
+        
+        # 🔧 车道过滤配置
+        self.enable_lane_filtering = enable_lane_filtering and LANE_CONFIG_AVAILABLE
+        if self.enable_lane_filtering:
+            print("✅ 三层过滤已启用: 象限 + S-L距离 + 车道")
+        else:
+            if enable_lane_filtering and not LANE_CONFIG_AVAILABLE:
+                print("⚠️ 车道过滤已禁用: 车道配置不可用")
+            else:
+                print("✅ 两层过滤已启用: 象限 + S-L距离（车道过滤未启用）")
         
         # 雷达缓冲区 (时间戳 -> 雷达目标列表)
         self.radar_buffer = defaultdict(list)
@@ -234,6 +258,7 @@ class RadarVisionFusionProcessor:
             'vision_objects_processed': 0,
             'successful_matches': 0,
             'failed_matches': 0,
+            'lane_filtered_candidates': 0,  # 被车道过滤排除的候选
         }
 
     def get_dynamic_long_threshold(self, speed):
@@ -244,6 +269,67 @@ class RadarVisionFusionProcessor:
             return 10.0
         else:
             return 25.0
+    
+    # 🔧 新增：车道过滤相关方法
+    def check_lane_compatibility(self, radar_obj, vision_obj) -> Tuple[bool, str]:
+        """
+        检查雷达目标和视觉目标的车道兼容性（三层过滤中的第三层）
+        
+        Args:
+            radar_obj: 雷达目标
+            vision_obj: 视觉目标 (OutputObject)
+            
+        Returns:
+            (兼容性, 原因)
+            - (True, "lane_match") - 车道完全匹配
+            - (True, "no_radar_lane") - 雷达无车道信息，假定兼容
+            - (True, "no_vision_lane") - 视觉目标无车道信息，假定兼容
+            - (False, "lane_mismatch") - 车道不匹配
+        """
+        if not self.enable_lane_filtering:
+            return True, "lane_filtering_disabled"
+        
+        # 获取雷达的车道（直接使用，不再推断）
+        if not hasattr(radar_obj, 'lane') or radar_obj.lane is None:
+            # 雷达无车道信息，假定兼容（宽松策略）
+            return True, "no_radar_lane"
+        
+        # 获取视觉目标的车道
+        if not hasattr(vision_obj, 'lane') or vision_obj.lane is None or vision_obj.lane == 'unknown':
+            # 视觉无车道信息，假定兼容（宽松策略）
+            return True, "no_vision_lane"
+        
+        # 直接比较雷达和视觉的车道信息
+        if radar_obj.lane == vision_obj.lane:
+            return True, "lane_match"
+        else:
+            return False, "lane_mismatch"
+    
+    def infer_radar_lane(self, radar_obj, vision_obj) -> Optional[str]:
+        """
+        根据地理坐标反推雷达目标的车道
+        通过找最接近的视觉目标来推断
+        
+        Args:
+            radar_obj: 雷达目标
+            vision_obj: 参考视觉目标
+            
+        Returns:
+            推断的车道名称（如 'lane_1'），或 None
+        """
+        if not vision_obj.lane or vision_obj.lane == 'unknown':
+            return None
+        
+        # 计算距离
+        dy = (vision_obj.lat - radar_obj.latitude) * LAT_TO_M
+        dx = (vision_obj.lon - radar_obj.longitude) * LON_TO_M
+        dist = math.sqrt(dx**2 + dy**2)
+        
+        # 只有距离足够近（15米内）时，才可信任这个推断
+        if dist < 15.0:
+            return vision_obj.lane
+        
+        return None
 
     def add_radar_data(self, timestamp, radar_objects):
         """
@@ -473,9 +559,15 @@ class RadarVisionFusionProcessor:
                 lat_diff = abs(dist * math.sin(delta_rad))
                 lon_diff = abs(dist * math.cos(delta_rad))
                 
-                # 距离阈值检查
+                # 距离阈值检查（第二层过滤：S-L）
                 long_thresh = self.get_dynamic_long_threshold(radar_obj.speed)
                 if lat_diff > self.MAX_LANE_DIFF or lon_diff > long_thresh:
+                    continue
+                
+                # 车道兼容性检查（第三层过滤：车道）
+                lane_compatible, lane_reason = self.check_lane_compatibility(radar_obj, v_obj)
+                if not lane_compatible:
+                    self.stats['lane_filtered_candidates'] = self.stats.get('lane_filtered_candidates', 0) + 1
                     continue
                 
                 # 计算总成本
@@ -645,12 +737,17 @@ class RadarDataLoader:
                         locus = []
                         for x in obj.get('locusList', []):
                             if x.get('objType') in VALID_RADAR_TYPES:
+                                # 将雷达的 lane (1-5) 转换为字符串格式 (lane_1 到 lane_5)
+                                radar_lane = x.get('lane', None)
+                                lane_str = f'lane_{radar_lane}' if radar_lane is not None else None
+                                
                                 radar_obj = RadarObject(
                                     radar_id=x.get('id', ''),
                                     latitude=float(x.get('latitude', 0)),
                                     longitude=float(x.get('longitude', 0)),
                                     speed=float(x.get('speed', 0)),
-                                    azimuth=float(x.get('azimuth', 0))
+                                    azimuth=float(x.get('azimuth', 0)),
+                                    lane=lane_str
                                 )
                                 locus.append(radar_obj)
 
