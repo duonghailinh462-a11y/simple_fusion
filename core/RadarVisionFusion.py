@@ -15,6 +15,7 @@ import numpy as np
 from collections import defaultdict, deque
 from datetime import datetime
 from typing import List, Dict, Tuple, Optional
+from scipy.optimize import linear_sum_assignment
 
 # 导入车道配置
 try:
@@ -304,33 +305,7 @@ class RadarVisionFusionProcessor:
             return True, "lane_match"
         else:
             return False, "lane_mismatch"
-    
-    def infer_radar_lane(self, radar_obj, vision_obj) -> Optional[str]:
-        """
-        根据地理坐标反推雷达目标的车道
-        通过找最接近的视觉目标来推断
-        
-        Args:
-            radar_obj: 雷达目标
-            vision_obj: 参考视觉目标
             
-        Returns:
-            推断的车道名称（如 'lane_1'），或 None
-        """
-        if not vision_obj.lane or vision_obj.lane == 'unknown':
-            return None
-        
-        # 计算距离
-        dy = (vision_obj.lat - radar_obj.latitude) * LAT_TO_M
-        dx = (vision_obj.lon - radar_obj.longitude) * LON_TO_M
-        dist = math.sqrt(dx**2 + dy**2)
-        
-        # 只有距离足够近（15米内）时，才可信任这个推断
-        if dist < 15.0:
-            return vision_obj.lane
-        
-        return None
-
     def add_radar_data(self, timestamp, radar_objects):
         """
         添加雷达数据到缓冲区
@@ -463,6 +438,131 @@ class RadarVisionFusionProcessor:
 
         return best_vision_obj if min_cost < 1e5 else None
 
+    def optimal_bipartite_matching(self, radar_objects, vision_objects):
+        """
+        🔄 最优二部图匹配（替代贪心算法）
+        使用匈牙利算法找到全局最优的匹配方案
+        
+        Args:
+            radar_objects: 雷达目标列表
+            vision_objects: 视觉目标列表
+            
+        Returns:
+            (radar_indices, vision_indices): 匹配对的索引列表
+        """
+        n_radar = len(radar_objects)
+        n_vision = len(vision_objects)
+        
+        if n_radar == 0 or n_vision == 0:
+            return [], []
+        
+        # 构建成本矩阵 (n_radar × n_vision)
+        # 如果无法匹配，成本设为极大值（1e6）
+        cost_matrix = np.full((n_radar, n_vision), 1e6, dtype=np.float32)
+        
+        for i, radar_obj in enumerate(radar_objects):
+            # 区域过滤
+            if self.fusion_area_geo and not point_in_polygon(
+                [radar_obj.longitude, radar_obj.latitude],
+                self.fusion_area_geo
+            ):
+                continue
+            
+            long_thresh = self.get_dynamic_long_threshold(radar_obj.speed)
+            
+            for j, v_obj in enumerate(vision_objects):
+                # 区域过滤
+                if self.fusion_area_geo and not point_in_polygon(
+                    [v_obj.calib_lon, v_obj.calib_lat],
+                    self.fusion_area_geo
+                ):
+                    continue
+                
+                # 数据有效性检查（防止NaN/Inf）
+                try:
+                    if (not isinstance(v_obj.calib_lat, (int, float)) or 
+                        not isinstance(v_obj.calib_lon, (int, float)) or
+                        not isinstance(radar_obj.latitude, (int, float)) or
+                        not isinstance(radar_obj.longitude, (int, float)) or
+                        math.isnan(v_obj.calib_lat) or math.isnan(v_obj.calib_lon) or
+                        math.isnan(radar_obj.latitude) or math.isnan(radar_obj.longitude) or
+                        math.isinf(v_obj.calib_lat) or math.isinf(v_obj.calib_lon) or
+                        math.isinf(radar_obj.latitude) or math.isinf(radar_obj.longitude)):
+                        cost_matrix[i, j] = 1e6
+                        continue
+                except (TypeError, ValueError):
+                    cost_matrix[i, j] = 1e6
+                    continue
+                
+                # 计算距离成本
+                dy = (v_obj.calib_lat - radar_obj.latitude) * LAT_TO_M
+                dx = (v_obj.calib_lon - radar_obj.longitude) * LON_TO_M
+                dist = math.sqrt(dx**2 + dy**2)
+                
+                # 计算方位角成本
+                angle = math.degrees(math.atan2(dx, dy))
+                if angle < 0:
+                    angle += 360
+                delta_rad = math.radians((angle - radar_obj.azimuth + 180) % 360 - 180)
+                
+                lat_diff = abs(dist * math.sin(delta_rad))
+                lon_diff = abs(dist * math.cos(delta_rad))
+                
+                # 检查计算结果的有效性
+                if math.isnan(lat_diff) or math.isnan(lon_diff) or math.isinf(lat_diff) or math.isinf(lon_diff):
+                    cost_matrix[i, j] = 1e6
+                    continue
+                
+                # 距离阈值检查（第二层过滤：S-L）
+                if lat_diff > self.MAX_LANE_DIFF or lon_diff > long_thresh:
+                    cost_matrix[i, j] = 1e6
+                    continue
+                
+                # 车道兼容性检查（第三层过滤：车道）
+                lane_compatible, _ = self.check_lane_compatibility(radar_obj, v_obj)
+                if not lane_compatible:
+                    self.stats['lane_filtered_candidates'] = self.stats.get('lane_filtered_candidates', 0) + 1
+                    cost_matrix[i, j] = 1e6
+                    continue
+                
+                # 计算总成本
+                cost = (10.0 * lat_diff) + (1.0 * lon_diff)
+                
+                # 检查总成本的有效性
+                if math.isnan(cost) or math.isinf(cost):
+                    cost_matrix[i, j] = 1e6
+                    continue
+                
+                # 忠诚度奖励
+                v_key = str(v_obj.track_id)
+                prev_fusion_id_radar = self.radar_id_map.get(radar_obj.id)
+                prev_fusion_id_vision = self.vision_id_map.get(v_key)
+                
+                if prev_fusion_id_radar and prev_fusion_id_radar == prev_fusion_id_vision:
+                    cost -= self.LOYALTY_BONUS
+                
+                # 最终成本有效性检查
+                if cost < 0 or math.isnan(cost) or math.isinf(cost):
+                    cost_matrix[i, j] = 1e6
+                else:
+                    cost_matrix[i, j] = cost
+        
+        # 使用匈牙利算法求解
+        radar_indices, vision_indices = linear_sum_assignment(cost_matrix)
+        
+        # 过滤掉无效匹配（成本 >= 1e5）
+        valid_matches = [
+            (r_idx, v_idx) 
+            for r_idx, v_idx in zip(radar_indices, vision_indices)
+            if cost_matrix[r_idx, v_idx] < 1e5
+        ]
+        
+        if valid_matches:
+            radar_indices, vision_indices = zip(*valid_matches)
+            return list(radar_indices), list(vision_indices)
+        else:
+            return [], []
+
     def process_frame(self, vision_timestamp, vision_objects):
         """
         处理单帧的雷视融合 - 集成高级融合逻辑
@@ -492,8 +592,19 @@ class RadarVisionFusionProcessor:
         
         # ===== 步骤 2：坐标校准 =====
         for v_obj in vision_objects:
-            v_obj.calib_lat = v_obj.lat + self.lat_offset
-            v_obj.calib_lon = v_obj.lon + self.lon_offset
+            # 检查坐标是否有效
+            try:
+                if (isinstance(v_obj.lat, (int, float)) and isinstance(v_obj.lon, (int, float)) and
+                    not math.isnan(v_obj.lat) and not math.isnan(v_obj.lon) and
+                    not math.isinf(v_obj.lat) and not math.isinf(v_obj.lon)):
+                    v_obj.calib_lat = v_obj.lat + self.lat_offset
+                    v_obj.calib_lon = v_obj.lon + self.lon_offset
+                else:
+                    v_obj.calib_lat = v_obj.lat
+                    v_obj.calib_lon = v_obj.lon
+            except (TypeError, AttributeError, ValueError):
+                v_obj.calib_lat = v_obj.lat
+                v_obj.calib_lon = v_obj.lon
         
         # ===== 步骤 3：找到最接近的雷达时间戳 =====
         radar_timestamp = self.find_closest_radar_timestamp(vision_timestamp)
@@ -515,110 +626,90 @@ class RadarVisionFusionProcessor:
         if not radar_objects:
             return vision_objects
         
+        # 数据清理：过滤掉坐标无效的雷达对象
+        valid_radar_objects = []
+        for radar_obj in radar_objects:
+            try:
+                if (hasattr(radar_obj, 'latitude') and hasattr(radar_obj, 'longitude') and
+                    isinstance(radar_obj.latitude, (int, float)) and isinstance(radar_obj.longitude, (int, float)) and
+                    not math.isnan(radar_obj.latitude) and not math.isnan(radar_obj.longitude) and
+                    not math.isinf(radar_obj.latitude) and not math.isinf(radar_obj.longitude)):
+                    valid_radar_objects.append(radar_obj)
+            except (TypeError, AttributeError):
+                continue
+        
+        if not valid_radar_objects:
+            return vision_objects
+        
+        radar_objects = valid_radar_objects
+        
+        # 数据清理：过滤掉坐标无效的视觉对象
+        valid_vision_objects = []
+        for v_obj in vision_objects:
+            try:
+                if (hasattr(v_obj, 'lat') and hasattr(v_obj, 'lon') and
+                    isinstance(v_obj.lat, (int, float)) and isinstance(v_obj.lon, (int, float)) and
+                    not math.isnan(v_obj.lat) and not math.isnan(v_obj.lon) and
+                    not math.isinf(v_obj.lat) and not math.isinf(v_obj.lon)):
+                    valid_vision_objects.append(v_obj)
+            except (TypeError, AttributeError):
+                continue
+        
+        if not valid_vision_objects:
+            return vision_objects
+        
+        vision_objects_to_match = valid_vision_objects
+        
         # ===== 步骤 4：初始化本帧的ID占用表（去重机制） =====
         used_fusion_ids = set()
         matched_vision_track_ids = set()
         
-        # ===== 步骤 5：雷达主动贪婪匹配视觉 =====
-        for radar_obj in radar_objects:
+        # ===== 步骤 5：【改进】最优二部图匹配（替代贪心算法） =====
+        # 使用匈牙利算法找到全局最优匹配，避免前期贪心造成后期缺配
+        radar_indices, vision_indices = self.optimal_bipartite_matching(radar_objects, vision_objects_to_match)
+        
+        # 处理匹配对
+        for radar_idx, vision_idx in zip(radar_indices, vision_indices):
+            radar_obj = radar_objects[radar_idx]
+            v_obj = vision_objects_to_match[vision_idx]
+            v_key = str(v_obj.track_id)
+            
             self.stats['radar_objects_processed'] += 1
+            self.stats['successful_matches'] += 1
             
-            # 区域过滤
-            if self.fusion_area_geo and not point_in_polygon(
-                [radar_obj.longitude, radar_obj.latitude],
-                self.fusion_area_geo
-            ):
-                continue
+            matched_vision_track_ids.add(v_obj.track_id)
             
-            best_vision_idx = -1
-            min_cost = 1e6
+            # 确定融合ID
+            fusion_id = self.vision_id_map.get(v_key) or self.radar_id_map.get(radar_obj.id)
+            if not fusion_id:
+                fusion_id = f"r{radar_obj.id[-4:]}-v{v_key}"
             
-            # 贪婪搜索最佳匹配的视觉目标
-            for j, v_obj in enumerate(vision_objects):
-                if v_obj.track_id in matched_vision_track_ids:
-                    continue  # 已匹配过，跳过
-                
-                # 区域过滤
-                if self.fusion_area_geo and not point_in_polygon(
-                    [v_obj.calib_lon, v_obj.calib_lat],
-                    self.fusion_area_geo
-                ):
-                    continue
-                
-                # 计算距离成本
-                dy = (v_obj.calib_lat - radar_obj.latitude) * LAT_TO_M
-                dx = (v_obj.calib_lon - radar_obj.longitude) * LON_TO_M
-                dist = math.sqrt(dx**2 + dy**2)
-                
-                # 计算方位角成本
-                angle = math.degrees(math.atan2(dx, dy))
-                if angle < 0:
-                    angle += 360
-                delta_rad = math.radians((angle - radar_obj.azimuth + 180) % 360 - 180)
-                
-                lat_diff = abs(dist * math.sin(delta_rad))
-                lon_diff = abs(dist * math.cos(delta_rad))
-                
-                # 距离阈值检查（第二层过滤：S-L）
-                long_thresh = self.get_dynamic_long_threshold(radar_obj.speed)
-                if lat_diff > self.MAX_LANE_DIFF or lon_diff > long_thresh:
-                    continue
-                
-                # 车道兼容性检查（第三层过滤：车道）
-                lane_compatible, lane_reason = self.check_lane_compatibility(radar_obj, v_obj)
-                if not lane_compatible:
-                    self.stats['lane_filtered_candidates'] = self.stats.get('lane_filtered_candidates', 0) + 1
-                    continue
-                
-                # 计算总成本
-                cost = (10.0 * lat_diff) + (1.0 * lon_diff)
-                
-                # 忠诚度奖励：如果之前匹配过，降低成本
-                v_key = str(v_obj.track_id)
-                prev_fusion_id_radar = self.radar_id_map.get(radar_obj.id)
-                prev_fusion_id_vision = self.vision_id_map.get(v_key)
-                
-                if prev_fusion_id_radar and prev_fusion_id_radar == prev_fusion_id_vision:
-                    cost -= self.LOYALTY_BONUS
-                
-                if cost < min_cost:
-                    min_cost = cost
-                    best_vision_idx = j
+            # 去重检查
+            if fusion_id in used_fusion_ids:
+                fusion_id = f"r{radar_obj.id[-4:]}-v{v_key}-{int(vision_timestamp*1000)%1000}"
             
-            # 匹配成功
-            if best_vision_idx != -1 and min_cost < 1e5:
-                v_obj = vision_objects[best_vision_idx]
-                v_key = str(v_obj.track_id)
-                matched_vision_track_ids.add(v_obj.track_id)
-                
-                # 确定融合ID
-                fusion_id = self.vision_id_map.get(v_key) or self.radar_id_map.get(radar_obj.id)
-                if not fusion_id:
-                    fusion_id = f"r{radar_obj.id[-4:]}-v{v_key}"
-                
-                # 去重检查
-                if fusion_id in used_fusion_ids:
-                    fusion_id = f"r{radar_obj.id[-4:]}-v{v_key}-{int(vision_timestamp*1000)%1000}"
-                
-                used_fusion_ids.add(fusion_id)
-                
-                # 更新映射
-                self.vision_id_map[v_key] = fusion_id
-                self.radar_id_map[radar_obj.id] = fusion_id
-                
-                # 创建或更新轨迹
-                track = Track(fusion_id, v_obj.calib_lat, v_obj.calib_lon, 
-                             radar_obj.speed, radar_obj.azimuth)
-                track.last_update_time = vision_timestamp
-                track.radar_id_ref = radar_obj.id
-                track.vision_id_ref = v_key
-                self.active_tracks[fusion_id] = track
-                
-                # 设置视觉目标的雷达ID（不更新坐标，保持视觉坐标）
-                v_obj.radar_id = radar_obj.id
-                self.stats['successful_matches'] += 1
-            else:
-                self.stats['failed_matches'] += 1
+            used_fusion_ids.add(fusion_id)
+            
+            # 更新映射
+            self.vision_id_map[v_key] = fusion_id
+            self.radar_id_map[radar_obj.id] = fusion_id
+            
+            # 创建或更新轨迹
+            track = Track(fusion_id, v_obj.calib_lat, v_obj.calib_lon, 
+                         radar_obj.speed, radar_obj.azimuth)
+            track.last_update_time = vision_timestamp
+            track.radar_id_ref = radar_obj.id
+            track.vision_id_ref = v_key
+            self.active_tracks[fusion_id] = track
+            
+            # 设置视觉目标的雷达ID（不更新坐标，保持视觉坐标）
+            v_obj.radar_id = radar_obj.id
+        
+        # 统计未匹配的雷达对象
+        matched_radar_count = len(radar_indices)
+        unmatched_radar_count = len(radar_objects) - matched_radar_count
+        if unmatched_radar_count > 0:
+            self.stats['failed_matches'] += unmatched_radar_count
         
         # ===== 步骤 6：处理未匹配的视觉目标 =====
         for v_obj in vision_objects:
