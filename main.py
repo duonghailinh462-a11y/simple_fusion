@@ -619,12 +619,30 @@ if __name__ == "__main__":
                     # 取第一个摄像头的时间戳作为基准（因为它们应该同步）
                     vision_timestamp = current_frame_results[1].get('timestamp', time.time()) if 1 in current_frame_results else time.time()
                     
-                    # 找到最接近的雷达时间戳
+                    # 转换vision_timestamp为字符串格式（如果是数字）用于比较
+                    if isinstance(vision_timestamp, (int, float)):
+                        from datetime import datetime
+                        vision_ts_str = datetime.fromtimestamp(vision_timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                    else:
+                        vision_ts_str = str(vision_timestamp)
+                    
+                    # 找到最接近的雷达时间戳（直接用字符串比较）
+                    # 注意：ISO 8601格式的字符串可以直接比较
                     closest_radar_ts = min(radar_timestamps_list, 
-                                          key=lambda ts: abs(ts - (vision_timestamp if isinstance(vision_timestamp, (int, float)) else time.time())))
+                                          key=lambda ts: abs(
+                                              int(ts.replace('-', '').replace(':', '').replace(' ', '').replace('.', '')) -
+                                              int(vision_ts_str.replace('-', '').replace(':', '').replace(' ', '').replace('.', ''))
+                                          ))
                     
                     if closest_radar_ts in radar_data_loader.radar_data:
                         all_radar_data = radar_data_loader.radar_data[closest_radar_ts]
+                        
+                        # 调试日志：检查第一条雷达数据的timestamp
+                        if all_radar_data and current_frame == 1:
+                            first_radar = all_radar_data[0]
+                            logger.info(f"Frame {current_frame}: 第一条雷达数据 - type={type(first_radar).__name__}, "
+                                       f"timestamp_str={getattr(first_radar, 'timestamp_str', 'N/A')}, "
+                                       f"radar_id={getattr(first_radar, 'id', 'N/A')}")
                         
                         # 执行过滤
                         fusion_radar_data, direct_output_radar = radar_filter.batch_filter_radar_data(all_radar_data)

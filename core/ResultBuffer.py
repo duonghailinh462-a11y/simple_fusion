@@ -236,18 +236,14 @@ class ResultOutputManager:
                         lat = radar_data.get('lat')
                         
                         if lon is not None and lat is not None:
-                            # 使用雷达数据本身的时间戳，如果没有则使用当前时间
-                            radar_timestamp = radar_data.get('time') or radar_data.get('timestamp')
+                            # 🔧 简化：直接使用雷达数据中的原始时间戳字符串
+                            timestamp_str = radar_data.get('timestamp')
                             
-                            if radar_timestamp:
-                                # 如果时间戳是字符串格式，直接使用
-                                if isinstance(radar_timestamp, str):
-                                    timestamp_str = radar_timestamp
-                                else:
-                                    # 如果是数字时间戳，转换为字符串格式
-                                    timestamp_str = datetime.fromtimestamp(radar_timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                            else:
-                                # 如果没有时间戳，使用当前时间
+                            if not timestamp_str:
+                                # 如果没有时间戳，使用当前时间（备选方案）
+                                logger.warning(f"⚠️ 雷达数据缺少时间戳，使用当前时间")
+                                logger.warning(f"   雷达数据内容: {radar_data}")
+                                logger.warning(f"   雷达数据键: {list(radar_data.keys())}")
                                 timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                             
                             radar_participant = {

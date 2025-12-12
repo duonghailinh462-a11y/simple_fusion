@@ -118,6 +118,7 @@ class RadarDataFilter:
                 lon = radar_data.longitude
                 lat = radar_data.latitude
                 # 将RadarObject转换为字典格式用于输出
+                # 直接使用原始时间字符串
                 data_dict = {
                     'radar_id': radar_data.id,
                     'lon': lon,
@@ -125,7 +126,7 @@ class RadarDataFilter:
                     'speed': radar_data.speed,
                     'azimuth': radar_data.azimuth,
                     'lane': radar_data.lane,
-                    'time': radar_data.timestamp
+                    'timestamp': radar_data.timestamp_str  # 直接使用原始时间字符串
                 }
             else:
                 logger.warning(f"⚠️ 不支持的雷达数据格式: {type(radar_data)}")
@@ -169,8 +170,14 @@ class RadarDataFilter:
             fusion_data, output_data = self.filter_radar_data(radar_data)
             if fusion_data:
                 fusion_data_list.append(fusion_data)
+                # 调试日志：记录融合区内的数据
+                if len(fusion_data_list) == 1:  # 只记录第一条
+                    logger.info(f"📍 第一条融合区内数据: timestamp={fusion_data.get('timestamp')}, radar_id={fusion_data.get('radar_id')}")
             if output_data:
                 direct_output_list.append(output_data)
+                # 调试日志：记录融合区外的数据
+                if len(direct_output_list) == 1:  # 只记录第一条
+                    logger.info(f"📍 第一条融合区外数据: timestamp={output_data.get('timestamp')}, radar_id={output_data.get('radar_id')}")
         
         logger.info(f"📊 批量过滤完成: 总数={len(radar_data_list)}, "
                    f"融合区内={len(fusion_data_list)}, 融合区外={len(direct_output_list)}")

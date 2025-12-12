@@ -154,13 +154,14 @@ class Track:
 # ==========================================
 class RadarObject:
     """雷达目标"""
-    def __init__(self, radar_id, latitude, longitude, speed=0.0, azimuth=0.0, lane=None):
+    def __init__(self, radar_id, latitude, longitude, speed=0.0, azimuth=0.0, lane=None, timestamp_str=None):
         self.id = radar_id
         self.latitude = latitude
         self.longitude = longitude
         self.speed = float(speed or 0)
         self.azimuth = float(azimuth or 0)
         self.lane = lane  # 雷达的车道信息 (1-5对应lane_1到lane_5)
+        self.timestamp_str = timestamp_str  # 雷达数据的原始时间戳字符串 (如 "2025-11-21 11:59:10.171")
 
 
 class OutputObject:
@@ -342,34 +343,46 @@ class RadarVisionFusionProcessor:
         closest_ts = None
         min_diff = float('inf')
 
+        # 处理两种时间戳格式：字符串和数字
+        # 如果radar_timestamps_list中是字符串，需要转换为可比较的数字
         for radar_ts in radar_timestamps_list:
-            diff = abs(radar_ts - vision_timestamp)
+            if isinstance(radar_ts, str):
+                # 字符串时间戳：转换为数字用于比较
+                # 格式: "2025-11-21 11:59:10.171"
+                radar_ts_numeric = int(radar_ts.replace('-', '').replace(':', '').replace(' ', '').replace('.', ''))
+            else:
+                # 数字时间戳：直接使用
+                radar_ts_numeric = radar_ts
+            
+            # vision_timestamp 可能是数字或字符串
+            if isinstance(vision_timestamp, str):
+                vision_ts_numeric = int(vision_timestamp.replace('-', '').replace(':', '').replace(' ', '').replace('.', ''))
+            else:
+                vision_ts_numeric = vision_timestamp
+            
+            diff = abs(radar_ts_numeric - vision_ts_numeric)
             if diff < min_diff:
                 min_diff = diff
                 closest_ts = radar_ts
 
         # 尝试多个阈值来找到匹配
         # 1. 严格阈值：0.5秒（MAX_TIME_DIFF）
-        if closest_ts is not None and min_diff <= max_time_diff:
+        if closest_ts is not None and min_diff <= max_time_diff * 1000000:  # 转换为微秒级别
             return closest_ts
         
         # 2. 宽松阈值：2秒（MAX_TIME_DIFF_LOOSE）
-        if closest_ts is not None and min_diff <= self.MAX_TIME_DIFF_LOOSE:
+        if closest_ts is not None and min_diff <= self.MAX_TIME_DIFF_LOOSE * 1000000:  # 转换为微秒级别
             return closest_ts
         
         # 3. 诊断输出：如果两个阈值都不满足，输出警告信息
         if closest_ts is not None and time.time() - self.last_diag_time > self.diag_interval:
             min_ts = min(radar_timestamps_list)
             max_ts = max(radar_timestamps_list)
-            vision_str = format_ts(vision_timestamp)
-            closest_str = format_ts(closest_ts)
-            min_str = format_ts(min_ts)
-            max_str = format_ts(max_ts)
             print(f"\n⚠️ [RADAR_FUSION DIAGNOSTIC]")
-            print(f"   视觉时间戳: {vision_str} ({vision_timestamp:.3f})")
-            print(f"   最接近的雷达时间戳: {closest_str} ({closest_ts:.3f})")
-            print(f"   时间差: {min_diff:.3f}秒 (严格阈值: {max_time_diff}秒, 宽松阈值: {self.MAX_TIME_DIFF_LOOSE}秒)")
-            print(f"   雷达时间范围: {min_str} ~ {max_str}")
+            print(f"   视觉时间戳: {vision_timestamp}")
+            print(f"   最接近的雷达时间戳: {closest_ts}")
+            print(f"   时间差: {min_diff / 1000000:.3f}秒 (严格阈值: {max_time_diff}秒, 宽松阈值: {self.MAX_TIME_DIFF_LOOSE}秒)")
+            print(f"   雷达时间范围: {min_ts} ~ {max_ts}")
             print(f"   雷达数据帧数: {len(radar_timestamps_list)}")
             self.last_diag_time = time.time()
         
@@ -812,6 +825,7 @@ class RadarDataLoader:
         """加载雷达数据"""
         try:
             with open(self.radar_file_path, 'r', encoding='utf-8') as f:
+                first_record = True
                 for line in f:
                     try:
                         obj = json.loads(line)
@@ -821,9 +835,17 @@ class RadarDataLoader:
                         if camera_id is None:
                             continue
                         
-                        ts = parse_time(obj.get('time', ''))
-                        if ts == 0:
+                        # 直接获取原始时间字符串，不进行转换
+                        time_str = obj.get('time', '')
+                        if not time_str:
                             continue
+                        
+                        # 调试日志：打印第一条有效的雷达数据
+                        if first_record:
+                            print(f"🔍 第一条有效雷达数据:")
+                            print(f"   原始时间字符串: {time_str}")
+                            print(f"   source_ip: {source_ip}, camera_id: {camera_id}")
+                            first_record = False
 
                         locus = []
                         for x in obj.get('locusList', []):
@@ -838,18 +860,19 @@ class RadarDataLoader:
                                     longitude=float(x.get('longitude', 0)),
                                     speed=float(x.get('speed', 0)),
                                     azimuth=float(x.get('azimuth', 0)),
-                                    lane=lane_str
+                                    lane=lane_str,
+                                    timestamp_str=time_str  # 直接传入原始时间字符串
                                 )
                                 locus.append(radar_obj)
 
                         if locus:
-                            # 存储到全局数据（向后兼容）
-                            self.radar_data[ts] = locus
+                            # 存储到全局数据（使用时间字符串作为键）
+                            self.radar_data[time_str] = locus
                             
                             # 存储到按摄像头分类的数据
-                            key = (camera_id, ts)
+                            key = (camera_id, time_str)
                             self.radar_data_by_camera[key] = locus
-                            self.camera_timestamps[camera_id].add(ts)
+                            self.camera_timestamps[camera_id].add(time_str)
 
                     except Exception as e:
                         print(f"  警告: 解析雷达数据行失败: {e}")
