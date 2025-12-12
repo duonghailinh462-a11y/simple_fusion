@@ -236,13 +236,12 @@ class ResultOutputManager:
                         lat = radar_data.get('lat')
                         
                         if lon is not None and lat is not None:
-                            # 🔧 简化：直接使用雷达数据中的原始时间戳字符串
+                            # 🔧 直接使用雷达数据中的原始时间戳字符串
                             timestamp_str = radar_data.get('timestamp')
                             
                             if not timestamp_str:
                                 # 如果没有时间戳，使用当前时间（备选方案）
-                                logger.warning(f"⚠️ 雷达数据缺少时间戳，使用当前时间")
-                                logger.warning(f"   雷达数据内容: {radar_data}")
+                                logger.warning(f"⚠️ 雷达字典数据缺少时间戳，使用当前时间")
                                 logger.warning(f"   雷达数据键: {list(radar_data.keys())}")
                                 timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                             
@@ -270,18 +269,13 @@ class ResultOutputManager:
                             if geo_result:
                                 lng, lat = geo_result
                                 
-                                # 使用雷达数据本身的时间戳，如果没有则使用当前时间
-                                radar_timestamp = getattr(radar_data, 'time', None) or getattr(radar_data, 'timestamp', None)
+                                # 🔧 使用雷达对象的原始时间戳字符串
+                                timestamp_str = getattr(radar_data, 'timestamp_str', None)
                                 
-                                if radar_timestamp:
-                                    # 如果时间戳是字符串格式，直接使用
-                                    if isinstance(radar_timestamp, str):
-                                        timestamp_str = radar_timestamp
-                                    else:
-                                        # 如果是数字时间戳，转换为字符串格式
-                                        timestamp_str = datetime.fromtimestamp(radar_timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                                else:
-                                    # 如果没有时间戳，使用当前时间
+                                if not timestamp_str:
+                                    # 如果没有时间戳，使用当前时间（备选方案）
+                                    logger.warning(f"⚠️ 雷达对象缺少时间戳，使用当前时间")
+                                    logger.warning(f"   雷达对象属性: {vars(radar_data)}")
                                     timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                                 
                                 radar_participant = {
@@ -383,8 +377,9 @@ class ResultOutputManager:
         combined_radar_ids.update(radar_ids_c2)
         combined_radar_ids.update(radar_ids_c3)
         
-        # 使用第一个摄像头的时间戳作为reportTime
-        reportTime_ms = int(result1['timestamp'] * 1000)
+        # 🔧 修改：reportTime 应该是当前时间，而不是数据时间戳
+        from datetime import datetime
+        reportTime_ms = int(datetime.now().timestamp() * 1000)
         
         # 从 global_targets 生成 participant 对象
         participants = []
