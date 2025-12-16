@@ -35,7 +35,11 @@ sys.path.append('/usr/local/lynxi/sdk/sdk-samples/python')
 from core.logger_config import FusionLogger, get_logger
 
 # 初始化日志系统（必须在导入其他模块之前）
-FusionLogger.setup()
+# 🔧 设置日志开关：
+#    - enable_radar_fusion=False     # 抑制雷达融合日志
+#    - enable_debug=False              # 禁用调试日志
+#    - enable_radar_filter=False       # 禁用雷达过滤日志
+FusionLogger.setup(enable_radar_fusion=False, enable_debug=False, enable_radar_filter=False)
 logger = get_logger(__name__)
 
 import numpy as np

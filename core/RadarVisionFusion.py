@@ -12,10 +12,20 @@ import json
 import math
 import time
 import numpy as np
+import logging
 from collections import defaultdict, deque
 from datetime import datetime
 from typing import List, Dict, Tuple, Optional
 from scipy.optimize import linear_sum_assignment
+
+# 导入统一日志配置
+try:
+    from core.logger_config import get_logger, FusionLogger
+except ImportError:
+    # 如果无法导入统一日志配置，使用基础日志
+    logging.basicConfig(level=logging.INFO)
+    get_logger = logging.getLogger
+    FusionLogger = None
 
 # 导入车道配置
 try:
@@ -23,7 +33,31 @@ try:
     LANE_CONFIG_AVAILABLE = True
 except ImportError:
     LANE_CONFIG_AVAILABLE = False
-    print("⚠️ 警告: 无法导入车道配置 (config.region_config)，将禁用车道过滤")
+    logging.warning("⚠️ 警告: 无法导入车道配置 (config.region_config)，将禁用车道过滤")
+
+# 获取模块日志记录器
+logger = get_logger('RadarFusion')
+
+# ==========================================
+# 日志过滤装饰器
+# ==========================================
+def conditional_log(log_level='info', condition_attr='ENABLE_RADAR_FUSION_LOG'):
+    """
+    条件日志装饰器 - 根据配置决定是否输出日志
+    
+    Args:
+        log_level: 日志级别 ('info', 'debug', 'warning', 'error')
+        condition_attr: FusionLogger中的配置属性名
+    """
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            # 检查是否应该输出日志
+            if FusionLogger and hasattr(FusionLogger, condition_attr):
+                if not getattr(FusionLogger, condition_attr):
+                    return
+            func(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 # ==========================================
@@ -243,12 +277,12 @@ class RadarVisionFusionProcessor:
         # 🔧 车道过滤配置
         self.enable_lane_filtering = enable_lane_filtering and LANE_CONFIG_AVAILABLE
         if self.enable_lane_filtering:
-            print("✅ 三层过滤已启用: 象限 + S-L距离 + 车道")
+            logger.info("✅ 三层过滤已启用: 象限 + S-L距离 + 车道")
         else:
             if enable_lane_filtering and not LANE_CONFIG_AVAILABLE:
-                print("⚠️ 车道过滤已禁用: 车道配置不可用")
+                logger.warning("⚠️ 车道过滤已禁用: 车道配置不可用")
             else:
-                print("✅ 两层过滤已启用: 象限 + S-L距离（车道过滤未启用）")
+                logger.info("✅ 两层过滤已启用: 象限 + S-L距离（车道过滤未启用）")
         
         # 雷达缓冲区 (时间戳 -> 雷达目标列表)
         self.radar_buffer = defaultdict(list)
@@ -278,9 +312,7 @@ class RadarVisionFusionProcessor:
         
         # 🔧 初始化摄像头IP映射
         if self.camera_id:
-            import sys
-            sys.stderr.write(f"📡 C{self.camera_id} RadarVisionFusion: 允许的雷达IP = {self.allowed_radar_ips}\n")
-            sys.stderr.flush()
+            logger.info(f"📡 C{self.camera_id} RadarVisionFusion: 允许的雷达IP = {self.allowed_radar_ips}")
 
     def _get_allowed_radar_ips(self, camera_id):
         """
@@ -393,13 +425,7 @@ class RadarVisionFusionProcessor:
                 filtered_objects.append(radar_obj)
             else:
                 rejected_objects.append(radar_obj)
-        
-        # 诊断日志：仅在有拒绝时输出
-        if self.camera_id and rejected_objects:
-            add_elapsed = (time_module.time() - add_start) * 1000
-            print(f"⚠️ C{self.camera_id} 雷达数据过滤: 总数={len(radar_objects)}, "
-                  f"接受={len(filtered_objects)}, 拒绝={len(rejected_objects)}, 耗时={add_elapsed:.2f}ms")
-        
+
         self.radar_buffer[timestamp] = filtered_objects
         self.radar_timestamps.append(timestamp)
         self.sorted_timestamps_cache_dirty = True  # 标记缓存需要更新
@@ -509,12 +535,11 @@ class RadarVisionFusionProcessor:
         if closest_ts is not None and time.time() - self.last_diag_time > self.diag_interval:
             min_ts = min(radar_timestamps_list)
             max_ts = max(radar_timestamps_list)
-            print(f"\n⚠️ [RADAR_FUSION DIAGNOSTIC]")
-            print(f"   视觉时间戳: {vision_timestamp}")
-            print(f"   最接近的雷达时间戳: {closest_ts}")
-            print(f"   时间差: {min_diff:.3f}秒 (严格阈值: {max_time_diff}秒, 宽松阈值: {self.MAX_TIME_DIFF_LOOSE}秒)")
-            print(f"   雷达时间范围: {min_ts} ~ {max_ts}")
-            print(f"   雷达数据帧数: {len(radar_timestamps_list)}")
+            logger.warning(f"⚠️ [RADAR_FUSION DIAGNOSTIC] 视觉时间戳: {vision_timestamp}")
+            logger.warning(f"   最接近的雷达时间戳: {closest_ts}")
+            logger.warning(f"   时间差: {min_diff:.3f}秒 (严格阈值: {max_time_diff}秒, 宽松阈值: {self.MAX_TIME_DIFF_LOOSE}秒)")
+            logger.warning(f"   雷达时间范围: {min_ts} ~ {max_ts}")
+            logger.warning(f"   雷达数据帧数: {len(radar_timestamps_list)}")
             self.last_diag_time = time.time()
         
         # 最后还是返回最接近的，即使超过所有阈值（最终容错）
@@ -621,9 +646,9 @@ class RadarVisionFusionProcessor:
                     dx = (v_obj.calib_lon - radar_obj.longitude) * LON_TO_M
                     dist = math.sqrt(dx**2 + dy**2)
                     if dist < 50:
-                        print(f"    [成本矩阵] 雷达[{i}]({radar_obj.latitude:.6f},{radar_obj.longitude:.6f}) vs 视觉[{j}]({v_obj.calib_lat:.6f},{v_obj.calib_lon:.6f})")
-                        print(f"      dx={dx:.2f}m, dy={dy:.2f}m, 总距离={dist:.2f}m")
-                        print(f"      ❌ 视觉目标不在融合区域内，跳过")
+                        logger.debug(f"    [成本矩阵] 雷达[{i}]({radar_obj.latitude:.6f},{radar_obj.longitude:.6f}) vs 视觉[{j}]({v_obj.calib_lat:.6f},{v_obj.calib_lon:.6f})")
+                        logger.debug(f"      dx={dx:.2f}m, dy={dy:.2f}m, 总距离={dist:.2f}m")
+                        logger.debug(f"      ❌ 视觉目标不在融合区域内，跳过")
                     continue
                 
                 # 数据有效性检查（防止NaN/Inf）
@@ -655,9 +680,9 @@ class RadarVisionFusionProcessor:
                 
                 # 诊断：打印所有距离较近的目标对
                 if dist < 50:
-                    print(f"    [成本矩阵] 雷达[{i}]({radar_obj.latitude:.6f},{radar_obj.longitude:.6f}) vs 视觉[{j}]({v_obj.calib_lat:.6f},{v_obj.calib_lon:.6f})")
-                    print(f"      dx={dx:.2f}m, dy={dy:.2f}m, 总距离={dist:.2f}m")
-                    print(f"      lon_diff(横向)={lon_diff:.2f}m(阈值{self.MAX_LANE_DIFF}m), lat_diff(纵向)={lat_diff:.2f}m(阈值{long_thresh}m)")
+                    logger.debug(f"    [成本矩阵] 雷达[{i}]({radar_obj.latitude:.6f},{radar_obj.longitude:.6f}) vs 视觉[{j}]({v_obj.calib_lat:.6f},{v_obj.calib_lon:.6f})")
+                    logger.debug(f"      dx={dx:.2f}m, dy={dy:.2f}m, 总距离={dist:.2f}m")
+                    logger.debug(f"      lon_diff(横向)={lon_diff:.2f}m(阈值{self.MAX_LANE_DIFF}m), lat_diff(纵向)={lat_diff:.2f}m(阈值{long_thresh}m)")
                 
                 # 检查计算结果的有效性
                 if math.isnan(lat_diff) or math.isnan(lon_diff) or math.isinf(lat_diff) or math.isinf(lon_diff):
@@ -668,7 +693,7 @@ class RadarVisionFusionProcessor:
                 # lon_diff(横向) <= MAX_LANE_DIFF, lat_diff(纵向) <= long_thresh
                 if lon_diff > self.MAX_LANE_DIFF or lat_diff > long_thresh:
                     if dist < 50:
-                        print(f"      ❌ 距离超过阈值，设为1e6")
+                        logger.debug(f"      ❌ 距离超过阈值，设为1e6")
                     cost_matrix[i, j] = 1e6
                     continue
                 
@@ -684,9 +709,9 @@ class RadarVisionFusionProcessor:
                         camera_id = v_obj.cameraid if hasattr(v_obj, 'cameraid') else 'N/A'
                         radar_ip = radar_obj.ip if hasattr(radar_obj, 'ip') else None
                         radar_device_name = RADAR_IP_TO_CAMERA.get(radar_ip, 'Unknown') if radar_ip else 'N/A'
-                        print(f"      ❌ 车道不兼容: {lane_reason}，设为1e6")
-                        print(f"         📹 摄像头: C{camera_id} | 🎯 雷达: {radar_device_name} ({radar_ip})")
-                        print(f"         🛣️  雷达车道: {radar_lane} | 🛣️  视觉车道: {vision_lane} (像素X: {pixel_x})")
+                        logger.debug(f"      ❌ 车道不兼容: {lane_reason}，设为1e6")
+                        logger.debug(f"         📹 摄像头: C{camera_id} | 🎯 雷达: {radar_device_name} ({radar_ip})")
+                        logger.debug(f"         🛣️  雷达车道: {radar_lane} | 🛣️  视觉车道: {vision_lane} (像素X: {pixel_x})")
                     cost_matrix[i, j] = 1e6
                     continue
                 else:
@@ -695,7 +720,7 @@ class RadarVisionFusionProcessor:
                         radar_lane = radar_obj.lane if hasattr(radar_obj, 'lane') else None
                         vision_lane = v_obj.lane if hasattr(v_obj, 'lane') else None
                         pixel_x = v_obj.pixel_x if hasattr(v_obj, 'pixel_x') else None
-                        print(f"      ✅ 车道兼容: {lane_reason} | 雷达车道: {radar_lane}, 视觉车道: {vision_lane} (像素X: {pixel_x})")
+                        logger.debug(f"      ✅ 车道兼容: {lane_reason} | 雷达车道: {radar_lane}, 视觉车道: {vision_lane} (像素X: {pixel_x})")
                 
                 # 计算总成本
                 cost = (10.0 * lat_diff) + (1.0 * lon_diff)
@@ -703,7 +728,7 @@ class RadarVisionFusionProcessor:
                 # 检查总成本的有效性
                 if math.isnan(cost) or math.isinf(cost):
                     if dist < 50:
-                        print(f"      ❌ 成本计算无效: cost={cost}，设为1e6")
+                        logger.debug(f"      ❌ 成本计算无效: cost={cost}，设为1e6")
                     cost_matrix[i, j] = 1e6
                     continue
                 
@@ -718,27 +743,27 @@ class RadarVisionFusionProcessor:
                     # 忠诚度绑定：成本除以很大的系数，保持正数
                     cost = cost / self.LOYALTY_BONUS  # 如果LOYALTY_BONUS=10000，则成本变为原来的1/10000
                     if dist < 50:
-                        print(f"      💰 忠诚度绑定（已匹配过）: {original_cost:.4f} -> {cost:.6f} (系数1/{self.LOYALTY_BONUS:.0f})")
+                        logger.debug(f"      💰 忠诚度绑定（已匹配过）: {original_cost:.4f} -> {cost:.6f} (系数1/{self.LOYALTY_BONUS:.0f})")
                 
                 # 最终成本有效性检查
                 if math.isnan(cost) or math.isinf(cost):
                     if dist < 50:
-                        print(f"      ❌ 最终成本无效: {cost}，设为1e6")
+                        logger.debug(f"      ❌ 最终成本无效: {cost}，设为1e6")
                     cost_matrix[i, j] = 1e6
                 else:
                     cost_matrix[i, j] = cost
                     if dist < 50:
-                        print(f"      ✅ 成本矩阵设置: cost_matrix[{i},{j}] = {cost:.6f}")
+                        logger.debug(f"      ✅ 成本矩阵设置: cost_matrix[{i},{j}] = {cost:.6f}")
         
         # 使用匈牙利算法求解
         radar_indices, vision_indices = linear_sum_assignment(cost_matrix)
         
         # 诊断：打印匈牙利算法的原始结果
         if len(radar_indices) > 0:
-            print(f"    [匈牙利算法结果] 总匹配数: {len(radar_indices)}")
+            logger.debug(f"    [匈牙利算法结果] 总匹配数: {len(radar_indices)}")
             for r_idx, v_idx in zip(radar_indices, vision_indices):
                 cost = cost_matrix[r_idx, v_idx]
-                print(f"      配对 [{r_idx},{v_idx}]: cost={cost:.2f} {'✅' if cost < 1e5 else '❌'}")
+                logger.debug(f"      配对 [{r_idx},{v_idx}]: cost={cost:.2f} {'✅' if cost < 1e5 else '❌'}")
         
         # 过滤掉无效匹配（成本 >= 1e5）
         valid_matches = [
@@ -748,11 +773,11 @@ class RadarVisionFusionProcessor:
         ]
         
         if valid_matches:
-            print(f"    [过滤结果] 有效匹配数: {len(valid_matches)}")
+            logger.debug(f"    [过滤结果] 有效匹配数: {len(valid_matches)}")
             radar_indices, vision_indices = zip(*valid_matches)
             return list(radar_indices), list(vision_indices)
         else:
-            print(f"    [过滤结果] 无有效匹配")
+            logger.debug(f"    [过滤结果] 无有效匹配")
             return [], []
 
     def process_frame(self, vision_timestamp, vision_objects):
@@ -820,16 +845,17 @@ class RadarVisionFusionProcessor:
                 max_ts = max(radar_timestamps_list)
                 time_diff_min = abs(vision_timestamp - min_ts)
                 time_diff_max = abs(vision_timestamp - max_ts)
-                print(f"[RADAR_FUSION] 警告: 视觉时间戳{vision_timestamp:.3f}无法匹配雷达数据")
-                print(f"  雷达时间戳范围: [{min_ts:.3f}, {max_ts:.3f}]")
-                print(f"  时间差范围: [{time_diff_min:.3f}, {time_diff_max:.3f}]秒")
-                print(f"  MAX_TIME_DIFF阈值: {self.MAX_TIME_DIFF}秒")
+                logger.warning(f"[RADAR_FUSION] 警告: 视觉时间戳{vision_timestamp:.3f}无法匹配雷达数据")
+                logger.warning(f"  雷达时间戳范围: [{min_ts:.3f}, {max_ts:.3f}]")
+                logger.warning(f"  时间差范围: [{time_diff_min:.3f}, {time_diff_max:.3f}]秒")
+                logger.warning(f"  MAX_TIME_DIFF阈值: {self.MAX_TIME_DIFF}秒")
             return vision_objects
         
         # 诊断输出：当前融合的时间戳信息
         # 将Unix时间戳转换为可读格式
-        vision_ts_str = datetime.fromtimestamp(vision_timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        print(f"[RADAR_FUSION] 融合尝试 - 视觉时间戳: {vision_ts_str}, 雷达时间戳: {radar_timestamp}, 视觉目标数: {len(vision_objects)}")
+        if FusionLogger and FusionLogger.ENABLE_RADAR_FUSION_LOG:
+            vision_ts_str = datetime.fromtimestamp(vision_timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+            logger.info(f"[RADAR_FUSION] 融合尝试 - 视觉时间戳: {vision_ts_str}, 雷达时间戳: {radar_timestamp}, 视觉目标数: {len(vision_objects)}")
         
         radar_objects = self.radar_buffer.get(radar_timestamp, [])
         if not radar_objects:
@@ -886,18 +912,20 @@ class RadarVisionFusionProcessor:
         matching_elapsed = (time_module.time() - matching_start) * 1000
         
         # 诊断输出：匹配结果
-        print(f"[RADAR_FUSION] 匹配结果 - 雷达目标数: {len(radar_objects)}, 视觉目标数: {len(vision_objects_to_match)}, "
-              f"成功匹配: {len(radar_indices)}, 耗时={matching_elapsed:.2f}ms")
+        if FusionLogger and FusionLogger.ENABLE_RADAR_FUSION_LOG:
+            logger.info(f"[RADAR_FUSION] 匹配结果 - 雷达目标数: {len(radar_objects)}, 视觉目标数: {len(vision_objects_to_match)}, "
+                  f"成功匹配: {len(radar_indices)}, 耗时={matching_elapsed:.2f}ms")
         
         # 诊断：显示雷达和视觉目标的坐标
-        if len(radar_objects) > 0 and len(vision_objects_to_match) > 0:
-            print(f"  雷达目标示例: {radar_objects[0].latitude:.6f}, {radar_objects[0].longitude:.6f}")
-            print(f"  视觉目标示例: {vision_objects_to_match[0].lat:.6f}, {vision_objects_to_match[0].lon:.6f}")
+        if (FusionLogger and FusionLogger.ENABLE_DEBUG_LOG and 
+            len(radar_objects) > 0 and len(vision_objects_to_match) > 0):
+            logger.debug(f"  雷达目标示例: {radar_objects[0].latitude:.6f}, {radar_objects[0].longitude:.6f}")
+            logger.debug(f"  视觉目标示例: {vision_objects_to_match[0].lat:.6f}, {vision_objects_to_match[0].lon:.6f}")
             # 计算距离
             dy = (vision_objects_to_match[0].lat - radar_objects[0].latitude) * 111000  # 米/度
             dx = (vision_objects_to_match[0].lon - radar_objects[0].longitude) * 111000 * 0.7  # 米/度（纬度修正）
             dist = (dx**2 + dy**2)**0.5
-            print(f"  距离: {dist:.2f}米 (阈值: 横向{self.MAX_LANE_DIFF}米, 纵向{self.MAX_LONG_DIFF}米)")
+            logger.debug(f"  距离: {dist:.2f}米 (阈值: 横向{self.MAX_LANE_DIFF}米, 纵向{self.MAX_LONG_DIFF}米)")
         
         # 处理匹配对
         process_match_start = time_module.time()
@@ -1014,28 +1042,91 @@ class RadarVisionFusionProcessor:
         
         # ===== 最终统计 =====
         total_elapsed = (time_module.time() - frame_start) * 1000
-        print(f"[RADAR_FUSION] 处理完成 - 总耗时={total_elapsed:.2f}ms "
-              f"[预测{predict_elapsed:.2f}ms + 校准{calib_elapsed:.2f}ms + "
-              f"时间戳匹配{ts_match_elapsed:.2f}ms + 数据清理{cleanup_elapsed:.2f}ms + "
-              f"最优匹配{matching_elapsed:.2f}ms + 处理匹配对{process_match_elapsed:.2f}ms + "
-              f"处理未匹配{unmatched_elapsed:.2f}ms]")
+        if FusionLogger and FusionLogger.ENABLE_RADAR_FUSION_LOG:
+            logger.info(f"[RADAR_FUSION] 处理完成 - 总耗时={total_elapsed:.2f}ms "
+                  f"[预测{predict_elapsed:.2f}ms + 校准{calib_elapsed:.2f}ms + "
+                  f"时间戳匹配{ts_match_elapsed:.2f}ms + 数据清理{cleanup_elapsed:.2f}ms + "
+                  f"最优匹配{matching_elapsed:.2f}ms + 处理匹配对{process_match_elapsed:.2f}ms + "
+                  f"处理未匹配{unmatched_elapsed:.2f}ms]")
         
         return vision_objects
 
     def clear_old_radar_data(self, current_timestamp, max_age=1.0):
         """
-        清理过期的雷达数据
+        清理过期的雷达数据和轨迹历史
         
         Args:
             current_timestamp: 当前时间戳
             max_age: 最大年龄 (秒)
         """
-        old_timestamps = [
-            ts for ts in self.radar_buffer.keys()
-            if current_timestamp - ts > max_age
-        ]
+        import time as time_module
+        clear_start = time_module.time()
+        
+        # 清理过期的雷达缓冲区数据
+        old_timestamps = []
+        for ts in self.radar_buffer.keys():
+            # 处理时间戳格式：可能是字符串或数字
+            try:
+                if isinstance(ts, str):
+                    ts_numeric = parse_time(ts)
+                else:
+                    ts_numeric = float(ts)
+                
+                # 将current_timestamp转换为相同格式
+                if isinstance(current_timestamp, str):
+                    current_ts_numeric = parse_time(current_timestamp)
+                else:
+                    current_ts_numeric = float(current_timestamp)
+                
+                if current_ts_numeric - ts_numeric > max_age:
+                    old_timestamps.append(ts)
+            except (ValueError, TypeError):
+                # 格式错误，清理掉
+                old_timestamps.append(ts)
+        
+        removed_count = len(old_timestamps)
         for ts in old_timestamps:
             del self.radar_buffer[ts]
+        
+        # 清理过期的轨迹历史（保留最近的100个）
+        history_size_before = len(self.track_radar_history)
+        if len(self.track_radar_history) > 1000:
+            # 保留最后100条记录
+            items = list(self.track_radar_history.items())[-100:]
+            self.track_radar_history = dict(items)
+        
+        history_removed = history_size_before - len(self.track_radar_history)
+        
+        # 清理过期的活跃轨迹
+        dead_ids = []
+        for fusion_id, track in self.active_tracks.items():
+            # 将current_timestamp转换为数字
+            if isinstance(current_timestamp, str):
+                current_ts_numeric = parse_time(current_timestamp)
+            else:
+                current_ts_numeric = float(current_timestamp)
+            
+            # 如果轨迹超过最大漂移时间，标记为过期
+            if current_ts_numeric - track.last_update_time > self.MAX_COAST_TIME:
+                dead_ids.append(fusion_id)
+        
+        for fusion_id in dead_ids:
+            del self.active_tracks[fusion_id]
+            self.vision_id_map = {k: v for k, v in self.vision_id_map.items() if v != fusion_id}
+            self.radar_id_map = {k: v for k, v in self.radar_id_map.items() if v != fusion_id}
+        
+        # 标记排序缓存需要更新
+        if removed_count > 0:
+            self.sorted_timestamps_cache_dirty = True
+        
+        clear_elapsed = (time_module.time() - clear_start) * 1000
+        
+        # 条件日志：仅当清理了数据时输出（受ENABLE_DEBUG_LOG控制）
+        if (FusionLogger and FusionLogger.ENABLE_DEBUG_LOG and 
+            (removed_count > 0 or history_removed > 0 or len(dead_ids) > 0)):
+            logger.debug(f"🧹 数据清理 - 移除雷达数据帧: {removed_count}, "
+                        f"清理轨迹历史: {history_removed}, 清理过期轨迹: {len(dead_ids)}, "
+                        f"耗时={clear_elapsed:.2f}ms")
 
     def get_stats(self):
         """获取统计信息"""
@@ -1134,9 +1225,7 @@ class RadarDataLoader:
                         
                         # 调试日志：打印第一条有效的雷达数据
                         if first_record:
-                            print(f"🔍 第一条有效雷达数据:")
-                            print(f"   原始时间字符串: {time_str}")
-                            print(f"   source_ip: {source_ip}, camera_id: {camera_id}")
+                            logger.debug(f"🔍 第一条有效雷达数据: 原始时间字符串: {time_str}, source_ip: {source_ip}, camera_id: {camera_id}")
                             first_record = False
 
                         locus = []
@@ -1181,18 +1270,18 @@ class RadarDataLoader:
                             self.camera_timestamps[camera_id].add(time_str)
 
                     except Exception as e:
-                        print(f"  警告: 解析雷达数据行失败: {e}")
+                        logger.warning(f"解析雷达数据行失败: {e}")
                         continue
 
             load_elapsed = (time_module.time() - load_start) * 1000
-            print(f"✅ 加载雷达数据完成: {len(self.radar_data)} 帧, 耗时={load_elapsed:.2f}ms")
-            print(f"   C1: {len(self.camera_timestamps[1])} 帧")
-            print(f"   C2: {len(self.camera_timestamps[2])} 帧")
-            print(f"   C3: {len(self.camera_timestamps[3])} 帧")
+            logger.info(f"✅ 加载雷达数据完成: {len(self.radar_data)} 帧, 耗时={load_elapsed:.2f}ms")
+            logger.info(f"   C1: {len(self.camera_timestamps[1])} 帧")
+            logger.info(f"   C2: {len(self.camera_timestamps[2])} 帧")
+            logger.info(f"   C3: {len(self.camera_timestamps[3])} 帧")
             return True
 
         except Exception as e:
-            print(f"❌ 加载雷达数据失败: {e}")
+            logger.error(f"❌ 加载雷达数据失败: {e}")
             return False
 
     def get_radar_data(self, timestamp):
@@ -1231,4 +1320,4 @@ if __name__ == "__main__":
         lat=23.530
     )
 
-    print("✅ RadarVisionFusion 模块加载成功")
+    logger.info("✅ RadarVisionFusion 模块加载成功")

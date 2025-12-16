@@ -17,6 +17,12 @@ from core.Basic import Config, GeometryUtils
 from core.RadarVisionFusion import RadarObject
 from core.StreamingDataLoader import RadarObject as StreamingRadarObject
 
+# 导入统一日志配置
+try:
+    from core.logger_config import FusionLogger
+except ImportError:
+    FusionLogger = None
+
 # ==========================================
 # 融合区域定义（经纬度坐标）
 # ==========================================
@@ -174,18 +180,20 @@ class RadarDataFilter:
             fusion_data, output_data = self.filter_radar_data(radar_data)
             if fusion_data:
                 fusion_data_list.append(fusion_data)
-                # 调试日志：记录融合区内的数据
-                if len(fusion_data_list) == 1:  # 只记录第一条
+                # 条件日志：记录融合区内的数据（受ENABLE_RADAR_FILTER_LOG控制）
+                if len(fusion_data_list) == 1 and FusionLogger and FusionLogger.ENABLE_RADAR_FILTER_LOG:  # 只记录第一条
                     logger.info(f"📍 第一条融合区内数据: timestamp={fusion_data.get('timestamp')}, radar_id={fusion_data.get('radar_id')}")
             if output_data:
                 direct_output_list.append(output_data)
-                # 调试日志：记录融合区外的数据
-                if len(direct_output_list) == 1:  # 只记录第一条
+                # 条件日志：记录融合区外的数据（受ENABLE_RADAR_FILTER_LOG控制）
+                if len(direct_output_list) == 1 and FusionLogger and FusionLogger.ENABLE_RADAR_FILTER_LOG:  # 只记录第一条
                     logger.info(f"📍 第一条融合区外数据: timestamp={output_data.get('timestamp')}, radar_id={output_data.get('radar_id')}")
         
         elapsed = (time_module.time() - start_time) * 1000
-        logger.info(f"📊 批量过滤完成: 总数={len(radar_data_list)}, "
-                   f"融合区内={len(fusion_data_list)}, 融合区外={len(direct_output_list)}, 耗时={elapsed:.2f}ms")
+        # 条件日志：批量过滤完成信息（受ENABLE_RADAR_FILTER_LOG控制）
+        if FusionLogger and FusionLogger.ENABLE_RADAR_FILTER_LOG:
+            logger.info(f"📊 批量过滤完成: 总数={len(radar_data_list)}, "
+                       f"融合区内={len(fusion_data_list)}, 融合区外={len(direct_output_list)}, 耗时={elapsed:.2f}ms")
         
         return fusion_data_list, direct_output_list
 

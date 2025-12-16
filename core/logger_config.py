@@ -23,18 +23,40 @@ class FusionLogger:
     LOG_DIR = Path(__file__).parent.parent / 'logs'
     LOG_FILE = LOG_DIR / 'fusion_system.log'
     
+    # 🔧 模块级日志开关配置
+    ENABLE_RADAR_FUSION_LOG = False  # 是否输出雷达融合日志（RadarVisionFusion + RadarFusionOrchestrator）
+    ENABLE_DEBUG_LOG = False          # 是否输出调试日志（包含详细的成本矩阵计算）
+    ENABLE_RADAR_FILTER_LOG = False   # 是否输出雷达过滤日志（RadarDataFilter的批量过滤日志）
+    
     @classmethod
-    def setup(cls):
-        """一次性设置日志系统（由main.py调用）"""
+    def setup(cls, enable_radar_fusion=True, enable_debug=False, enable_radar_filter=False):
+        """
+        一次性设置日志系统（由main.py调用）
+        
+        Args:
+            enable_radar_fusion: 是否启用雷达融合日志输出
+                - RadarVisionFusion: 融合尝试、匹配结果、耗时统计
+                - RadarFusionOrchestrator: 地理区域过滤、摄像头融合、总体统计
+            enable_debug: 是否启用调试级别日志（包含详细信息）
+                - 成本矩阵计算、车道检查、坐标诊断、时间戳匹配详情
+            enable_radar_filter: 是否启用雷达过滤日志输出
+                - RadarDataFilter: 批量过滤统计、融合区内/外数据信息
+        """
         if cls._handlers_initialized:
             return cls._logger
+        
+        # 保存配置
+        cls.ENABLE_RADAR_FUSION_LOG = enable_radar_fusion
+        cls.ENABLE_DEBUG_LOG = enable_debug
+        cls.ENABLE_RADAR_FILTER_LOG = enable_radar_filter
         
         # 创建日志目录
         cls.LOG_DIR.mkdir(exist_ok=True)
         
         # 配置root logger
         root_logger = logging.getLogger()
-        root_logger.setLevel(logging.DEBUG)
+        log_level = logging.DEBUG if enable_debug else logging.INFO
+        root_logger.setLevel(log_level)
         
         # 清除已有的handlers（防止重复）
         root_logger.handlers.clear()
@@ -45,7 +67,7 @@ class FusionLogger:
             mode='w',  # 清空模式，每次运行先清空
             encoding='utf-8'
         )
-        file_handler.setLevel(logging.DEBUG)
+        file_handler.setLevel(log_level)
         
         # 日志格式
         formatter = logging.Formatter(
@@ -66,6 +88,22 @@ class FusionLogger:
         cls._logger.info("=" * 70)
         cls._logger.info(f"日志文件: {cls.LOG_FILE}")
         cls._logger.info(f"启动时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        if enable_radar_fusion:
+            cls._logger.info("✅ 雷达融合日志已启用（包括：")
+            cls._logger.info("   - RadarVisionFusion: 融合尝试、匹配结果、耗时")
+            cls._logger.info("   - RadarFusionOrchestrator: 地理过滤、摄像头融合、统计）")
+        else:
+            cls._logger.info("❌ 雷达融合日志已禁用")
+        if enable_debug:
+            cls._logger.info("✅ 调试日志已启用（包括：")
+            cls._logger.info("   - 成本矩阵计算、车道检查、坐标诊断、时间戳详情）")
+        else:
+            cls._logger.info("❌ 调试日志已禁用")
+        if enable_radar_filter:
+            cls._logger.info("✅ 雷达过滤日志已启用（包括：")
+            cls._logger.info("   - RadarDataFilter: 批量过滤统计、融合区内/外数据）")
+        else:
+            cls._logger.info("❌ 雷达过滤日志已禁用")
         cls._logger.info("=" * 70)
         
         return cls._logger

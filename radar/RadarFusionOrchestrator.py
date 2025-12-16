@@ -17,7 +17,17 @@ from core.Basic import GeometryUtils
 from core.RadarVisionFusion import OutputObject
 from config.region_config import get_lane_for_point
 
-logger = logging.getLogger(__name__)
+# 导入统一日志配置
+try:
+    from core.logger_config import get_logger, FusionLogger
+except ImportError:
+    # 如果无法导入统一日志配置，使用基础日志
+    logging.basicConfig(level=logging.INFO)
+    get_logger = logging.getLogger
+    FusionLogger = None
+
+# 获取模块日志记录器
+logger = get_logger('RadarFusionOrchestrator')
 
 
 class RadarFusionOrchestrator:
@@ -103,8 +113,8 @@ class RadarFusionOrchestrator:
                             )
                             
                             filter_elapsed = (time_module.time() - filter_start) * 1000
-                            if current_frame % 100 == 0:
-                                logger.debug(f"Frame {current_frame}: 雷达过滤 总数={len(all_radar_data)}, "
+                            if current_frame % 100 == 0 and FusionLogger and FusionLogger.ENABLE_RADAR_FUSION_LOG:
+                                logger.info(f"Frame {current_frame}: 雷达过滤 总数={len(all_radar_data)}, "
                                            f"融合区内={len(fusion_radar_data)}, 融合区外={len(direct_radar_outputs)}, "
                                            f"耗时={filter_elapsed:.2f}ms")
         
@@ -159,13 +169,15 @@ class RadarFusionOrchestrator:
             camera_elapsed = (time_module.time() - camera_start) * 1000
             
             # 诊断输出：显示当前处理的摄像头和时间戳
-            print(f"[RADAR_FUSION_ORCHESTRATOR] Frame {current_frame} C{camera_id}: "
-                  f"收集={collect_elapsed:.2f}ms, 融合={process_elapsed:.2f}ms, 小计={camera_elapsed:.2f}ms, "
-                  f"目标数={len(vision_objects)}, 匹配数={matched_count}")
+            if FusionLogger and FusionLogger.ENABLE_RADAR_FUSION_LOG:
+                logger.info(f"[RADAR_FUSION_ORCHESTRATOR] Frame {current_frame} C{camera_id}: "
+                      f"收集={collect_elapsed:.2f}ms, 融合={process_elapsed:.2f}ms, 小计={camera_elapsed:.2f}ms, "
+                      f"目标数={len(vision_objects)}, 匹配数={matched_count}")
             
             if current_frame % 100 == 0 and matched_count > 0:
-                logger.info(f"Frame {current_frame} C{camera_id}: 雷达匹配 "
-                           f"{matched_count}/{len(vision_objects)} 个目标")
+                if FusionLogger and FusionLogger.ENABLE_RADAR_FUSION_LOG:
+                    logger.info(f"Frame {current_frame} C{camera_id}: 雷达匹配 "
+                               f"{matched_count}/{len(vision_objects)} 个目标")
         
         if perf_monitor:
             perf_monitor.end_timer('radar_fusion_processing')
@@ -174,9 +186,10 @@ class RadarFusionOrchestrator:
         frame_total_elapsed = (time_module.time() - frame_start_time) * 1000
         
         # 总体统计输出
-        print(f"[RADAR_FUSION_ORCHESTRATOR] Frame {current_frame}: "
-              f"总融合耗时={frame_total_elapsed:.2f}ms (地理过滤部分 + 各摄像头融合), "
-              f"视觉目标数={total_vision_objects}, 成功匹配={total_matched}")
+        if FusionLogger and FusionLogger.ENABLE_RADAR_FUSION_LOG:
+            logger.info(f"[RADAR_FUSION_ORCHESTRATOR] Frame {current_frame}: "
+                  f"总融合耗时={frame_total_elapsed:.2f}ms (地理过滤部分 + 各摄像头融合), "
+                  f"视觉目标数={total_vision_objects}, 成功匹配={total_matched}")
         
         return radar_id_map, direct_radar_outputs
     
@@ -196,12 +209,12 @@ class RadarFusionOrchestrator:
             )
             
             # 调试日志
-            if current_frame <= 3:
+            if current_frame <= 3 and FusionLogger and FusionLogger.ENABLE_DEBUG_LOG:
                 time_diff = abs(
                     int(closest_radar_ts.replace('-', '').replace(':', '').replace(' ', '').replace('.', '')) -
                     int(vision_ts_str.replace('-', '').replace(':', '').replace(' ', '').replace('.', ''))
                 )
-                logger.info(f"Frame {current_frame}: 视觉时间戳={vision_ts_str}, "
+                logger.debug(f"Frame {current_frame}: 视觉时间戳={vision_ts_str}, "
                            f"最接近雷达时间戳={closest_radar_ts}, 差值={time_diff}")
             
             return closest_radar_ts
@@ -381,35 +394,36 @@ class RadarFusionOrchestrator:
         return overall_stats
     
     def print_overall_statistics(self):
-        """打印所有摄像头的总体融合统计信息"""
+        """打印并记录所有摄像头的总体融合统计信息到日志"""
         stats = self.get_overall_statistics()
         
-        print("\n" + "="*80)
-        print("【雷达视觉融合 - 全摄像头统计】")
-        print("="*80)
+        # 同时输出到控制台和日志
+        logger.info("\n" + "="*80)
+        logger.info("【雷达视觉融合 - 全摄像头统计】")
+        logger.info("="*80)
         
         # 按摄像头打印
         for camera_id in [1, 2, 3]:
             if camera_id in stats['by_camera']:
                 cam_stats = stats['by_camera'][camera_id]
-                print(f"\n【摄像头 C{camera_id}】")
-                print(f"  雷达目标:        {cam_stats['total_radar_objects']:>5} 个")
-                print(f"  视觉目标:        {cam_stats['total_vision_objects']:>5} 个")
-                print(f"  成功匹配:        {cam_stats['successful_matches']:>5} 个")
-                print(f"  失败匹配:        {cam_stats['failed_matches']:>5} 个")
-                print(f"  车道过滤:        {cam_stats['lane_filtered_candidates']:>5} 个")
-                print(f"  雷达匹配率:      {cam_stats['radar_match_rate']:>5.1f}%")
-                print(f"  视觉匹配率:      {cam_stats['vision_match_rate']:>5.1f}%")
+                logger.info(f"\n【摄像头 C{camera_id}】")
+                logger.info(f"  雷达目标:        {cam_stats['total_radar_objects']:>5} 个")
+                logger.info(f"  视觉目标:        {cam_stats['total_vision_objects']:>5} 个")
+                logger.info(f"  成功匹配:        {cam_stats['successful_matches']:>5} 个")
+                logger.info(f"  失败匹配:        {cam_stats['failed_matches']:>5} 个")
+                logger.info(f"  车道过滤:        {cam_stats['lane_filtered_candidates']:>5} 个")
+                logger.info(f"  雷达匹配率:      {cam_stats['radar_match_rate']:>5.1f}%")
+                logger.info(f"  视觉匹配率:      {cam_stats['vision_match_rate']:>5.1f}%")
         
-        # 打印总体统计
+        # 记录总体统计
         total = stats['total']
-        print("\n" + "-"*80)
-        print("【总体统计】")
-        print(f"  雷达目标总数:    {total['total_radar_objects']:>5} 个")
-        print(f"  视觉目标总数:    {total['total_vision_objects']:>5} 个")
-        print(f"  成功匹配总数:    {total['successful_matches']:>5} 个")
-        print(f"  失败匹配总数:    {total['failed_matches']:>5} 个")
-        print(f"  车道过滤总数:    {total['lane_filtered_candidates']:>5} 个")
-        print(f"  总体雷达匹配率:  {total['radar_match_rate']:>5.1f}%")
-        print(f"  总体视觉匹配率:  {total['vision_match_rate']:>5.1f}%")
-        print("="*80 + "\n")
+        logger.info("\n" + "-"*80)
+        logger.info("【总体统计】")
+        logger.info(f"  雷达目标总数:    {total['total_radar_objects']:>5} 个")
+        logger.info(f"  视觉目标总数:    {total['total_vision_objects']:>5} 个")
+        logger.info(f"  成功匹配总数:    {total['successful_matches']:>5} 个")
+        logger.info(f"  失败匹配总数:    {total['failed_matches']:>5} 个")
+        logger.info(f"  车道过滤总数:    {total['lane_filtered_candidates']:>5} 个")
+        logger.info(f"  总体雷达匹配率:  {total['radar_match_rate']:>5.1f}%")
+        logger.info(f"  总体视觉匹配率:  {total['vision_match_rate']:>5.1f}%")
+        logger.info("="*80 + "\n")
