@@ -481,3 +481,167 @@ class SmoothingFilter:
 
 # 创建全局Config实例，以便直接通过Config.FPS等方式访问
 Config = _Config()
+
+# --- 检测和跟踪辅助函数 ---
+def filter_by_detect_areas(detections: List[dict], areas: List[np.ndarray]) -> List[dict]:
+    """根据检测区域过滤检测结果"""
+    filtered_detections = []
+    for detection in detections:
+        # 使用边界框的底部中心点作为判断点
+        x1, y1, x2, y2 = detection['box']
+        center_x, center_y = int((x1 + x2) / 2), int(y2) 
+        in_detect_area = any(cv2.pointPolygonTest(area, (center_x, center_y), False) >= 0 
+                           for area in areas)
+        if in_detect_area:
+            filtered_detections.append(detection)
+    return filtered_detections
+
+
+def batch_prepare_tracker_input(nms_detections: List[dict]) -> Tuple[np.ndarray, Dict[str, str]]:
+    """
+    批量准备跟踪器输入，优化性能 - 使用numpy避免torch依赖
+    同时返回检测框到类别的映射字典
+    """
+    if not nms_detections:
+        return np.empty((0, 5), dtype=np.float32), {}
+    
+    # 批量提取数据，避免循环
+    # BYTETracker 期望的格式: [x1, y1, x2, y2, score]
+    boxes_scores = np.array([[d['box'][0], d['box'][1], d['box'][2], d['box'][3], d['confidence']] 
+                              for d in nms_detections], dtype=np.float32)
+    
+    # 创建映射字典：key为box的字符串表示，value为类别名称
+    # 这样可以通过box坐标快速查找对应的类别
+    box_to_class = {}
+    for i, det in enumerate(nms_detections):
+        box_key = f"{det['box'][0]:.1f}_{det['box'][1]:.1f}_{det['box'][2]:.1f}_{det['box'][3]:.1f}"
+        box_to_class[box_key] = det['class']
+    
+    # 跟踪器只需要前5列：[x1, y1, x2, y2, score]
+    tracker_input_array = boxes_scores.astype(np.float32)
+    return tracker_input_array, box_to_class
+
+
+def batch_convert_track_results(tracked_objects: List, result: dict, camera_id: int, current_frame: int, 
+                               original_detections: List[dict] = None, box_to_class: Dict[str, str] = None) -> List[dict]:
+    """
+    批量转换跟踪结果，优化性能并保留原始类别信息
+    box_to_class: 检测框到类别的映射字典
+    """
+    from config.region_config import get_lane_for_point
+    
+    tracked_detections = []
+    
+    # 添加调试信息
+    if current_frame % 100 == 0 and len(tracked_objects) > 0:
+        logger.debug(f"C{camera_id} Frame {current_frame}: {len(tracked_objects)} tracked objects")
+    
+    for track in tracked_objects:
+        # 高效转换tlwh到tlbr
+        tlwh = track.tlwh
+        tlbr = [tlwh[0], tlwh[1], tlwh[0] + tlwh[2], tlwh[1] + tlwh[3]]
+        
+        # 尝试从box_to_class映射中获取类别信息（最准确的方法）
+        class_name = 'car'  # 默认值
+        
+        if box_to_class:
+            # 尝试通过IoU匹配找到对应的原始检测
+            best_iou = 0
+            best_class = None
+            best_box_key = None
+            
+            for box_key, class_str in box_to_class.items():
+                # 解析box_key
+                coords = box_key.split('_')
+                if len(coords) == 4:
+                    try:
+                        orig_box = [float(c) for c in coords]
+                        iou = GeometryUtils.calculate_iou(tlbr, orig_box)
+                        if iou > best_iou and iou > 0.1:  # 降低IoU阈值
+                            best_iou = iou
+                            best_class = class_str
+                            best_box_key = box_key
+                    except:
+                        continue
+            
+            if best_class:
+                class_name = best_class
+                if box_to_class and best_box_key:
+                    # 删除已使用的映射，避免重复使用
+                    del box_to_class[best_box_key]
+            else:
+                # 如果IoU匹配失败，尝试通过距离匹配
+                min_distance = float('inf')
+                best_class_dist = None
+                
+                for box_key, class_str in box_to_class.items():
+                    coords = box_key.split('_')
+                    if len(coords) == 4:
+                        try:
+                            orig_box = [float(c) for c in coords]
+                            orig_center = [(orig_box[0] + orig_box[2]) / 2, (orig_box[1] + orig_box[3]) / 2]
+                            track_center = [(tlbr[0] + tlbr[2]) / 2, (tlbr[1] + tlbr[3]) / 2]
+                            distance = ((orig_center[0] - track_center[0]) ** 2 + 
+                                       (orig_center[1] - track_center[1]) ** 2) ** 0.5
+                            
+                            if distance < min_distance and distance < 100:  # 100像素内的最近匹配
+                                min_distance = distance
+                                best_class_dist = class_str
+                        except:
+                            continue
+                
+                if best_class_dist:
+                    class_name = best_class_dist
+        
+        elif original_detections:
+            # 备选方案：使用原始检测列表
+            best_iou = 0
+            best_match = None
+            for orig_det in original_detections:
+                iou = GeometryUtils.calculate_iou(tlbr, orig_det['box'])
+                if iou > best_iou and iou > 0.1:
+                    best_iou = iou
+                    best_match = orig_det
+            
+            if best_match:
+                class_name = best_match['class']
+            else:
+                # 距离匹配
+                min_distance = float('inf')
+                for orig_det in original_detections:
+                    orig_center = [(orig_det['box'][0] + orig_det['box'][2]) / 2, 
+                                  (orig_det['box'][1] + orig_det['box'][3]) / 2]
+                    track_center = [(tlbr[0] + tlbr[2]) / 2, (tlbr[1] + tlbr[3]) / 2]
+                    distance = ((orig_center[0] - track_center[0]) ** 2 + 
+                               (orig_center[1] - track_center[1]) ** 2) ** 0.5
+                    
+                    if distance < min_distance and distance < 100:
+                        min_distance = distance
+                        class_name = orig_det['class']
+        
+        # 计算目标底部中心点（用于融合区域判断）
+        center_x = int((tlbr[0] + tlbr[2]) / 2)
+        center_y = int(tlbr[3])
+        pixel_point = (center_x, center_y)
+        
+        # 判断车道所属
+        lane = get_lane_for_point(camera_id, center_x, center_y)
+        
+        # 检查是否在雷视融合区域内
+        in_fusion_area = GeometryUtils.is_in_radar_vision_fusion_area(pixel_point, camera_id)
+        
+        detection = {
+            'box': tlbr,
+            'confidence': track.score,
+            'class': class_name,  # 保留原始类别信息
+            'track_id': track.track_id,
+            'local_id': track.track_id,
+            'center_point': [(tlbr[0] + tlbr[2]) / 2, (tlbr[1] + tlbr[3]) / 2],
+            'timestamp': result.get('timestamp', time.time()),
+            'camera_id': camera_id,
+            'lane': lane,  # 新增：车道信息
+            'in_fusion_area': in_fusion_area  # 新增：标记是否在融合区域内
+        }
+        tracked_detections.append(detection)
+    
+    return tracked_detections

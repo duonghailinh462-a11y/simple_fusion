@@ -54,183 +54,28 @@ except ImportError as e:
 
 # 🔧 移除FFmpeg相关导入，改用直接计算时间戳
 # from Timestamp_sync import FFmpegTimeStampProvider, FFmpegTimestampFrameSynchronizer
-from core.Basic import Config, DetectionUtils, GeometryUtils, PerformanceMonitor
+from core.Basic import (Config, DetectionUtils, GeometryUtils, PerformanceMonitor,
+                        filter_by_detect_areas, batch_prepare_tracker_input, 
+                        batch_convert_track_results)
 from vision.TargetTrack import TargetBuffer
 from core.Fusion import CrossCameraFusion
 from core.RadarVisionFusion import RadarVisionFusionProcessor, RadarDataLoader, OutputObject
 from radar.RadarDataFilter import RadarDataFilter  # 新增：雷达地理过滤
+from radar.RadarFusionOrchestrator import RadarFusionOrchestrator  # 新增：雷达融合协调器
 from vision.CameraManager import CameraManager
 from core.ResultBuffer import ResultOutputManager
 from config.region_config import get_lane_for_point
 
 # 创建共享布尔值用于停止运行线程
 cancel_flag = multiprocessing.Value('b', False)
-# --- 辅助函数 (从SDKinfer.py移过来) ---
+
+# --- 信号处理函数 ---
 
 def cancel_process(signum, frame):
     """取消处理信号"""
     global cancel_flag
     cancel_flag.value = True
     logger.info("收到停止信号，正在退出...")
-
-def filter_by_detect_areas(detections: List[dict], areas: List[np.ndarray]) -> List[dict]:
-    """根据检测区域过滤检测结果"""
-    filtered_detections = []
-    for detection in detections:
-        # 使用边界框的底部中心点作为判断点
-        x1, y1, x2, y2 = detection['box']
-        center_x, center_y = int((x1 + x2) / 2), int(y2) 
-        in_detect_area = any(cv2.pointPolygonTest(area, (center_x, center_y), False) >= 0 
-                           for area in areas)
-        if in_detect_area:
-            filtered_detections.append(detection)
-    return filtered_detections
-
-def batch_prepare_tracker_input(nms_detections: List[dict]) -> Tuple[np.ndarray, Dict[str, str]]:
-    """
-    批量准备跟踪器输入，优化性能 - 使用numpy避免torch依赖
-    同时返回检测框到类别的映射字典
-    """
-    if not nms_detections:
-        return np.empty((0, 5), dtype=np.float32), {}
-    
-    # 批量提取数据，避免循环
-    # BYTETracker 期望的格式: [x1, y1, x2, y2, score]
-    boxes_scores = np.array([[d['box'][0], d['box'][1], d['box'][2], d['box'][3], d['confidence']] 
-                              for d in nms_detections], dtype=np.float32)
-    
-    # 创建映射字典：key为box的字符串表示，value为类别名称
-    # 这样可以通过box坐标快速查找对应的类别
-    box_to_class = {}
-    for i, det in enumerate(nms_detections):
-        box_key = f"{det['box'][0]:.1f}_{det['box'][1]:.1f}_{det['box'][2]:.1f}_{det['box'][3]:.1f}"
-        box_to_class[box_key] = det['class']
-    
-    # 跟踪器只需要前5列：[x1, y1, x2, y2, score]
-    tracker_input_array = boxes_scores.astype(np.float32)
-    return tracker_input_array, box_to_class
-
-def batch_convert_track_results(tracked_objects: List, result: dict, camera_id: int, current_frame: int, 
-                               original_detections: List[dict] = None, box_to_class: Dict[str, str] = None) -> List[dict]:
-    """
-    批量转换跟踪结果，优化性能并保留原始类别信息
-    box_to_class: 检测框到类别的映射字典
-    """
-    tracked_detections = []
-    
-    # 添加调试信息
-    if current_frame % 100 == 0 and len(tracked_objects) > 0:
-        logger.debug(f"C{camera_id} Frame {current_frame}: {len(tracked_objects)} tracked objects")
-    
-    for track in tracked_objects:
-        # 高效转换tlwh到tlbr
-        tlwh = track.tlwh
-        tlbr = [tlwh[0], tlwh[1], tlwh[0] + tlwh[2], tlwh[1] + tlwh[3]]
-        
-        # 尝试从box_to_class映射中获取类别信息（最准确的方法）
-        class_name = 'car'  # 默认值
-        
-        if box_to_class:
-            # 尝试通过IoU匹配找到对应的原始检测
-            best_iou = 0
-            best_class = None
-            best_box_key = None
-            
-            for box_key, class_str in box_to_class.items():
-                # 解析box_key
-                coords = box_key.split('_')
-                if len(coords) == 4:
-                    try:
-                        orig_box = [float(c) for c in coords]
-                        iou = GeometryUtils.calculate_iou(tlbr, orig_box)
-                        if iou > best_iou and iou > 0.1:  # 降低IoU阈值
-                            best_iou = iou
-                            best_class = class_str
-                            best_box_key = box_key
-                    except:
-                        continue
-            
-            if best_class:
-                class_name = best_class
-                if box_to_class and best_box_key:
-                    # 删除已使用的映射，避免重复使用
-                    del box_to_class[best_box_key]
-            else:
-                # 如果IoU匹配失败，尝试通过距离匹配
-                min_distance = float('inf')
-                best_class_dist = None
-                
-                for box_key, class_str in box_to_class.items():
-                    coords = box_key.split('_')
-                    if len(coords) == 4:
-                        try:
-                            orig_box = [float(c) for c in coords]
-                            orig_center = [(orig_box[0] + orig_box[2]) / 2, (orig_box[1] + orig_box[3]) / 2]
-                            track_center = [(tlbr[0] + tlbr[2]) / 2, (tlbr[1] + tlbr[3]) / 2]
-                            distance = ((orig_center[0] - track_center[0]) ** 2 + 
-                                       (orig_center[1] - track_center[1]) ** 2) ** 0.5
-                            
-                            if distance < min_distance and distance < 100:  # 100像素内的最近匹配
-                                min_distance = distance
-                                best_class_dist = class_str
-                        except:
-                            continue
-                
-                if best_class_dist:
-                    class_name = best_class_dist
-        
-        elif original_detections:
-            # 备选方案：使用原始检测列表
-            best_iou = 0
-            best_match = None
-            for orig_det in original_detections:
-                iou = GeometryUtils.calculate_iou(tlbr, orig_det['box'])
-                if iou > best_iou and iou > 0.1:
-                    best_iou = iou
-                    best_match = orig_det
-            
-            if best_match:
-                class_name = best_match['class']
-            else:
-                # 距离匹配
-                min_distance = float('inf')
-                for orig_det in original_detections:
-                    orig_center = [(orig_det['box'][0] + orig_det['box'][2]) / 2, 
-                                  (orig_det['box'][1] + orig_det['box'][3]) / 2]
-                    track_center = [(tlbr[0] + tlbr[2]) / 2, (tlbr[1] + tlbr[3]) / 2]
-                    distance = ((orig_center[0] - track_center[0]) ** 2 + 
-                               (orig_center[1] - track_center[1]) ** 2) ** 0.5
-                    
-                    if distance < min_distance and distance < 100:
-                        min_distance = distance
-                        class_name = orig_det['class']
-        
-        # 计算目标底部中心点（用于融合区域判断）
-        center_x = int((tlbr[0] + tlbr[2]) / 2)
-        center_y = int(tlbr[3])
-        pixel_point = (center_x, center_y)
-        
-        # 判断车道所属
-        lane = get_lane_for_point(camera_id, center_x, center_y)
-        
-        # 检查是否在雷视融合区域内
-        in_fusion_area = GeometryUtils.is_in_radar_vision_fusion_area(pixel_point, camera_id)
-        
-        detection = {
-            'box': tlbr,
-            'confidence': track.score,
-            'class': class_name,  # 保留原始类别信息
-            'track_id': track.track_id,
-            'local_id': track.track_id,
-            'center_point': [(tlbr[0] + tlbr[2]) / 2, (tlbr[1] + tlbr[3]) / 2],
-            'timestamp': result.get('timestamp', time.time()),
-            'camera_id': camera_id,
-            'lane': lane,  # 新增：车道信息
-            'in_fusion_area': in_fusion_area  # 新增：标记是否在融合区域内
-        }
-        tracked_detections.append(detection)
-    
-    return tracked_detections
 
 # 🔧 修改：使用初始视频时间 + frame_id/fps 计算时间戳
 def create_sdk_worker_process(camera_id: int, video_path: str, result_queue: multiprocessing.Queue):
@@ -370,9 +215,10 @@ if __name__ == "__main__":
                 for camera_id in [1, 2, 3]:
                     radar_fusion_processors[camera_id] = RadarVisionFusionProcessor(
                         fusion_area_geo=None,  # 使用融合区域判断已在GlobalID分配时完成
-                        lat_offset=-0.00000165,
-                        lon_offset=0.0000450,
-                        enable_lane_filtering=True  # 启用三层过滤（象限 + S-L + 车道）
+                        lat_offset=0.0,
+                        lon_offset=0.0,
+                        enable_lane_filtering=True,  # 禁用车道过滤（过滤太严格，导致匹配率低）
+                        camera_id=camera_id  # 传入摄像头ID，用于调整阈值
                     )
                     
                     # 将该摄像头的雷达数据添加到对应的处理器
@@ -394,6 +240,20 @@ if __name__ == "__main__":
         logger.warning(f"雷达融合模块初始化失败: {e}")
         logger.warning("将不使用雷达融合功能")
         radar_fusion_enabled = False
+    
+    # 初始化雷达融合协调器
+    radar_fusion_orchestrator = None
+    radar_filter = None
+    if radar_fusion_enabled:
+        try:
+            radar_filter = RadarDataFilter()
+            radar_fusion_orchestrator = RadarFusionOrchestrator(
+                radar_data_loader, radar_filter, radar_fusion_processors
+            )
+            logger.info("雷达融合协调器已初始化")
+        except Exception as e:
+            logger.warning(f"雷达融合协调器初始化失败: {e}")
+            radar_fusion_orchestrator = None
     
     # 初始化统计：直接输出的雷达数据
     radar_direct_output_count = 0  # 区外直接输出
@@ -447,9 +307,6 @@ if __name__ == "__main__":
 
     # 4. 主循环：时间戳融合逻辑 (消费者)
     
-    # 🔧 时间戳配置：完全基于时间戳同步，不依赖帧号
-    logger.info("同步方式: 纯时间戳同步 (不依赖帧号)")
-    
     # 🔧 改造：移除帧同步，改为单路独立处理
     logger.info("融合主循环启动 - 单路处理模式")
     logger.info("处理模式: 单路独立处理 + 后期三路匹配")
@@ -462,7 +319,20 @@ if __name__ == "__main__":
         current_frame = 0
         radar_id_map = {}  # 全局radar_id_map
         
+        # 🔧 新增：性能统计（整体处理时间）
+        frame_times = deque(maxlen=300)  # 保留最近300帧的处理时间
+        component_times = {
+            'queue_processing': deque(maxlen=300),
+            'frame_processing': deque(maxlen=300),
+            'matching_processing': deque(maxlen=300),
+            'radar_fusion': deque(maxlen=300),
+            'result_buffer': deque(maxlen=300),
+            'total_frame': deque(maxlen=300)
+        }
+        
         while not cancel_flag.value:
+            # 🔧 新增：记录整个帧处理的开始时间
+            frame_start_time = time.time()
             
             # A. 从所有队列中获取结果，单路独立处理
             perf_monitor.start_timer('queue_processing')
@@ -603,192 +473,20 @@ if __name__ == "__main__":
             fusion_system.update_global_state(all_global_targets, all_local_targets)
             matching_time = perf_monitor.end_timer('matching_processing')
 
-            # D. 雷达融合处理 (按摄像头同步融合)
+            # D. 雷达融合处理 (使用协调器)
             radar_id_map = {}
-            direct_radar_outputs = []  # 用于存储直接输出的雷达数据
+            direct_radar_outputs = []
             
-            if radar_fusion_enabled and radar_fusion_processors:
-                perf_monitor.start_timer('radar_fusion_processing')
+            if radar_fusion_enabled and radar_fusion_orchestrator:
+                radar_id_map, direct_radar_outputs = radar_fusion_orchestrator.process_radar_fusion(
+                    current_frame, current_frame_results,
+                    all_global_targets, all_local_targets,
+                    perf_monitor
+                )
                 
-                # ===== 第一道关卡：地理区域过滤 (新增) =====
-                perf_monitor.start_timer('radar_filtering')
-                
-                # 从雷达数据加载器获取当前时间戳最近的雷达数据
-                radar_timestamps_list = list(radar_data_loader.radar_data.keys()) if radar_data_loader else []
-                if radar_timestamps_list and current_frame_results:
-                    # 取第一个摄像头的时间戳作为基准（因为它们应该同步）
-                    vision_timestamp = current_frame_results[1].get('timestamp', time.time()) if 1 in current_frame_results else time.time()
-                    
-                    # 转换vision_timestamp为字符串格式（如果是数字）用于比较
-                    if isinstance(vision_timestamp, (int, float)):
-                        from datetime import datetime
-                        vision_ts_str = datetime.fromtimestamp(vision_timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                    else:
-                        vision_ts_str = str(vision_timestamp)
-                    
-                    # 找到最接近的雷达时间戳（直接用字符串比较）
-                    # 注意：ISO 8601格式的字符串可以直接比较
-                    closest_radar_ts = min(radar_timestamps_list, 
-                                          key=lambda ts: abs(
-                                              int(ts.replace('-', '').replace(':', '').replace(' ', '').replace('.', '')) -
-                                              int(vision_ts_str.replace('-', '').replace(':', '').replace(' ', '').replace('.', ''))
-                                          ))
-                    
-                    if closest_radar_ts in radar_data_loader.radar_data:
-                        all_radar_data = radar_data_loader.radar_data[closest_radar_ts]
-                        
-                        # 调试日志：检查第一条雷达数据的timestamp
-                        if all_radar_data and current_frame == 1:
-                            first_radar = all_radar_data[0]
-                            logger.info(f"Frame {current_frame}: 第一条雷达数据 - type={type(first_radar).__name__}, "
-                                       f"timestamp_str={getattr(first_radar, 'timestamp_str', 'N/A')}, "
-                                       f"radar_id={getattr(first_radar, 'id', 'N/A')}")
-                        
-                        # 执行过滤
-                        fusion_radar_data, direct_output_radar = radar_filter.batch_filter_radar_data(all_radar_data)
-                        
-                        logger.debug(f"Frame {current_frame}: 雷达过滤 总数={len(all_radar_data)}, "
-                                   f"融合区内={len(fusion_radar_data)}, 融合区外={len(direct_output_radar)}")
-                        
-                        # 统计直接输出的数据
-                        direct_radar_outputs.extend(direct_output_radar)
-                        radar_direct_output_count += len(direct_output_radar)
-                        radar_fusion_count += len(fusion_radar_data)
-                
-                perf_monitor.end_timer('radar_filtering')
-                
-                # 按摄像头进行雷达融合
-                for camera_id in [1, 2, 3]:
-                    if camera_id not in radar_fusion_processors:
-                        continue
-                    
-                    # 收集该摄像头的所有目标
-                    vision_objects = []
-                    
-                    # 处理全局目标
-                    for global_target in all_global_targets:
-                        if global_target.camera_id != camera_id:
-                            continue
-                        if not global_target.bev_trajectory:
-                            continue
-                        current_bev = global_target.bev_trajectory[-1]
-                        if current_bev[0] == 0.0 and current_bev[1] == 0.0:
-                            continue
-                        
-                        geo_result = GeometryUtils.bev_to_geo(current_bev[0], current_bev[1])
-                        if not geo_result:
-                            continue
-                        
-                        lng, lat = geo_result
-                        confidence = global_target.confidence_history[-1] if global_target.confidence_history else 0.0
-                        
-                        # 获取车道信息（从最后一个像素位置）
-                        lane = None
-                        if global_target.pixel_trajectory:
-                            pixel_x, pixel_y = global_target.pixel_trajectory[-1]
-                            lane = get_lane_for_point(camera_id, pixel_x, pixel_y)
-                        
-                        vision_obj = OutputObject(
-                            timestamp="",
-                            cameraid=global_target.camera_id,
-                            type_name=global_target.class_name,
-                            confidence=confidence,
-                            track_id=global_target.global_id,
-                            lon=lng,
-                            lat=lat,
-                            pixel_x=pixel_x if global_target.pixel_trajectory else None,
-                            lane=lane
-                        )
-                        vision_objects.append(vision_obj)
-                    
-                    # 处理本地目标 (已匹配的)
-                    for local_target in all_local_targets:
-                        if local_target.camera_id != camera_id:
-                            continue
-                        if not local_target.matched_global_id:
-                            continue
-                        
-                        if local_target.current_bev_pos[0] == 0.0 and local_target.current_bev_pos[1] == 0.0:
-                            continue
-                        
-                        geo_result = GeometryUtils.bev_to_geo(local_target.current_bev_pos[0], local_target.current_bev_pos[1])
-                        if not geo_result:
-                            continue
-                        
-                        lng, lat = geo_result
-                        
-                        # 检查是否已经添加过这个 global_id
-                        if not any(v.track_id == local_target.matched_global_id for v in vision_objects):
-                            # 获取车道信息
-                            pixel_x, pixel_y = local_target.current_pixel_pos
-                            lane = get_lane_for_point(camera_id, pixel_x, pixel_y)
-                            
-                            vision_obj = OutputObject(
-                                timestamp="",
-                                cameraid=local_target.camera_id,
-                                type_name=local_target.class_name,
-                                confidence=local_target.confidence,
-                                track_id=local_target.matched_global_id,
-                                lon=lng,
-                                lat=lat,
-                                pixel_x=pixel_x,
-                                lane=lane
-                            )
-                            vision_objects.append(vision_obj)
-                    
-                    # 执行该摄像头的雷达融合 - 使用原始时间戳
-                    if vision_objects:
-                        # 获取该摄像头的原始时间戳
-                        if camera_id in current_frame_results:
-                            result = current_frame_results[camera_id]
-                            original_timestamp = result.get('timestamp', time.time())
-                        else:
-                            # 如果没有该摄像头的结果，使用当前时间
-                            logger.warning(f"C{camera_id} 没有当前帧结果，使用当前时间作为时间戳")
-                            original_timestamp = time.time()
-                        if isinstance(original_timestamp, str):
-                            # 如果是字符串，需要转换为浮点数
-                            # 注意：时间戳格式是 'YYYY-MM-DD HH:MM:SS.mmm' (3位毫秒，不是6位微秒)
-                            try:
-                                from datetime import datetime
-                                # 方法1：先尝试3位毫秒格式
-                                try:
-                                    dt = datetime.strptime(original_timestamp, '%Y-%m-%d %H:%M:%S.%f')
-                                except ValueError:
-                                    # 方法2：如果失败，说明可能是3位毫秒，需要补充到6位
-                                    # 分割秒和毫秒部分
-                                    parts = original_timestamp.split('.')
-                                    if len(parts) == 2:
-                                        second_part = parts[0]
-                                        ms_part = parts[1]
-                                        # 补充到6位微秒
-                                        us_part = ms_part.ljust(6, '0')
-                                        ts_with_us = f"{second_part}.{us_part}"
-                                        dt = datetime.strptime(ts_with_us, '%Y-%m-%d %H:%M:%S.%f')
-                                    else:
-                                        raise ValueError("时间戳格式错误")
-                                original_timestamp = dt.timestamp()
-                            except Exception as e:
-                                logger.warning(f"时间戳转换失败: {original_timestamp}, 错误: {e}")
-                                original_timestamp = time.time()
-                        
-                        updated_vision_objects = radar_fusion_processors[camera_id].process_frame(original_timestamp, vision_objects)
-                        
-                        # 构建 radar_id_map (key使用global_id，即vision_obj.track_id)
-                        # vision_obj.track_id 已经是 global_id（见上面创建vision_objects的代码）
-                        for vision_obj in updated_vision_objects:
-                            if vision_obj.radar_id is not None:
-                                # 直接使用 track_id 作为 key（track_id 就是 global_id）
-                                radar_id_map[vision_obj.track_id] = vision_obj.radar_id
-                                if current_frame % 100 == 0:
-                                    logger.debug(f"Frame {current_frame} C{camera_id}: 雷达ID映射 track_id={vision_obj.track_id} -> radar_id={vision_obj.radar_id}")
-                        
-                        # 统计信息
-                        matched_count = sum(1 for v in updated_vision_objects if v.radar_id is not None)
-                        if current_frame % 100 == 0 and matched_count > 0:
-                            logger.info(f"Frame {current_frame} C{camera_id}: 雷达匹配 {matched_count}/{len(updated_vision_objects)} 个目标，radar_id_map大小={len(radar_id_map)}")
-                
-                perf_monitor.end_timer('radar_fusion_processing')
+                # 更新统计信息
+                radar_direct_output_count += len(direct_radar_outputs)
+                radar_fusion_count += sum(1 for _ in radar_id_map.values())
             
             # D.1 添加单路处理结果到缓冲区（存储已融合的GlobalTarget）
             perf_monitor.start_timer('store_single_camera_results')
@@ -856,7 +554,7 @@ if __name__ == "__main__":
                 logger.info(f"缓冲区状态: C1={buffer_status['c1_size']} "
                            f"C2={buffer_status['c2_size']} C3={buffer_status['c3_size']}")
             
-            perf_monitor.end_timer('result_buffer_processing')
+            result_buffer_time = perf_monitor.end_timer('result_buffer_processing')
             
             # ✅ 关键修改：不再生成每帧的JSON
             # 现在只通过 ResultBuffer 的三路匹配输出结果
@@ -867,6 +565,55 @@ if __name__ == "__main__":
             fusion_system.next_frame()
             
             json_mqtt_time = perf_monitor.end_timer('json_mqtt_processing')
+            
+            # 🔧 新增：记录整个帧的处理时间
+            # 注意：perf_monitor.end_timer() 返回的是毫秒，需要转换回秒
+            total_frame_time = time.time() - frame_start_time
+            frame_times.append(total_frame_time)
+            component_times['queue_processing'].append(queue_processing_time / 1000.0)  # 转秒
+            component_times['frame_processing'].append(frame_processing_time / 1000.0)
+            component_times['matching_processing'].append(matching_time / 1000.0)
+            if radar_fusion_enabled:
+                # 雷达融合时间从协调器返回（秒）
+                component_times['radar_fusion'].append(0)  # 暂未记录
+            component_times['result_buffer'].append(result_buffer_time / 1000.0)
+            component_times['total_frame'].append(total_frame_time)
+            
+            # 🔧 新增：每100帧输出一次性能统计
+            if current_frame > 0 and current_frame % 100 == 0:
+                logger.info("="*70)
+                logger.info(f"📊 性能统计 (截至Frame {current_frame}, 最近100帧)")
+                logger.info("="*70)
+                
+                # 计算平均耗时
+                if frame_times:
+                    avg_total = mean(frame_times)
+                    fps_actual = 1.0 / avg_total if avg_total > 0 else 0
+                    logger.info(f"总处理时间: {avg_total*1000:.2f}ms/帧 (实际FPS: {fps_actual:.1f})")
+                    
+                    if component_times['queue_processing']:
+                        logger.info(f"  ├─ 队列读取: {mean(component_times['queue_processing'])*1000:.2f}ms")
+                    if component_times['frame_processing']:
+                        logger.info(f"  ├─ 帧处理(跟踪+融合): {mean(component_times['frame_processing'])*1000:.2f}ms")
+                    if component_times['matching_processing']:
+                        logger.info(f"  ├─ 匹配处理: {mean(component_times['matching_processing'])*1000:.2f}ms")
+                    if radar_fusion_enabled and component_times['radar_fusion']:
+                        avg_radar = mean(component_times['radar_fusion'])
+                        if avg_radar > 0:
+                            logger.info(f"  ├─ 雷达融合: {avg_radar*1000:.2f}ms")
+                    if component_times['result_buffer']:
+                        logger.info(f"  └─ 结果缓冲: {mean(component_times['result_buffer'])*1000:.2f}ms")
+                    
+                    # 实时性评估
+                    required_fps = 30  # 目标30FPS
+                    required_time = 1.0 / required_fps  # 约33.3ms
+                    if avg_total > required_time:
+                        logger.warning(f"⚠️  实时性告警：平均处理时间({avg_total*1000:.2f}ms) > 目标时间({required_time*1000:.1f}ms)")
+                        logger.warning(f"    瓶颈可能在: 帧处理或匹配处理阶段")
+                    else:
+                        logger.info(f"✅ 可以达到 {fps_actual:.1f} FPS 的实时处理")
+                
+                logger.info("="*70)
 
             # D. 定期报告队列状态
             if current_frame > 0 and current_frame % 300 == 0:
@@ -927,7 +674,6 @@ if __name__ == "__main__":
             logger.info(f"  平均跟踪耗时: {avg_tracking_time:.3f}s")
             logger.info(f"  平均预测耗时: {avg_prediction_time:.3f}s")
         logger.info("="*60)
-        
     except Exception as e:
         logger.error(f"主程序执行出错: {e}")
         import traceback
@@ -936,6 +682,15 @@ if __name__ == "__main__":
         # 刷新所有缓冲区中的结果
         logger.info("程序结束，刷新缓冲区...")
         result_output_manager.flush_all()
+        
+        # 🔧 打印雷达融合统计信息
+        if radar_fusion_orchestrator and hasattr(radar_fusion_orchestrator, 'print_overall_statistics'):
+            try:
+                radar_fusion_orchestrator.print_overall_statistics()
+            except Exception as e:
+                logger.warning(f"打印雷达融合统计失败: {e}")
+                import traceback
+                traceback.print_exc()
         
         # 🔧 修复：在finally块中保存JSON，确保即使异常退出也能保存数据
         logger.info("正在保存JSON数据")

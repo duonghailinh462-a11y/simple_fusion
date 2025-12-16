@@ -2,13 +2,13 @@
 __pycache__/
 
 # 临时输出文件
-*.json
+# *.json  # 暂时注释，用于调试
 
 # 日志文件
-*.log
+# *.log  # 暂时注释，用于调试
 logs/
 
 # 大体积视频和数据文件
 videos/
-*.jsonl
+# *.jsonl  # 暂时注释，用于调试
 *.mp4

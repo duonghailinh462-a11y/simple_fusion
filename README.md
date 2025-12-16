@@ -165,22 +165,26 @@ python main.py
 │   └── TargetTrack.py        # 目标跟踪缓冲
 ├── radar/                     # 雷达模块
 │   ├── RadarDataFilter.py    # 雷达数据筛选和转发
-│   └── RadarDataManager.py   # 雷达数据管理器
+│   ├── RadarDataManager.py   # 雷达数据管理器
+│   └── RadarFusionOrchestrator.py  # 雷达融合协调器 (v2新增)
 ├── config/                    # 配置文件
 │   ├── fusion_config.py      # 融合配置
 │   ├── camera_config.ini     # 摄像头配置（RTSP URLs）
 │   └── mqtt_config.ini       # MQTT配置
 └── PROJECT_STRUCTURE.md       # 详细的项目结构文档
-```
 
 详见 `PROJECT_STRUCTURE.md` 了解各模块详情。
 
 ## 版本信息
 
-- **当前版本**：1.1
-- **状态**：代码结构重构完成，可正常运行
-- **最后更新**：2025-12-10
-- **最近更新**：完成项目模块化重构，统一导入规范
+- **当前版本**：2.0
+- **状态**：代码精简重构完成，可正常运行
+- **最后更新**：2025-12-12
+- **最近更新**：
+  - ✅ 辅助函数迁移到 `core/Basic.py`（减少156行）
+  - ✅ 雷达融合处理迁移到 `radar/RadarFusionOrchestrator.py`（减少178行）
+  - ✅ main.py 精简 32.6%（从978→659行）
+  - ✅ 详见 `REFACTORING_v2.md`
 
 ┌─────────────────────────────────────────────────┐
 │ 车辆从 C1 主责区 移动到 C1-C2 交界区             │

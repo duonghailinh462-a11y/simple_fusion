@@ -140,13 +140,13 @@ class RadarDataFilter:
             # 判断是否在融合区
             if self.is_in_fusion_area(lon, lat):
                 # 在融合区内 → 送入融合系统
-                logger.debug(f"📍 雷达点({lon:.6f}, {lat:.6f})在融合区内，送入融合系统")
+                #logger.debug(f"📍 雷达点({lon:.6f}, {lat:.6f})在融合区内，送入融合系统")
                 return data_dict, None
             else:
                 # 区域外 → 直接输出
                 output = data_dict.copy()
                 output['source'] = 'radar'  # 添加source标记
-                logger.debug(f"📍 雷达点({lon:.6f}, {lat:.6f})在融合区外，直接输出")
+                #logger.debug(f"📍 雷达点({lon:.6f}, {lat:.6f})在融合区外，直接输出")
                 return None, output
                 
         except Exception as e:

@@ -42,7 +42,7 @@ class FusionLogger:
         # 文件处理器 - 写入所有日志到单一文件
         file_handler = logging.FileHandler(
             cls.LOG_FILE, 
-            mode='w',  # 每次启动时清空日志
+            mode='w',  # 清空模式，每次运行先清空
             encoding='utf-8'
         )
         file_handler.setLevel(logging.DEBUG)
