@@ -13,7 +13,7 @@ import math
 import time
 import numpy as np
 import logging
-from collections import defaultdict, deque
+from collections import OrderedDict, deque
 from datetime import datetime
 from typing import List, Dict, Tuple, Optional
 from scipy.optimize import linear_sum_assignment
@@ -284,11 +284,20 @@ class RadarVisionFusionProcessor:
             else:
                 logger.info("✅ 两层过滤已启用: 象限 + S-L距离（车道过滤未启用）")
         
-        # 雷达缓冲区 (时间戳 -> 雷达目标列表)
-        self.radar_buffer = defaultdict(list)
+        # 🔧 改进：用 OrderedDict 替代 defaultdict，支持时间窗口管理
+        # 好处：
+        # 1. FIFO 有序，自动维护时间顺序
+        # 2. 容易实现 LRU/FIFO 清理策略
+        # 3. 不会隐式创建不存在的键
+        self.radar_buffer = OrderedDict()  # 时间戳 -> 雷达目标列表
         self.radar_timestamps = deque(maxlen=100)  # 保留最近100个时间戳
         self.sorted_radar_timestamps = []  # 缓存排序后的时间戳（用于二分查找优化）
         self.sorted_timestamps_cache_dirty = True  # 标记缓存是否过期
+        
+        # 🔧 新增：时间窗口管理参数
+        self.radar_buffer_time_window = 5.0  # 雷达缓冲区时间窗口 (秒)
+        self.last_buffer_cleanup_time = time.time()  # 上次清理时间
+        self.buffer_cleanup_interval = 1.0  # 清理间隔 (秒) - 避免过于频繁的清理
         
         # 匹配映射 (track_id -> radar_id)
         self.radar_id_map = {}  # 雷达ID -> 融合ID
@@ -426,9 +435,16 @@ class RadarVisionFusionProcessor:
             else:
                 rejected_objects.append(radar_obj)
 
+        # 🔧 使用 OrderedDict 的 put 操作
         self.radar_buffer[timestamp] = filtered_objects
         self.radar_timestamps.append(timestamp)
         self.sorted_timestamps_cache_dirty = True  # 标记缓存需要更新
+        
+        # 🔧 自动触发时间窗口清理（定期执行，避免频繁调用）
+        current_time = time_module.time()
+        if current_time - self.last_buffer_cleanup_time > self.buffer_cleanup_interval:
+            self._cleanup_radar_buffer_by_time_window(timestamp)
+            self.last_buffer_cleanup_time = current_time
 
     def find_closest_radar_timestamp(self, vision_timestamp, max_time_diff=None):
         """
@@ -446,8 +462,12 @@ class RadarVisionFusionProcessor:
             max_time_diff = self.MAX_TIME_DIFF
 
         # 🔧 优化：使用缓存的排序时间戳列表，避免每次都重新排序
-        # 只有在新数据添加时才重新排序
+        # 策略：
+        # 1. OrderedDict 保证 FIFO 有序
+        # 2. 仅当 sorted_timestamps_cache_dirty=True 时重新排序
+        # 3. 排序后的列表用于二分查找（O(log n)）
         if self.sorted_timestamps_cache_dirty:
+            # 由于 OrderedDict 已经按插入顺序排列，只需按时间戳数值排序一次
             self.sorted_radar_timestamps = sorted(self.radar_buffer.keys(), 
                                                    key=lambda ts: parse_time(ts))
             self.sorted_timestamps_cache_dirty = False
@@ -707,8 +727,8 @@ class RadarVisionFusionProcessor:
                         vision_lane = v_obj.lane if hasattr(v_obj, 'lane') else None
                         pixel_x = v_obj.pixel_x if hasattr(v_obj, 'pixel_x') else None
                         camera_id = v_obj.cameraid if hasattr(v_obj, 'cameraid') else 'N/A'
-                        radar_ip = radar_obj.ip if hasattr(radar_obj, 'ip') else None
-                        radar_device_name = RADAR_IP_TO_CAMERA.get(radar_ip, 'Unknown') if radar_ip else 'N/A'
+                        radar_ip = radar_obj.source_ip if hasattr(radar_obj, 'source_ip') else None
+                        radar_device_name = RadarDataLoader.RADAR_IP_TO_CAMERA.get(radar_ip, 'Unknown') if radar_ip else 'N/A'
                         logger.debug(f"      ❌ 车道不兼容: {lane_reason}，设为1e6")
                         logger.debug(f"         📹 摄像头: C{camera_id} | 🎯 雷达: {radar_device_name} ({radar_ip})")
                         logger.debug(f"         🛣️  雷达车道: {radar_lane} | 🛣️  视觉车道: {vision_lane} (像素X: {pixel_x})")
@@ -1051,6 +1071,57 @@ class RadarVisionFusionProcessor:
         
         return vision_objects
 
+    def _cleanup_radar_buffer_by_time_window(self, current_timestamp):
+        """
+        🔧 新增：按时间窗口清理雷达缓冲区（内部方法，自动调用）
+        
+        Args:
+            current_timestamp: 当前时间戳（字符串或数字）
+        """
+        # 转换当前时间戳为数字格式
+        try:
+            if isinstance(current_timestamp, str):
+                current_ts_numeric = parse_time(current_timestamp)
+            else:
+                current_ts_numeric = float(current_timestamp)
+        except (ValueError, TypeError):
+            return
+        
+        # 使用 OrderedDict 的特性：按照插入顺序迭代
+        # 由于是 FIFO，最旧的数据在最前面，可以直接 popitem(last=False) 删除
+        removed_count = 0
+        while self.radar_buffer:
+            # 检查最旧的时间戳（第一个元素）
+            oldest_ts, _ = next(iter(self.radar_buffer.items()))
+            
+            try:
+                if isinstance(oldest_ts, str):
+                    oldest_ts_numeric = parse_time(oldest_ts)
+                else:
+                    oldest_ts_numeric = float(oldest_ts)
+            except (ValueError, TypeError):
+                # 格式错误，删除
+                del self.radar_buffer[oldest_ts]
+                removed_count += 1
+                continue
+            
+            # 检查是否超出时间窗口
+            if current_ts_numeric - oldest_ts_numeric > self.radar_buffer_time_window:
+                # 删除最旧的数据
+                del self.radar_buffer[oldest_ts]
+                removed_count += 1
+            else:
+                # 还在时间窗口内，停止删除
+                break
+        
+        if removed_count > 0:
+            # 标记排序缓存需要更新
+            self.sorted_timestamps_cache_dirty = True
+            if FusionLogger and FusionLogger.ENABLE_DEBUG_LOG:
+                logger.debug(f"🧹 自动清理雷达缓冲区: 移除 {removed_count} 帧, "
+                           f"缓冲区大小: {len(self.radar_buffer)}, "
+                           f"时间窗口: {self.radar_buffer_time_window}秒")
+
     def clear_old_radar_data(self, current_timestamp, max_age=1.0):
         """
         清理过期的雷达数据和轨迹历史
@@ -1062,21 +1133,26 @@ class RadarVisionFusionProcessor:
         import time as time_module
         clear_start = time_module.time()
         
-        # 清理过期的雷达缓冲区数据
+        # 🔧 改进：使用 OrderedDict 的特性进行高效清理
+        # 由于 OrderedDict 维护 FIFO 顺序，最旧数据总是在最前面
+        # 可以直接使用 popitem(last=False) 进行高效删除
+        try:
+            if isinstance(current_timestamp, str):
+                current_ts_numeric = parse_time(current_timestamp)
+            else:
+                current_ts_numeric = float(current_timestamp)
+        except (ValueError, TypeError):
+            current_ts_numeric = time.time()
+        
+        removed_count = 0
+        # 使用列表收集要删除的时间戳（避免迭代时修改字典）
         old_timestamps = []
         for ts in self.radar_buffer.keys():
-            # 处理时间戳格式：可能是字符串或数字
             try:
                 if isinstance(ts, str):
                     ts_numeric = parse_time(ts)
                 else:
                     ts_numeric = float(ts)
-                
-                # 将current_timestamp转换为相同格式
-                if isinstance(current_timestamp, str):
-                    current_ts_numeric = parse_time(current_timestamp)
-                else:
-                    current_ts_numeric = float(current_timestamp)
                 
                 if current_ts_numeric - ts_numeric > max_age:
                     old_timestamps.append(ts)
@@ -1127,6 +1203,37 @@ class RadarVisionFusionProcessor:
             logger.debug(f"🧹 数据清理 - 移除雷达数据帧: {removed_count}, "
                         f"清理轨迹历史: {history_removed}, 清理过期轨迹: {len(dead_ids)}, "
                         f"耗时={clear_elapsed:.2f}ms")
+
+    def get_buffer_stats(self):
+        """
+        🔧 新增：获取雷达缓冲区统计信息
+        
+        Returns:
+            dict: 缓冲区统计信息
+                {
+                    'buffer_size': int,  # 当前缓冲区中的帧数
+                    'buffer_time_window': float,  # 时间窗口大小（秒）
+                    'oldest_timestamp': str,  # 最旧的时间戳
+                    'newest_timestamp': str,  # 最新的时间戳
+                    'cache_dirty': bool,  # 排序缓存是否过期
+                    'sorted_cache_size': int  # 排序缓存大小
+                }
+        """
+        if self.radar_buffer:
+            oldest_ts = next(iter(self.radar_buffer.keys()))
+            newest_ts = next(reversed(self.radar_buffer))
+        else:
+            oldest_ts = None
+            newest_ts = None
+        
+        return {
+            'buffer_size': len(self.radar_buffer),
+            'buffer_time_window': self.radar_buffer_time_window,
+            'oldest_timestamp': oldest_ts,
+            'newest_timestamp': newest_ts,
+            'cache_dirty': self.sorted_timestamps_cache_dirty,
+            'sorted_cache_size': len(self.sorted_radar_timestamps)
+        }
 
     def get_stats(self):
         """获取统计信息"""

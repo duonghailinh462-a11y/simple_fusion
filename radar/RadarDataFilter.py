@@ -192,8 +192,8 @@ class RadarDataFilter:
         elapsed = (time_module.time() - start_time) * 1000
         # 条件日志：批量过滤完成信息（受ENABLE_RADAR_FILTER_LOG控制）
         if FusionLogger and FusionLogger.ENABLE_RADAR_FILTER_LOG:
-            logger.info(f"📊 批量过滤完成: 总数={len(radar_data_list)}, "
-                       f"融合区内={len(fusion_data_list)}, 融合区外={len(direct_output_list)}, 耗时={elapsed:.2f}ms")
+        logger.info(f"📊 批量过滤完成: 总数={len(radar_data_list)}, "
+                   f"融合区内={len(fusion_data_list)}, 融合区外={len(direct_output_list)}, 耗时={elapsed:.2f}ms")
         
         return fusion_data_list, direct_output_list
 

@@ -1,0 +1,59 @@
+# 雷达数据源配置文件
+# 支持两种模式：
+#   1. file - 从JSONL文件读取（测试模式）
+#   2. stream - 从TCP服务器接收（实际模式）
+
+radar_source:
+  # 模式选择: "file" 或 "stream"
+  mode: file
+  
+  # ===== 文件模式配置 =====
+  file:
+    # 雷达数据文件路径
+    path: /path/to/radar_data.jsonl
+    
+    # 是否在启动时加载所有数据到内存
+    preload: true
+  
+  # ===== 流模式配置 =====
+  stream:
+    # TCP服务器地址和端口
+    host: 44.30.142.88
+    port: 5000
+    
+    # Socket超时时间（秒）
+    socket_timeout: 5.0
+    
+    # 最大重连次数
+    max_reconnect_attempts: 5
+    
+    # 重连延迟（秒）
+    reconnect_delay: 2.0
+
+# 摄像头过滤配置
+camera_filter:
+  # 是否启用摄像头过滤
+  enabled: true
+  
+  # 摄像头ID (1, 2, 3) 或 null 表示接收所有摄像头数据
+  camera_id: null
+
+# 雷达缓冲配置
+buffer:
+  # 最大保留的时间戳数（用于时间匹配）
+  max_timestamps: 100
+  
+  # 清理过期数据的时间间隔（秒）
+  cleanup_interval: 5.0
+  
+  # 数据最大保留时间（秒）
+  max_data_age: 10.0
+
+# 诊断和调试
+diagnostics:
+  # 是否启用诊断日志
+  enable_diagnostics: false
+  
+  # 诊断输出间隔（秒）
+  diagnostics_interval: 5.0
+
