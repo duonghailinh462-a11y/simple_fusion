@@ -253,6 +253,8 @@ class RadarVisionFusionProcessor:
         # 雷达缓冲区 (时间戳 -> 雷达目标列表)
         self.radar_buffer = defaultdict(list)
         self.radar_timestamps = deque(maxlen=100)  # 保留最近100个时间戳
+        self.sorted_radar_timestamps = []  # 缓存排序后的时间戳（用于二分查找优化）
+        self.sorted_timestamps_cache_dirty = True  # 标记缓存是否过期
         
         # 匹配映射 (track_id -> radar_id)
         self.radar_id_map = {}  # 雷达ID -> 融合ID
@@ -379,6 +381,9 @@ class RadarVisionFusionProcessor:
             timestamp: 时间戳
             radar_objects: 雷达目标列表
         """
+        import time as time_module
+        add_start = time_module.time()
+        
         # 🔧 按摄像头ID过滤雷达数据
         filtered_objects = []
         rejected_objects = []
@@ -391,11 +396,13 @@ class RadarVisionFusionProcessor:
         
         # 诊断日志：仅在有拒绝时输出
         if self.camera_id and rejected_objects:
+            add_elapsed = (time_module.time() - add_start) * 1000
             print(f"⚠️ C{self.camera_id} 雷达数据过滤: 总数={len(radar_objects)}, "
-                  f"接受={len(filtered_objects)}, 拒绝={len(rejected_objects)}")
+                  f"接受={len(filtered_objects)}, 拒绝={len(rejected_objects)}, 耗时={add_elapsed:.2f}ms")
         
         self.radar_buffer[timestamp] = filtered_objects
         self.radar_timestamps.append(timestamp)
+        self.sorted_timestamps_cache_dirty = True  # 标记缓存需要更新
 
     def find_closest_radar_timestamp(self, vision_timestamp, max_time_diff=None):
         """
@@ -412,9 +419,14 @@ class RadarVisionFusionProcessor:
         if max_time_diff is None:
             max_time_diff = self.MAX_TIME_DIFF
 
-        # 🔧 修复：直接从 radar_buffer 的键中查找，而不是从受限的 deque 中查找
-        # 这样可以访问所有已加载的雷达时间戳，而不会因为 deque 的 maxlen 限制而丢失早期数据
-        radar_timestamps_list = list(self.radar_buffer.keys())
+        # 🔧 优化：使用缓存的排序时间戳列表，避免每次都重新排序
+        # 只有在新数据添加时才重新排序
+        if self.sorted_timestamps_cache_dirty:
+            self.sorted_radar_timestamps = sorted(self.radar_buffer.keys(), 
+                                                   key=lambda ts: parse_time(ts))
+            self.sorted_timestamps_cache_dirty = False
+        
+        radar_timestamps_list = self.sorted_radar_timestamps
         
         if not radar_timestamps_list:
             return None
@@ -434,32 +446,55 @@ class RadarVisionFusionProcessor:
                 vision_ts_numeric = vision_dt.timestamp()
             except (ValueError, TypeError):
                 # 降级：如果解析失败，尝试其他格式或使用当前时间
-                logger.warning(f"无法解析视觉时间戳: {vision_timestamp}")
+                # logger.warning(f"无法解析视觉时间戳: {vision_timestamp}")
                 return None
         else:
             # 假设已经是 Unix 时间戳
             vision_ts_numeric = float(vision_timestamp)
         
-        # 然后处理雷达时间戳列表
+        # 🔧 优化：转换所有时间戳为数字，然后使用二分查找
+        # 构建雷达时间戳的数字版本缓存
+        import bisect
+        
+        radar_ts_numeric_list = []
+        radar_ts_original_list = []
+        
         for radar_ts in radar_timestamps_list:
             if isinstance(radar_ts, str):
                 # 字符串时间戳：转换为 Unix 时间戳
-                # 格式: "2025-11-21 11:59:10.171"
                 try:
-                    radar_dt = datetime.strptime(radar_ts, '%Y-%m-%d %H:%M:%S.%f')
-                    radar_ts_numeric = radar_dt.timestamp()
+                    radar_ts_numeric = parse_time(radar_ts)
+                    if radar_ts_numeric == 0.0:
+                        continue
                 except (ValueError, TypeError):
-                    logger.warning(f"无法解析雷达时间戳: {radar_ts}")
                     continue
             else:
                 # 数字时间戳：直接使用
                 radar_ts_numeric = float(radar_ts)
             
-            # 计算时间差（秒级）
-            diff = abs(radar_ts_numeric - vision_ts_numeric)
-            if diff < min_diff:
-                min_diff = diff
-                closest_ts = radar_ts
+            radar_ts_numeric_list.append(radar_ts_numeric)
+            radar_ts_original_list.append(radar_ts)
+        
+        # 使用二分查找找到最接近的索引
+        if radar_ts_numeric_list:
+            # 找到插入位置
+            insert_idx = bisect.bisect_left(radar_ts_numeric_list, vision_ts_numeric)
+            
+            # 检查左边的值
+            if insert_idx > 0:
+                left_idx = insert_idx - 1
+                diff_left = abs(radar_ts_numeric_list[left_idx] - vision_ts_numeric)
+                if diff_left < min_diff:
+                    min_diff = diff_left
+                    closest_ts = radar_ts_original_list[left_idx]
+            
+            # 检查右边的值
+            if insert_idx < len(radar_ts_numeric_list):
+                right_idx = insert_idx
+                diff_right = abs(radar_ts_numeric_list[right_idx] - vision_ts_numeric)
+                if diff_right < min_diff:
+                    min_diff = diff_right
+                    closest_ts = radar_ts_original_list[right_idx]
 
         # 尝试多个阈值来找到匹配
         # 1. 严格阈值：0.5秒（MAX_TIME_DIFF）
@@ -732,7 +767,11 @@ class RadarVisionFusionProcessor:
         Returns:
             更新后的视觉目标列表 (with radar_id)
         """
+        import time as time_module
+        frame_start = time_module.time()
+        
         # ===== 步骤 1：轨迹预测与清理 =====
+        predict_start = time_module.time()
         dead_ids = []
         for fusion_id, track in self.active_tracks.items():
             dt = vision_timestamp - track.last_update_time
@@ -747,7 +786,10 @@ class RadarVisionFusionProcessor:
             self.vision_id_map = {k: v for k, v in self.vision_id_map.items() if v != fusion_id}
             self.radar_id_map = {k: v for k, v in self.radar_id_map.items() if v != fusion_id}
         
+        predict_elapsed = (time_module.time() - predict_start) * 1000
+        
         # ===== 步骤 2：坐标校准 =====
+        calib_start = time_module.time()
         for v_obj in vision_objects:
             # 检查坐标是否有效
             try:
@@ -763,8 +805,13 @@ class RadarVisionFusionProcessor:
                 v_obj.calib_lat = v_obj.lat
                 v_obj.calib_lon = v_obj.lon
         
+        calib_elapsed = (time_module.time() - calib_start) * 1000
+        
         # ===== 步骤 3：找到最接近的雷达时间戳 =====
+        ts_match_start = time_module.time()
         radar_timestamp = self.find_closest_radar_timestamp(vision_timestamp)
+        ts_match_elapsed = (time_module.time() - ts_match_start) * 1000
+        
         if radar_timestamp is None:
             # 诊断：没有找到匹配的雷达时间戳
             radar_timestamps_list = list(self.radar_buffer.keys())
@@ -789,6 +836,7 @@ class RadarVisionFusionProcessor:
             return vision_objects
         
         # 数据清理：过滤掉坐标无效的雷达对象
+        cleanup_start = time_module.time()
         valid_radar_objects = []
         for radar_obj in radar_objects:
             try:
@@ -821,6 +869,7 @@ class RadarVisionFusionProcessor:
             return vision_objects
         
         vision_objects_to_match = valid_vision_objects
+        cleanup_elapsed = (time_module.time() - cleanup_start) * 1000
         
         # 📊 统计本帧的对象数（在处理前）
         self.stats['radar_objects_processed'] += len(radar_objects)
@@ -832,10 +881,13 @@ class RadarVisionFusionProcessor:
         
         # ===== 步骤 5：【改进】最优二部图匹配（替代贪心算法） =====
         # 使用匈牙利算法找到全局最优匹配，避免前期贪心造成后期缺配
+        matching_start = time_module.time()
         radar_indices, vision_indices = self.optimal_bipartite_matching(radar_objects, vision_objects_to_match)
+        matching_elapsed = (time_module.time() - matching_start) * 1000
         
         # 诊断输出：匹配结果
-        print(f"[RADAR_FUSION] 匹配结果 - 雷达目标数: {len(radar_objects)}, 视觉目标数: {len(vision_objects_to_match)}, 成功匹配: {len(radar_indices)}")
+        print(f"[RADAR_FUSION] 匹配结果 - 雷达目标数: {len(radar_objects)}, 视觉目标数: {len(vision_objects_to_match)}, "
+              f"成功匹配: {len(radar_indices)}, 耗时={matching_elapsed:.2f}ms")
         
         # 诊断：显示雷达和视觉目标的坐标
         if len(radar_objects) > 0 and len(vision_objects_to_match) > 0:
@@ -848,6 +900,7 @@ class RadarVisionFusionProcessor:
             print(f"  距离: {dist:.2f}米 (阈值: 横向{self.MAX_LANE_DIFF}米, 纵向{self.MAX_LONG_DIFF}米)")
         
         # 处理匹配对
+        process_match_start = time_module.time()
         for radar_idx, vision_idx in zip(radar_indices, vision_indices):
             radar_obj = radar_objects[radar_idx]
             v_obj = vision_objects_to_match[vision_idx]
@@ -895,6 +948,8 @@ class RadarVisionFusionProcessor:
                     orig_v_obj.radar_id = radar_obj.id
                     break
         
+        process_match_elapsed = (time_module.time() - process_match_start) * 1000
+        
         # 统计本帧的匹配情况
         matched_radar_count = len(radar_indices)
         unmatched_radar_count = len(radar_objects) - matched_radar_count
@@ -905,6 +960,7 @@ class RadarVisionFusionProcessor:
         # 累加本帧的视觉对象数到统计
         self.stats['vision_objects_processed'] += len(vision_objects)
         
+        unmatched_start = time_module.time()
         for v_obj in vision_objects:
             v_key = str(v_obj.track_id)
             
@@ -953,6 +1009,16 @@ class RadarVisionFusionProcessor:
                 v_obj.radar_id = self.track_radar_history[v_obj.track_id]
             else:
                 v_obj.radar_id = None  # 从未匹配过的视觉目标没有雷达ID
+        
+        unmatched_elapsed = (time_module.time() - unmatched_start) * 1000
+        
+        # ===== 最终统计 =====
+        total_elapsed = (time_module.time() - frame_start) * 1000
+        print(f"[RADAR_FUSION] 处理完成 - 总耗时={total_elapsed:.2f}ms "
+              f"[预测{predict_elapsed:.2f}ms + 校准{calib_elapsed:.2f}ms + "
+              f"时间戳匹配{ts_match_elapsed:.2f}ms + 数据清理{cleanup_elapsed:.2f}ms + "
+              f"最优匹配{matching_elapsed:.2f}ms + 处理匹配对{process_match_elapsed:.2f}ms + "
+              f"处理未匹配{unmatched_elapsed:.2f}ms]")
         
         return vision_objects
 
@@ -1046,6 +1112,9 @@ class RadarDataLoader:
 
     def load(self):
         """加载雷达数据"""
+        import time as time_module
+        load_start = time_module.time()
+        
         try:
             with open(self.radar_file_path, 'r', encoding='utf-8') as f:
                 first_record = True
@@ -1115,7 +1184,8 @@ class RadarDataLoader:
                         print(f"  警告: 解析雷达数据行失败: {e}")
                         continue
 
-            print(f"✅ 加载雷达数据完成: {len(self.radar_data)} 帧")
+            load_elapsed = (time_module.time() - load_start) * 1000
+            print(f"✅ 加载雷达数据完成: {len(self.radar_data)} 帧, 耗时={load_elapsed:.2f}ms")
             print(f"   C1: {len(self.camera_timestamps[1])} 帧")
             print(f"   C2: {len(self.camera_timestamps[2])} 帧")
             print(f"   C3: {len(self.camera_timestamps[3])} 帧")

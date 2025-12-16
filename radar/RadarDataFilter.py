@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 # 导入现有的工具和配置
 from core.Basic import Config, GeometryUtils
 from core.RadarVisionFusion import RadarObject
+from core.StreamingDataLoader import RadarObject as StreamingRadarObject
 
 # ==========================================
 # 融合区域定义（经纬度坐标）
@@ -114,7 +115,7 @@ class RadarDataFilter:
                 lon = radar_data.get('lon')
                 lat = radar_data.get('lat')
                 data_dict = radar_data
-            elif isinstance(radar_data, RadarObject):
+            elif isinstance(radar_data, (RadarObject, StreamingRadarObject)):
                 lon = radar_data.longitude
                 lat = radar_data.latitude
                 # 将RadarObject转换为字典格式用于输出
@@ -163,6 +164,9 @@ class RadarDataFilter:
         返回:
             (fusion_data_list, direct_output_list)
         """
+        import time as time_module
+        start_time = time_module.time()
+        
         fusion_data_list = []
         direct_output_list = []
         
@@ -179,8 +183,9 @@ class RadarDataFilter:
                 if len(direct_output_list) == 1:  # 只记录第一条
                     logger.info(f"📍 第一条融合区外数据: timestamp={output_data.get('timestamp')}, radar_id={output_data.get('radar_id')}")
         
+        elapsed = (time_module.time() - start_time) * 1000
         logger.info(f"📊 批量过滤完成: 总数={len(radar_data_list)}, "
-                   f"融合区内={len(fusion_data_list)}, 融合区外={len(direct_output_list)}")
+                   f"融合区内={len(fusion_data_list)}, 融合区外={len(direct_output_list)}, 耗时={elapsed:.2f}ms")
         
         return fusion_data_list, direct_output_list
 

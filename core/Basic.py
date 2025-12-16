@@ -30,6 +30,7 @@ class PerformanceMonitor:
         self.start_time = time.time()
         self.last_report_time = time.time()
         self.report_interval = 10.0
+        self.perf_data = defaultdict(lambda: {'total_ms': 0, 'count': 0})  # 🔧 新增：存储计时数据
         
         logger.info("性能监视器初始化完成")
     
@@ -43,6 +44,9 @@ class PerformanceMonitor:
             return 0.0
         elapsed = (time.time() - self.timers[name]) * 1000
         del self.timers[name]
+        # 🔧 新增：保存到 perf_data
+        self.perf_data[name]['total_ms'] = elapsed
+        self.perf_data[name]['count'] += 1
         return elapsed
     
     def add_counter(self, name: str, value: int = 1):
