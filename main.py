@@ -218,7 +218,9 @@ if __name__ == "__main__":
                         lat_offset=0.0,
                         lon_offset=0.0,
                         enable_lane_filtering=True,  # 禁用车道过滤（过滤太严格，导致匹配率低）
-                        camera_id=camera_id  # 传入摄像头ID，用于调整阈值
+                        camera_id=camera_id,  # 传入摄像头ID，用于调整阈值
+                        enable_perf_stats=True,  # 📊 性能统计开关（True=启用，False=禁用）
+                        enable_fusion_logs=False  # 📝 融合详细日志开关（True=启用，False=禁用）
                     )
                     
                     # 将该摄像头的雷达数据添加到对应的处理器
