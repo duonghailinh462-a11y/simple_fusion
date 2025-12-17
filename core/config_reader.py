@@ -7,7 +7,10 @@
 
 import configparser
 import os
+import logging
 from typing import List, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 class ConfigReader:
     """配置读取器类"""
@@ -35,7 +38,7 @@ class ConfigReader:
         cameras = []
         
         if not os.path.exists(config_path):
-            print(f"⚠️  配置文件不存在: {config_path}")
+            logger.warning(f"⚠️  配置文件不存在: {config_path}")
             return cameras
             
         try:
@@ -50,10 +53,10 @@ class ConfigReader:
                         'enabled': config.getboolean(section, 'enabled', fallback=False)
                     }
                     cameras.append(camera_info)
-                    print(f"📷 读取摄像头配置: {camera_info['name']} - {camera_info['rtsp_url']} (启用: {camera_info['enabled']})")
+                    logger.info(f"📷 读取摄像头配置: {camera_info['name']} - {camera_info['rtsp_url']} (启用: {camera_info['enabled']})")
                     
         except Exception as e:
-            print(f"❌ 读取摄像头配置失败: {e}")
+            logger.error(f"❌ 读取摄像头配置失败: {e}")
             
         return cameras
     
@@ -69,7 +72,7 @@ class ConfigReader:
         """
         all_cameras = self.read_camera_config(config_file)
         enabled_cameras = [cam for cam in all_cameras if cam['enabled']]
-        print(f"✅ 找到 {len(enabled_cameras)} 个启用的摄像头")
+        logger.info(f"✅ 找到 {len(enabled_cameras)} 个启用的摄像头")
         return enabled_cameras
     
     def get_camera_urls(self, config_file: str = "camera_config.ini") -> List[str]:
@@ -84,7 +87,7 @@ class ConfigReader:
         """
         enabled_cameras = self.get_enabled_cameras(config_file)
         urls = [cam['rtsp_url'] for cam in enabled_cameras if cam['rtsp_url']]
-        print(f"📡 获取到 {len(urls)} 个摄像头URL")
+        logger.info(f"📡 获取到 {len(urls)} 个摄像头URL")
         return urls
     
     def read_mqtt_config(self, config_file: str = "mqtt_config.ini") -> Optional[Dict[str, str]]:
@@ -100,7 +103,7 @@ class ConfigReader:
         config_path = os.path.join(self.config_dir, config_file)
         
         if not os.path.exists(config_path):
-            print(f"⚠️  MQTT配置文件不存在: {config_path}")
+            logger.warning(f"⚠️  MQTT配置文件不存在: {config_path}")
             return None
             
         try:
@@ -117,12 +120,12 @@ class ConfigReader:
                     'password': config.get('MQTT', 'password', fallback=''),
                     'topic_template': config.get('MQTT', 'topic_template', fallback='GRGUpload/{client_id}/RSM')
                 }
-                print(f"📡 读取MQTT配置: {mqtt_config['broker']}:{mqtt_config['port']}")
+                logger.info(f"📡 读取MQTT配置: {mqtt_config['broker']}:{mqtt_config['port']}")
             else:
-                print("❌ 配置文件中未找到[MQTT]部分")
+                logger.error("❌ 配置文件中未找到[MQTT]部分")
                 
         except Exception as e:
-            print(f"❌ 读取MQTT配置失败: {e}")
+            logger.error(f"❌ 读取MQTT配置失败: {e}")
             return None
             
         return mqtt_config
@@ -130,30 +133,30 @@ class ConfigReader:
 # 测试函数
 def test_config_reader():
     """测试配置读取器"""
-    print("🔍 测试配置读取器...")
+    logger.info("🔍 测试配置读取器...")
     
     reader = ConfigReader()
     
     # 测试摄像头配置读取
-    print("\n=== 摄像头配置测试 ===")
+    logger.info("\n=== 摄像头配置测试 ===")
     cameras = reader.read_camera_config()
-    print(f"总共读取到 {len(cameras)} 个摄像头配置")
+    logger.info(f"总共读取到 {len(cameras)} 个摄像头配置")
     
     enabled_cameras = reader.get_enabled_cameras()
-    print(f"其中 {len(enabled_cameras)} 个已启用")
+    logger.info(f"其中 {len(enabled_cameras)} 个已启用")
     
     urls = reader.get_camera_urls()
-    print(f"获取到 {len(urls)} 个URL:")
+    logger.info(f"获取到 {len(urls)} 个URL:")
     for i, url in enumerate(urls, 1):
-        print(f"  {i}. {url}")
+        logger.info(f"  {i}. {url}")
     
     # 测试MQTT配置读取
-    print("\n=== MQTT配置测试 ===")
+    logger.info("\n=== MQTT配置测试 ===")
     mqtt_config = reader.read_mqtt_config()
     if mqtt_config:
-        print("MQTT配置读取成功")
+        logger.info("MQTT配置读取成功")
     else:
-        print("MQTT配置读取失败")
+        logger.error("MQTT配置读取失败")
 
 if __name__ == "__main__":
     test_config_reader()

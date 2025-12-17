@@ -4,6 +4,9 @@
 """
 
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Camera 1 车道配置
 CAMERA_1_LANES = {
@@ -66,9 +69,9 @@ def get_lane_for_point(camera_id: int, x: float, y: float) -> str:
 
 # 如果需要直接打印车道配置，用于调试
 if __name__ == '__main__':
-    print("车道配置已加载:")
+    logger.info("车道配置已加载:")
     for camera_id, lanes in LANE_CONFIG.items():
-        print(f"\nCamera {camera_id}:")
+        logger.info(f"\nCamera {camera_id}:")
         for lane_name, polygon in lanes.items():
-            print(f"  {lane_name}: {polygon.tolist()}")
+            logger.info(f"  {lane_name}: {polygon.tolist()}")
 
