@@ -535,15 +535,16 @@ class CrossCameraFusion:
             # 新格式输出 - 只输出有视觉检测（经纬度）的结果
             # 经纬度坐标以视觉为准（以经纬度计算之后的结果为准）
             # 雷达的唯一作用就是匹配上之后把ID填进来，不输出雷达的经纬度
+            track_id = f"{global_target.global_id}_{radar_id[-6:]}" if radar_id else local_target.matched_global_id
             participant = {
                 "timestamp": current_timestamp,
-                "source": "camera",  # 视觉数据源标记
+                "cameraid": "camera",  # 视觉数据源标记
                 "type": global_target.class_name,
                 "confidence": global_target.confidence_history[-1] if global_target.confidence_history else 0.0,
-                "track_id": global_target.global_id,
-                "radar_id": radar_id,  # 匹配上了就输出radar_id，否则为null
-                "lon": lng,
-                "lat": lat
+                "pid": track_id,
+                "heading": 0,
+                "lng": lng*1e7,
+                "lat": lat*1e7
             }
             participants.append(participant)
         
@@ -572,15 +573,17 @@ class CrossCameraFusion:
                 # 新格式输出 - 只输出有视觉检测（经纬度）的结果
                 # 经纬度坐标以视觉为准（以经纬度计算之后的结果为准）
                 # 雷达的唯一作用就是匹配上之后把ID填进来，不输出雷达的经纬度
+                # 合并track_id和radar_id：如果匹配上了就是trackid_radarid后六位，否则只用trackid
+                track_id = f"{local_target.matched_global_id}_{radar_id[-6:]}" if radar_id else local_target.matched_global_id
                 participant = {
+                    "pid": track_id,
                     "timestamp": current_timestamp,
-                    "source": "camera",  # 视觉数据源标记
+                    "cameraid": "camera",  # 视觉数据源标记
                     "type": local_target.class_name,
-                    "confidence": local_target.confidence,
-                    "track_id": local_target.matched_global_id,
-                    "radar_id": radar_id,  # 匹配上了就输出radar_id，否则为null
-                    "lon": lng,
-                    "lat": lat
+                    "confidence": local_target.confidence,           
+                    "heading": 0,
+                    "lng": lng*1e7,
+                    "lat": lat*1e7
                 }
                 participants.append(participant)
         
@@ -638,13 +641,13 @@ class CrossCameraFusion:
         for radar_obj in radar_objects:
             participant = {
                 "timestamp": current_timestamp or radar_obj.get('timestamp', ''),
-                "source": "radar",  # 雷达数据源标记
+                "cameraid": "radar",  # 雷达数据源标记
                 "type": radar_obj.get('type', 'unknown'),
                 "confidence": radar_obj.get('confidence', 0.0),
-                "track_id": None,  # 雷达数据没有track_id
-                "radar_id": radar_obj.get('radar_id'),
-                "lon": radar_obj.get('lon'),
-                "lat": radar_obj.get('lat')
+                "pid": radar_obj.get('radar_id', '')[-6:], 
+                "heading": 0,
+                "lng": radar_obj.get('lon')*1e7,
+                "lat": radar_obj.get('lat')*1e7
             }
             json_data['participant'].append(participant)
         

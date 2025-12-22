@@ -1,449 +1,1281 @@
-2025-12-22 14:50:26 - core.logger_config - INFO - ======================================================================
-2025-12-22 14:50:26 - core.logger_config - INFO - 融合系统启动
-2025-12-22 14:50:26 - core.logger_config - INFO - ======================================================================
-2025-12-22 14:50:26 - core.logger_config - INFO - 日志文件: /zhw/no-frame-sync/logs/fusion_system.log
-2025-12-22 14:50:26 - core.logger_config - INFO - 启动时间: 2025-12-22 14:50:26
-2025-12-22 14:50:26 - core.logger_config - INFO - ======================================================================
-2025-12-22 14:50:31 - __main__ - INFO - ============================================================
-2025-12-22 14:50:31 - __main__ - INFO - 程序开始启动...
-2025-12-22 14:50:31 - __main__ - INFO - ============================================================
-2025-12-22 14:50:31 - core.config_reader - INFO - 📷 读取摄像头配置: Main Entrance - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4 (启用: True)
-2025-12-22 14:50:31 - core.config_reader - INFO - 📷 读取摄像头配置: Back Yard - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4 (启用: True)
-2025-12-22 14:50:31 - core.config_reader - INFO - 📷 读取摄像头配置: Side Gate - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4 (启用: True)
-2025-12-22 14:50:31 - core.config_reader - INFO - ✅ 找到 3 个启用的摄像头
-2025-12-22 14:50:31 - __main__ - INFO - 摄像头1: Main Entrance - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
-2025-12-22 14:50:31 - __main__ - INFO - 摄像头2: Back Yard - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
-2025-12-22 14:50:31 - __main__ - INFO - 摄像头3: Side Gate - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
-2025-12-22 14:50:31 - __main__ - INFO - 使用RTSP流作为输入
-2025-12-22 14:50:31 - core.Basic - INFO - 性能监视器初始化完成
-2025-12-22 14:50:31 - vision.CameraManager - INFO - CameraManager 初始化完成
-2025-12-22 14:50:31 - vision.CameraManager - INFO - 已创建3个队列 (maxsize=10)
-2025-12-22 14:50:31 - __main__ - INFO - 初始化雷达地理过滤器
-2025-12-22 14:50:31 - __main__ - INFO - ✓ RadarDataFilter初始化成功
-2025-12-22 14:50:31 - __main__ - INFO - 🔧 系统运行模式: TEST
-2025-12-22 14:50:31 - core.RadarDataSource - INFO - 🔧 创建文件雷达数据源 (TEST模式) - 文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/radar_data.jsonl
-2025-12-22 14:50:31 - core.RadarDataSource - INFO - ✅ FileRadarSource 初始化成功: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/radar_data.jsonl
-2025-12-22 14:50:31 - core.RadarDataSource - INFO - ✅ 预读雷达数据成功: ts=1763697550.171, objs=6
-2025-12-22 14:50:31 - __main__ - INFO - ✅ 雷达数据源已启动
-2025-12-22 14:50:31 - RadarFusion - INFO - ✅ 两层过滤已启用: 象限 + S-L距离（车道过滤未启用）
-2025-12-22 14:50:31 - RadarFusion - INFO - 📡 C1 RadarVisionFusion: 允许的雷达IP = ['44.30.142.88']
-2025-12-22 14:50:31 - RadarFusion - INFO - ✅ 两层过滤已启用: 象限 + S-L距离（车道过滤未启用）
-2025-12-22 14:50:31 - RadarFusion - INFO - 📡 C2 RadarVisionFusion: 允许的雷达IP = ['44.30.142.85']
-2025-12-22 14:50:31 - RadarFusion - INFO - ✅ 两层过滤已启用: 象限 + S-L距离（车道过滤未启用）
-2025-12-22 14:50:31 - RadarFusion - INFO - 📡 C3 RadarVisionFusion: 允许的雷达IP = ['44.30.142.87']
-2025-12-22 14:50:31 - __main__ - INFO - ✅ 获取初始雷达数据: ts=1763697550.171, objs=6
-2025-12-22 14:50:31 - __main__ - INFO - ✅ 雷达融合模块初始化成功 (TEST模式)
-2025-12-22 14:50:31 - __main__ - INFO - 雷达融合协调器已初始化 (详细日志: 启用)
-2025-12-22 14:50:34 - core.mqtt_publisher - ERROR - MQTT 连接失败: [Errno 113] No route to host
-2025-12-22 14:50:34 - __main__ - WARNING - MQTT连接失败: [Errno 113] No route to host, 将使用JSON文件保存
-2025-12-22 14:50:34 - __main__ - INFO - 结果输出管理器已初始化 - 三路缓冲和时间对齐模式
-2025-12-22 14:50:34 - __main__ - INFO - 已启用优化版ByteTracker - 交替跟踪模式
-2025-12-22 14:50:34 - vision.CameraManager - INFO - 测试RTSP连接 (使用PyAV/OpenCV)
-2025-12-22 14:50:34 - vision.CameraManager - INFO - Camera1 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
-2025-12-22 14:50:34 - vision.CameraManager - INFO - Camera2 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
-2025-12-22 14:50:34 - vision.CameraManager - INFO - Camera3 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
-2025-12-22 14:50:34 - vision.CameraManager - INFO - 启动SDK版多摄像头融合系统
-2025-12-22 14:50:34 - vision.CameraManager - INFO - 启动Camera1 SDK推理进程
-2025-12-22 14:50:34 - vision.CameraManager - INFO - 启动Camera2 SDK推理进程
-2025-12-22 14:50:34 - vision.CameraManager - INFO - 启动Camera3 SDK推理进程
-2025-12-22 14:50:34 - vision.CameraManager - INFO - 所有SDK推理进程已启动
-2025-12-22 14:50:34 - vision.CameraManager - INFO - 进入预热阶段，等待所有摄像头推送第一帧数据
-2025-12-22 14:50:34 - __main__ - INFO - Camera1 子进程启动
-2025-12-22 14:50:34 - __main__ - INFO - Camera1 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
-2025-12-22 14:50:34 - __main__ - INFO - Camera1 初始化yolov5_SDK
-2025-12-22 14:50:34 - __main__ - INFO - Camera1 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
-2025-12-22 14:50:34 - __main__ - INFO - Camera1 模式: TEST (文件回放), 使用计算时间戳: 2025-11-21 11:59:12.135
-2025-12-22 14:50:34 - __main__ - INFO - Camera2 子进程启动
-2025-12-22 14:50:34 - __main__ - INFO - Camera2 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
-2025-12-22 14:50:34 - __main__ - INFO - Camera2 初始化yolov5_SDK
-2025-12-22 14:50:34 - __main__ - INFO - Camera2 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
-2025-12-22 14:50:34 - __main__ - INFO - Camera2 模式: TEST (文件回放), 使用计算时间戳: 2025-11-21 11:59:12.150
-2025-12-22 14:50:34 - __main__ - INFO - Camera3 子进程启动
-2025-12-22 14:50:34 - __main__ - INFO - Camera3 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
-2025-12-22 14:50:34 - __main__ - INFO - Camera3 初始化yolov5_SDK
-2025-12-22 14:50:34 - __main__ - INFO - Camera3 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
-2025-12-22 14:50:34 - __main__ - INFO - Camera3 模式: TEST (文件回放), 使用计算时间戳: 2025-11-21 11:59:12.143
-2025-12-22 14:50:35 - vision.SDKinfer - INFO - Camera1 时间戳初始化: 起始时间=2025-11-21 11:59:12.135, FPS=25
-2025-12-22 14:50:35 - __main__ - INFO - Camera1 yolov5_SDK初始化成功
-2025-12-22 14:50:35 - vision.SDKinfer - INFO - Camera1 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
-2025-12-22 14:50:35 - __main__ - INFO - Camera1 类别名称已更新
-2025-12-22 14:50:35 - __main__ - INFO - Camera1 开始运行SDK推理...
-2025-12-22 14:50:35 - vision.SDKinfer - INFO - Camera1 SDK线程已启动
-2025-12-22 14:50:35 - vision.SDKinfer - DEBUG - C1 尺寸: 1280x720 -> 640x640
-2025-12-22 14:50:35 - vision.SDKinfer - DEBUG - C1 F0: 19 boxes
-2025-12-22 14:50:35 - vision.SDKinfer - INFO - Camera3 时间戳初始化: 起始时间=2025-11-21 11:59:12.143, FPS=25
-2025-12-22 14:50:35 - __main__ - INFO - Camera3 yolov5_SDK初始化成功
-2025-12-22 14:50:35 - vision.SDKinfer - INFO - Camera3 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
-2025-12-22 14:50:35 - __main__ - INFO - Camera3 类别名称已更新
-2025-12-22 14:50:35 - __main__ - INFO - Camera3 开始运行SDK推理...
-2025-12-22 14:50:35 - vision.CameraManager - INFO - 摄像头 C1 已就绪
-2025-12-22 14:50:35 - vision.SDKinfer - INFO - Camera3 SDK线程已启动
-2025-12-22 14:50:35 - vision.SDKinfer - DEBUG - C3 尺寸: 1280x720 -> 640x640
-2025-12-22 14:50:35 - vision.SDKinfer - DEBUG - C3 F0: 27 boxes
-2025-12-22 14:50:36 - vision.SDKinfer - INFO - Camera2 时间戳初始化: 起始时间=2025-11-21 11:59:12.150, FPS=25
-2025-12-22 14:50:36 - __main__ - INFO - Camera2 yolov5_SDK初始化成功
-2025-12-22 14:50:36 - vision.SDKinfer - INFO - Camera2 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
-2025-12-22 14:50:36 - __main__ - INFO - Camera2 类别名称已更新
-2025-12-22 14:50:36 - __main__ - INFO - Camera2 开始运行SDK推理...
-2025-12-22 14:50:36 - vision.SDKinfer - INFO - Camera2 SDK线程已启动
-2025-12-22 14:50:36 - vision.SDKinfer - DEBUG - C2 尺寸: 1280x720 -> 640x640
-2025-12-22 14:50:36 - vision.SDKinfer - DEBUG - C2 F0: 21 boxes
-2025-12-22 14:50:36 - vision.CameraManager - INFO - 摄像头 C2 已就绪
-2025-12-22 14:50:36 - vision.CameraManager - INFO - 摄像头 C3 已就绪
-2025-12-22 14:50:36 - vision.CameraManager - INFO - 所有摄像头均已就绪，预热完成
-2025-12-22 14:50:36 - __main__ - INFO - 融合主循环启动 - 单路处理模式
-2025-12-22 14:50:36 - __main__ - INFO - 处理模式: 单路独立处理 + 后期三路匹配
-2025-12-22 14:50:36 - __main__ - INFO - ============================================================
-2025-12-22 14:50:37 - RadarFusion - INFO - ================================================================================
-2025-12-22 14:50:37 - RadarFusion - INFO - 📊 雷达融合性能统计 (已处理 50 帧)
-2025-12-22 14:50:37 - RadarFusion - INFO - ================================================================================
-2025-12-22 14:50:37 - RadarFusion - INFO - 
+2025-12-22 16:54:34 - core.logger_config - INFO - ======================================================================
+2025-12-22 16:54:34 - core.logger_config - INFO - 融合系统启动
+2025-12-22 16:54:34 - core.logger_config - INFO - ======================================================================
+2025-12-22 16:54:34 - core.logger_config - INFO - 日志文件: /zhw/no-frame-sync/logs/fusion_system.log
+2025-12-22 16:54:34 - core.logger_config - INFO - 启动时间: 2025-12-22 16:54:34
+2025-12-22 16:54:34 - core.logger_config - INFO - ======================================================================
+2025-12-22 16:54:39 - __main__ - INFO - ============================================================
+2025-12-22 16:54:39 - __main__ - INFO - 程序开始启动...
+2025-12-22 16:54:39 - __main__ - INFO - ============================================================
+2025-12-22 16:54:39 - core.config_reader - INFO - 📷 读取摄像头配置: Main Entrance - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4 (启用: True)
+2025-12-22 16:54:39 - core.config_reader - INFO - 📷 读取摄像头配置: Back Yard - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4 (启用: True)
+2025-12-22 16:54:39 - core.config_reader - INFO - 📷 读取摄像头配置: Side Gate - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4 (启用: True)
+2025-12-22 16:54:39 - core.config_reader - INFO - ✅ 找到 3 个启用的摄像头
+2025-12-22 16:54:39 - __main__ - INFO - 摄像头1: Main Entrance - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
+2025-12-22 16:54:39 - __main__ - INFO - 摄像头2: Back Yard - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
+2025-12-22 16:54:39 - __main__ - INFO - 摄像头3: Side Gate - /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
+2025-12-22 16:54:39 - __main__ - INFO - 使用RTSP流作为输入
+2025-12-22 16:54:39 - core.Basic - INFO - 性能监视器初始化完成
+2025-12-22 16:54:39 - vision.CameraManager - INFO - CameraManager 初始化完成
+2025-12-22 16:54:39 - vision.CameraManager - INFO - 已创建3个队列 (maxsize=10)
+2025-12-22 16:54:39 - __main__ - INFO - 初始化雷达地理过滤器
+2025-12-22 16:54:39 - __main__ - INFO - ✓ RadarDataFilter初始化成功
+2025-12-22 16:54:39 - __main__ - INFO - 🔧 系统运行模式: PROD
+2025-12-22 16:54:39 - core.RadarDataSource - INFO - 🔧 创建实时雷达数据源 (PROD模式) - 端口: 12400
+2025-12-22 16:54:39 - core.RadarDataSource - INFO - ✅ RealtimeRadarSource 初始化成功: port=12400
+2025-12-22 16:54:39 - core.RadarDataSource - INFO - 🔧 正在创建TCP socket...
+2025-12-22 16:54:39 - core.RadarDataSource - INFO - 🔧 设置socket选项...
+2025-12-22 16:54:39 - core.RadarDataSource - INFO - 🔧 正在绑定端口 12400...
+2025-12-22 16:54:39 - core.RadarDataSource - INFO - ✅ 端口 12400 绑定成功，开始监听连接...
+2025-12-22 16:54:39 - core.RadarDataSource - INFO - 🔧 TCP接受线程已启动，等待连接...
+2025-12-22 16:54:39 - core.RadarDataSource - INFO - ✅ 实时雷达接收已启动，监听端口: 12400
+2025-12-22 16:54:39 - __main__ - INFO - ✅ 雷达数据源已启动
+2025-12-22 16:54:39 - RadarFusion - INFO - ✅ 两层过滤已启用: 象限 + S-L距离（车道过滤未启用）
+2025-12-22 16:54:39 - RadarFusion - INFO - 📡 C1 RadarVisionFusion: 允许的雷达IP = ['44.30.142.88']
+2025-12-22 16:54:39 - RadarFusion - INFO - ✅ 两层过滤已启用: 象限 + S-L距离（车道过滤未启用）
+2025-12-22 16:54:39 - RadarFusion - INFO - 📡 C2 RadarVisionFusion: 允许的雷达IP = ['44.30.142.85']
+2025-12-22 16:54:39 - RadarFusion - INFO - ✅ 两层过滤已启用: 象限 + S-L距离（车道过滤未启用）
+2025-12-22 16:54:39 - RadarFusion - INFO - 📡 C3 RadarVisionFusion: 允许的雷达IP = ['44.30.142.87']
+2025-12-22 16:54:39 - __main__ - INFO - ✅ 雷达融合模块初始化成功 (PROD模式)
+2025-12-22 16:54:39 - __main__ - INFO - 雷达融合协调器已初始化 (详细日志: 启用)
+2025-12-22 16:54:39 - core.mqtt_publisher - INFO - MQTT 连接成功: 44.30.142.241:1883
+2025-12-22 16:54:39 - core.RadarDataSource - INFO - --- [新连接] 设备 44.30.142.85 已接入 ---
+2025-12-22 16:54:39 - core.RadarDataSource - INFO - --- [新连接] 设备 44.30.142.88 已接入 ---
+2025-12-22 16:54:39 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:39.906, 目标数: 4
+2025-12-22 16:54:39 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393679.909, objs=4
+2025-12-22 16:54:39 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:39.947, 目标数: 12
+2025-12-22 16:54:39 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393679.950, objs=12
+2025-12-22 16:54:39 - core.RadarDataSource - INFO - --- [新连接] 设备 44.30.142.87 已接入 ---
+2025-12-22 16:54:39 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:39.984, 目标数: 3
+2025-12-22 16:54:39 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393679.986, objs=3
+2025-12-22 16:54:40 - __main__ - INFO - MQTT发布器已连接
+2025-12-22 16:54:40 - __main__ - INFO - 结果输出管理器已初始化 - 三路缓冲和时间对齐模式
+2025-12-22 16:54:40 - __main__ - INFO - 已启用优化版ByteTracker - 交替跟踪模式
+2025-12-22 16:54:40 - vision.CameraManager - INFO - 测试RTSP连接 (使用PyAV/OpenCV)
+2025-12-22 16:54:40 - vision.CameraManager - INFO - Camera1 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
+2025-12-22 16:54:40 - vision.CameraManager - INFO - Camera2 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
+2025-12-22 16:54:40 - vision.CameraManager - INFO - Camera3 使用本地视频文件: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
+2025-12-22 16:54:40 - vision.CameraManager - INFO - 启动SDK版多摄像头融合系统
+2025-12-22 16:54:40 - vision.CameraManager - INFO - 启动Camera1 SDK推理进程
+2025-12-22 16:54:40 - vision.CameraManager - INFO - 启动Camera2 SDK推理进程
+2025-12-22 16:54:40 - __main__ - INFO - Camera1 子进程启动
+2025-12-22 16:54:40 - __main__ - INFO - Camera1 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_18_25fps.mp4
+2025-12-22 16:54:40 - __main__ - INFO - Camera1 初始化yolov5_SDK
+2025-12-22 16:54:40 - __main__ - INFO - Camera1 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
+2025-12-22 16:54:40 - __main__ - INFO - Camera1 模式: PROD (RTSP流), 使用实时系统时间
+2025-12-22 16:54:40 - vision.CameraManager - INFO - 启动Camera3 SDK推理进程
+2025-12-22 16:54:40 - vision.CameraManager - INFO - 所有SDK推理进程已启动
+2025-12-22 16:54:40 - vision.CameraManager - INFO - 进入预热阶段，等待所有摄像头推送第一帧数据
+2025-12-22 16:54:40 - __main__ - INFO - Camera2 子进程启动
+2025-12-22 16:54:40 - __main__ - INFO - Camera2 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_19_25fps.mp4
+2025-12-22 16:54:40 - __main__ - INFO - Camera2 初始化yolov5_SDK
+2025-12-22 16:54:40 - __main__ - INFO - Camera2 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
+2025-12-22 16:54:40 - __main__ - INFO - Camera2 模式: PROD (RTSP流), 使用实时系统时间
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:40.110, 目标数: 4
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.114, objs=4
+2025-12-22 16:54:40 - __main__ - INFO - Camera3 子进程启动
+2025-12-22 16:54:40 - __main__ - INFO - Camera3 视频源: /root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/cam_20_25fps.mp4
+2025-12-22 16:54:40 - __main__ - INFO - Camera3 初始化yolov5_SDK
+2025-12-22 16:54:40 - __main__ - INFO - Camera3 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件
+2025-12-22 16:54:40 - __main__ - INFO - Camera3 模式: PROD (RTSP流), 使用实时系统时间
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:40.148, 目标数: 12
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.151, objs=12
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:40.186, 目标数: 3
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.187, objs=3
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:40.312, 目标数: 4
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.314, objs=4
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:40.350, 目标数: 12
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.354, objs=12
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:40.387, 目标数: 3
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.388, objs=3
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:40.512, 目标数: 4
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.515, objs=4
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:40.552, 目标数: 12
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.556, objs=12
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:40.571, 目标数: 3
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.573, objs=3
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:40.714, 目标数: 4
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.716, objs=4
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:40.752, 目标数: 12
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.756, objs=12
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:40.774, 目标数: 3
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.776, objs=3
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:40.925, 目标数: 4
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.928, objs=4
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:40.953, 目标数: 12
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.958, objs=12
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:40.975, 目标数: 3
+2025-12-22 16:54:40 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393680.978, objs=3
+2025-12-22 16:54:41 - __main__ - INFO - Camera1 yolov5_SDK初始化成功
+2025-12-22 16:54:41 - vision.SDKinfer - INFO - Camera1 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
+2025-12-22 16:54:41 - __main__ - INFO - Camera1 类别名称已更新
+2025-12-22 16:54:41 - __main__ - INFO - Camera1 开始运行SDK推理...
+2025-12-22 16:54:41 - vision.SDKinfer - INFO - Camera1 SDK线程已启动
+2025-12-22 16:54:41 - vision.SDKinfer - DEBUG - C1 尺寸: 1280x720 -> 640x640
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:41.117, 目标数: 4
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.121, objs=4
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:41.134, 目标数: 11
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.138, objs=11
+2025-12-22 16:54:41 - vision.SDKinfer - DEBUG - C1 F0: 19 boxes
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:41.179, 目标数: 3
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.183, objs=3
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:41.298, 目标数: 3
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.300, objs=3
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:41.336, 目标数: 11
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.340, objs=11
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:41.378, 目标数: 2
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.380, objs=2
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:41.499, 目标数: 4
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.502, objs=4
+2025-12-22 16:54:41 - __main__ - INFO - Camera3 yolov5_SDK初始化成功
+2025-12-22 16:54:41 - vision.SDKinfer - INFO - Camera3 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
+2025-12-22 16:54:41 - __main__ - INFO - Camera3 类别名称已更新
+2025-12-22 16:54:41 - __main__ - INFO - Camera3 开始运行SDK推理...
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:41.538, 目标数: 11
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.541, objs=11
+2025-12-22 16:54:41 - vision.SDKinfer - INFO - Camera3 SDK线程已启动
+2025-12-22 16:54:41 - vision.SDKinfer - DEBUG - C3 尺寸: 1280x720 -> 640x640
+2025-12-22 16:54:41 - vision.CameraManager - INFO - 摄像头 C1 已就绪
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:41.581, 目标数: 2
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.583, objs=2
+2025-12-22 16:54:41 - vision.SDKinfer - DEBUG - C3 F0: 27 boxes
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:41.700, 目标数: 3
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.703, objs=3
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:41.738, 目标数: 11
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.743, objs=11
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:41.782, 目标数: 2
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.784, objs=2
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:41.901, 目标数: 3
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.904, objs=3
+2025-12-22 16:54:41 - __main__ - INFO - Camera2 yolov5_SDK初始化成功
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:41.941, 目标数: 11
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.944, objs=11
+2025-12-22 16:54:41 - vision.SDKinfer - INFO - Camera2 更新类别名称: /usr/local/lynxi/sdk/sdk-samples/data/class.txt
+2025-12-22 16:54:41 - __main__ - INFO - Camera2 类别名称已更新
+2025-12-22 16:54:41 - __main__ - INFO - Camera2 开始运行SDK推理...
+2025-12-22 16:54:41 - vision.SDKinfer - INFO - Camera2 SDK线程已启动
+2025-12-22 16:54:41 - vision.SDKinfer - DEBUG - C2 尺寸: 1280x720 -> 640x640
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:41.989, 目标数: 2
+2025-12-22 16:54:41 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393681.991, objs=2
+2025-12-22 16:54:42 - vision.SDKinfer - DEBUG - C2 F0: 21 boxes
+2025-12-22 16:54:42 - vision.CameraManager - INFO - 摄像头 C2 已就绪
+2025-12-22 16:54:42 - vision.CameraManager - INFO - 摄像头 C3 已就绪
+2025-12-22 16:54:42 - vision.CameraManager - INFO - 所有摄像头均已就绪，预热完成
+2025-12-22 16:54:42 - __main__ - INFO - 融合主循环启动 - 单路处理模式
+2025-12-22 16:54:42 - __main__ - INFO - 处理模式: 单路独立处理 + 后期三路匹配
+2025-12-22 16:54:42 - __main__ - INFO - ============================================================
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:42.104, 目标数: 3
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.109, objs=3
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.186无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.616无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.197无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.629无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.207无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.644无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:42.142, 目标数: 11
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.148, objs=11
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.222无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.660无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.252无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.675无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.263无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.694无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.275无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.709无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.285无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.723无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:42.190, 目标数: 2
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.195, objs=2
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.300无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393681.738无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393682.086无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393682.107无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393682.127无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393682.140无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393682.167无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393682.193无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393682.218无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393682.241无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393682.275无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:42.312, 目标数: 4
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.314, objs=4
+2025-12-22 16:54:42 - RadarFusion - WARNING - [RADAR_FUSION] 警告: 视觉时间戳1766393682.304无法匹配雷达数据（雷达缓冲区为空）
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:42.343, 目标数: 11
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.348, objs=11
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:42.390, 目标数: 2
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.393, objs=2
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:42.514, 目标数: 4
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.517, objs=4
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:42.544, 目标数: 11
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.549, objs=11
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:42.572, 目标数: 2
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.578, objs=2
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:42.720, 目标数: 4
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.722, objs=4
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:42.745, 目标数: 11
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.748, objs=11
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:42.772, 目标数: 2
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.777, objs=2
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:42.897, 目标数: 4
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.903, objs=4
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:42.948, 目标数: 12
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.952, objs=12
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:42.974, 目标数: 2
+2025-12-22 16:54:42 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393682.976, objs=2
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:42 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:43. 98, 目标数: 4
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.101, objs=4
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:43.147, 目标数: 12
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.154, objs=12
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:43.174, 目标数: 2
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.177, objs=2
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:43.299, 目标数: 5
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.303, objs=5
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:43.348, 目标数: 12
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.353, objs=12
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:43.375, 目标数: 2
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.378, objs=2
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.Basic - DEBUG - C1 Frame 100: 4 tracked objects
+2025-12-22 16:54:43 - radar.RadarFusionOrchestrator - INFO - Frame 100: 雷达过滤 总数=19, 融合区内=9, 融合区外=10
+2025-12-22 16:54:43 - radar.RadarFusionOrchestrator - INFO - Frame 100 C1: 雷达匹配 1/2 个目标 (耗时: 0.57ms)
+2025-12-22 16:54:43 - radar.RadarFusionOrchestrator - INFO - 📊 雷达协调器性能 (Frame 100): 过滤=0.38ms, 融合=0.78ms, 总计=1.17ms
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:43 - __main__ - INFO - 📊 性能统计 (截至Frame 100, 最近100帧)
+2025-12-22 16:54:43 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:43 - __main__ - INFO - 总处理时间: 8.97ms/帧 (实际FPS: 111.5)
+2025-12-22 16:54:43 - __main__ - INFO -   ├─ 队列读取: 0.44ms
+2025-12-22 16:54:43 - __main__ - INFO -   ├─ 帧处理(跟踪+融合): 5.15ms
+2025-12-22 16:54:43 - __main__ - INFO -   ├─ 匹配处理: 0.17ms
+2025-12-22 16:54:43 - __main__ - INFO -   ├─ 结果缓冲: 1.49ms
+2025-12-22 16:54:43 - __main__ - INFO -   ├─ 雷达快进: 0.29ms
+2025-12-22 16:54:43 - __main__ - INFO -   └─ 雷达协调: 2.62ms
+2025-12-22 16:54:43 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:43 - __main__ - INFO - 缓冲区诊断信息
+2025-12-22 16:54:43 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:43 - __main__ - INFO - 融合系统: 全局目标=5, JSON缓冲=126
+2025-12-22 16:54:43 - __main__ - INFO - C1跟踪器: 活跃轨迹=4, 丢失轨迹=0
+2025-12-22 16:54:43 - __main__ - INFO - C2跟踪器: 活跃轨迹=0, 丢失轨迹=0
+2025-12-22 16:54:43 - __main__ - INFO - C3跟踪器: 活跃轨迹=4, 丢失轨迹=0
+2025-12-22 16:54:43 - __main__ - INFO - 结果缓冲: C1=21, C2=13, C3=9
+2025-12-22 16:54:43 - __main__ - INFO - 内存使用: 243.5MB
+2025-12-22 16:54:43 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:43 - __main__ - INFO - 可以达到 111.5 FPS 的实时处理
+2025-12-22 16:54:43 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:43.501, 目标数: 5
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.506, objs=5
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:43.549, 目标数: 11
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.554, objs=11
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:43.576, 目标数: 1
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.582, objs=1
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:43.701, 目标数: 5
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.704, objs=5
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:43.751, 目标数: 12
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.759, objs=12
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:43.779, 目标数: 2
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.785, objs=2
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:43 - RadarFusion - INFO - 📊 雷达融合性能统计 (已处理 50 帧)
+2025-12-22 16:54:43 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:43 - RadarFusion - INFO - 
 📈 每一步的耗时统计 (单位: 毫秒):
-2025-12-22 14:50:37 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:37 - RadarFusion - INFO -   bipartite_matching        |    0.37ms (min:  0.28ms, max:  0.58ms) | 
-2025-12-22 14:50:37 - RadarFusion - INFO -   timestamp_matching        |    0.05ms (min:  0.04ms, max:  0.10ms) | 
-2025-12-22 14:50:37 - RadarFusion - INFO -   trajectory_prediction     |    0.02ms (min:  0.00ms, max:  0.06ms) | 
-2025-12-22 14:50:37 - RadarFusion - INFO -   coordinate_calibration    |    0.02ms (min:  0.01ms, max:  0.07ms) | 
-2025-12-22 14:50:37 - RadarFusion - INFO -   data_validation           |    0.02ms (min:  0.01ms, max:  0.02ms) | 
-2025-12-22 14:50:37 - RadarFusion - INFO -   result_processing         |    0.01ms (min:  0.01ms, max:  0.06ms) | 
-2025-12-22 14:50:37 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:37 - RadarFusion - INFO -   总耗时                       |    0.52ms (min:  0.40ms, max:  0.85ms)
-2025-12-22 14:50:37 - RadarFusion - INFO - 
+2025-12-22 16:54:43 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:43 - RadarFusion - INFO -   bipartite_matching        |    0.41ms (min:  0.36ms, max:  0.48ms) | 
+2025-12-22 16:54:43 - RadarFusion - INFO -   timestamp_matching        |    0.11ms (min:  0.04ms, max:  0.36ms) | 
+2025-12-22 16:54:43 - RadarFusion - INFO -   coordinate_calibration    |    0.02ms (min:  0.02ms, max:  0.05ms) | 
+2025-12-22 16:54:43 - RadarFusion - INFO -   data_validation           |    0.02ms (min:  0.01ms, max:  0.02ms) | 
+2025-12-22 16:54:43 - RadarFusion - INFO -   result_processing         |    0.01ms (min:  0.01ms, max:  0.02ms) | 
+2025-12-22 16:54:43 - RadarFusion - INFO -   trajectory_prediction     |    0.01ms (min:  0.00ms, max:  0.01ms) | 
+2025-12-22 16:54:43 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:43 - RadarFusion - INFO -   总耗时                       |    0.55ms (min:  0.48ms, max:  0.64ms)
+2025-12-22 16:54:43 - RadarFusion - INFO - 
 🔴 性能瓶颈分析:
-2025-12-22 14:50:37 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:37 - RadarFusion - INFO - 
+2025-12-22 16:54:43 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:43 - RadarFusion - INFO - 
 📊 业务统计:
-2025-12-22 14:50:37 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:37 - RadarFusion - INFO -   雷达目标总数: 50
-2025-12-22 14:50:37 - RadarFusion - INFO -   视觉目标总数: 100
-2025-12-22 14:50:37 - RadarFusion - INFO -   成功匹配数: 41
-2025-12-22 14:50:37 - RadarFusion - INFO -   失败匹配数: 9
-2025-12-22 14:50:37 - RadarFusion - INFO -   车道过滤数: 0
-2025-12-22 14:50:37 - RadarFusion - INFO -   匹配成功率: 82.0%
-2025-12-22 14:50:37 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:43 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:43 - RadarFusion - INFO -   雷达目标总数: 50
+2025-12-22 16:54:43 - RadarFusion - INFO -   视觉目标总数: 100
+2025-12-22 16:54:43 - RadarFusion - INFO -   成功匹配数: 50
+2025-12-22 16:54:43 - RadarFusion - INFO -   失败匹配数: 0
+2025-12-22 16:54:43 - RadarFusion - INFO -   车道过滤数: 0
+2025-12-22 16:54:43 - RadarFusion - INFO -   匹配成功率: 100.0%
+2025-12-22 16:54:43 - RadarFusion - INFO - ================================================================================
 
-2025-12-22 14:50:37 - core.Basic - DEBUG - C3 Frame 100: 4 tracked objects
-2025-12-22 14:50:37 - radar.RadarFusionOrchestrator - INFO - Frame 100: 雷达过滤 总数=32, 融合区内=11, 融合区外=21
-2025-12-22 14:50:37 - radar.RadarFusionOrchestrator - INFO - Frame 100 C3: 雷达匹配 1/3 个目标 (耗时: 0.55ms)
-2025-12-22 14:50:37 - radar.RadarFusionOrchestrator - INFO - 📊 雷达协调器性能 (Frame 100): 过滤=0.70ms, 融合=0.80ms, 总计=1.51ms
-2025-12-22 14:50:37 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:37 - __main__ - INFO - 📊 性能统计 (截至Frame 100, 最近100帧)
-2025-12-22 14:50:37 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:37 - __main__ - INFO - 总处理时间: 7.45ms/帧 (实际FPS: 134.1)
-2025-12-22 14:50:37 - __main__ - INFO -   ├─ 队列读取: 0.45ms
-2025-12-22 14:50:37 - __main__ - INFO -   ├─ 帧处理(跟踪+融合): 4.36ms
-2025-12-22 14:50:37 - __main__ - INFO -   ├─ 匹配处理: 0.14ms
-2025-12-22 14:50:37 - __main__ - INFO -   ├─ 结果缓冲: 0.35ms
-2025-12-22 14:50:37 - __main__ - INFO -   ├─ 雷达快进: 0.49ms
-2025-12-22 14:50:37 - __main__ - INFO -   └─ 雷达协调: 2.75ms
-2025-12-22 14:50:37 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:37 - __main__ - INFO - 缓冲区诊断信息
-2025-12-22 14:50:37 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:37 - __main__ - INFO - 融合系统: 全局目标=5, JSON缓冲=147
-2025-12-22 14:50:37 - __main__ - INFO - C1跟踪器: 活跃轨迹=4, 丢失轨迹=0
-2025-12-22 14:50:37 - __main__ - INFO - C2跟踪器: 活跃轨迹=0, 丢失轨迹=0
-2025-12-22 14:50:37 - __main__ - INFO - C3跟踪器: 活跃轨迹=4, 丢失轨迹=0
-2025-12-22 14:50:37 - __main__ - INFO - 结果缓冲: C1=11, C2=5, C3=0
-2025-12-22 14:50:37 - __main__ - INFO - 内存使用: 243.7MB
-2025-12-22 14:50:37 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:37 - __main__ - INFO - 可以达到 134.1 FPS 的实时处理
-2025-12-22 14:50:37 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:37 - RadarFusion - INFO - ================================================================================
-2025-12-22 14:50:37 - RadarFusion - INFO - 📊 雷达融合性能统计 (已处理 50 帧)
-2025-12-22 14:50:37 - RadarFusion - INFO - ================================================================================
-2025-12-22 14:50:37 - RadarFusion - INFO - 
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:43.903, 目标数: 5
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.906, objs=5
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:43.953, 目标数: 12
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.958, objs=12
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:43.984, 目标数: 2
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393683.989, objs=2
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:43 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:44 - RadarFusion - INFO - 📊 雷达融合性能统计 (已处理 50 帧)
+2025-12-22 16:54:44 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:44 - RadarFusion - INFO - 
 📈 每一步的耗时统计 (单位: 毫秒):
-2025-12-22 14:50:37 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:37 - RadarFusion - INFO -   bipartite_matching        |    0.36ms (min:  0.29ms, max:  0.43ms) | 
-2025-12-22 14:50:37 - RadarFusion - INFO -   timestamp_matching        |    0.04ms (min:  0.03ms, max:  0.07ms) | 
-2025-12-22 14:50:37 - RadarFusion - INFO -   coordinate_calibration    |    0.02ms (min:  0.02ms, max:  0.03ms) | 
-2025-12-22 14:50:37 - RadarFusion - INFO -   data_validation           |    0.02ms (min:  0.02ms, max:  0.02ms) | 
-2025-12-22 14:50:37 - RadarFusion - INFO -   result_processing         |    0.02ms (min:  0.01ms, max:  0.02ms) | 
-2025-12-22 14:50:37 - RadarFusion - INFO -   trajectory_prediction     |    0.01ms (min:  0.00ms, max:  0.04ms) | 
-2025-12-22 14:50:37 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:37 - RadarFusion - INFO -   总耗时                       |    0.49ms (min:  0.39ms, max:  0.59ms)
-2025-12-22 14:50:37 - RadarFusion - INFO - 
+2025-12-22 16:54:44 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:44 - RadarFusion - INFO -   bipartite_matching        |    0.42ms (min:  0.31ms, max:  0.66ms) | 
+2025-12-22 16:54:44 - RadarFusion - INFO -   timestamp_matching        |    0.07ms (min:  0.03ms, max:  0.20ms) | 
+2025-12-22 16:54:44 - RadarFusion - INFO -   coordinate_calibration    |    0.03ms (min:  0.02ms, max:  0.04ms) | 
+2025-12-22 16:54:44 - RadarFusion - INFO -   trajectory_prediction     |    0.02ms (min:  0.00ms, max:  0.06ms) | 
+2025-12-22 16:54:44 - RadarFusion - INFO -   data_validation           |    0.02ms (min:  0.02ms, max:  0.05ms) | 
+2025-12-22 16:54:44 - RadarFusion - INFO -   result_processing         |    0.02ms (min:  0.02ms, max:  0.04ms) | 
+2025-12-22 16:54:44 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:44 - RadarFusion - INFO -   总耗时                       |    0.58ms (min:  0.43ms, max:  0.84ms)
+2025-12-22 16:54:44 - RadarFusion - INFO - 
 🔴 性能瓶颈分析:
-2025-12-22 14:50:37 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:37 - RadarFusion - INFO - 
+2025-12-22 16:54:44 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:44 - RadarFusion - INFO - 
 📊 业务统计:
-2025-12-22 14:50:37 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:37 - RadarFusion - INFO -   雷达目标总数: 50
-2025-12-22 14:50:37 - RadarFusion - INFO -   视觉目标总数: 150
-2025-12-22 14:50:37 - RadarFusion - INFO -   成功匹配数: 50
-2025-12-22 14:50:37 - RadarFusion - INFO -   失败匹配数: 0
-2025-12-22 14:50:37 - RadarFusion - INFO -   车道过滤数: 0
-2025-12-22 14:50:37 - RadarFusion - INFO -   匹配成功率: 100.0%
-2025-12-22 14:50:37 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:44 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:44 - RadarFusion - INFO -   雷达目标总数: 50
+2025-12-22 16:54:44 - RadarFusion - INFO -   视觉目标总数: 150
+2025-12-22 16:54:44 - RadarFusion - INFO -   成功匹配数: 50
+2025-12-22 16:54:44 - RadarFusion - INFO -   失败匹配数: 0
+2025-12-22 16:54:44 - RadarFusion - INFO -   车道过滤数: 0
+2025-12-22 16:54:44 - RadarFusion - INFO -   匹配成功率: 100.0%
+2025-12-22 16:54:44 - RadarFusion - INFO - ================================================================================
 
-2025-12-22 14:50:38 - vision.SDKinfer - DEBUG - C1 F100: 20 boxes
-2025-12-22 14:50:38 - RadarFusion - INFO - ================================================================================
-2025-12-22 14:50:38 - RadarFusion - INFO - 📊 雷达融合性能统计 (已处理 100 帧)
-2025-12-22 14:50:38 - RadarFusion - INFO - ================================================================================
-2025-12-22 14:50:38 - RadarFusion - INFO - 
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:44.104, 目标数: 5
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.109, objs=5
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:44.138, 目标数: 12
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.146, objs=12
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:44.185, 目标数: 1
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.187, objs=1
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:44.305, 目标数: 5
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.308, objs=5
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:44.342, 目标数: 12
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.345, objs=12
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:44.389, 目标数: 1
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.391, objs=1
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:44.505, 目标数: 5
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.509, objs=5
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:44.543, 目标数: 12
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.551, objs=12
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:44.570, 目标数: 1
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.576, objs=1
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - vision.SDKinfer - DEBUG - C1 F100: 20 boxes
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:44.707, 目标数: 5
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.710, objs=5
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:44.748, 目标数: 12
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.755, objs=12
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:44.771, 目标数: 1
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.779, objs=1
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:44.909, 目标数: 2
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.914, objs=2
+2025-12-22 16:54:44 - vision.SDKinfer - DEBUG - C2 F100: 18 boxes
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.Basic - DEBUG - C1 Frame 200: 4 tracked objects
+2025-12-22 16:54:44 - radar.RadarFusionOrchestrator - INFO - Frame 200: 雷达过滤 总数=41, 融合区内=23, 融合区外=18
+2025-12-22 16:54:44 - radar.RadarFusionOrchestrator - INFO - Frame 200 C1: 雷达匹配 1/3 个目标 (耗时: 0.59ms)
+2025-12-22 16:54:44 - radar.RadarFusionOrchestrator - INFO - 📊 雷达协调器性能 (Frame 200): 过滤=0.98ms, 融合=0.83ms, 总计=1.81ms
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:44 - __main__ - INFO - 📊 性能统计 (截至Frame 200, 最近100帧)
+2025-12-22 16:54:44 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:44 - __main__ - INFO - 总处理时间: 9.13ms/帧 (实际FPS: 109.5)
+2025-12-22 16:54:44 - __main__ - INFO -   ├─ 队列读取: 0.47ms
+2025-12-22 16:54:44 - __main__ - INFO -   ├─ 帧处理(跟踪+融合): 4.71ms
+2025-12-22 16:54:44 - __main__ - INFO -   ├─ 匹配处理: 0.18ms
+2025-12-22 16:54:44 - __main__ - INFO -   ├─ 结果缓冲: 1.76ms
+2025-12-22 16:54:44 - __main__ - INFO -   ├─ 雷达快进: 0.22ms
+2025-12-22 16:54:44 - __main__ - INFO -   └─ 雷达协调: 2.89ms
+2025-12-22 16:54:44 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:44 - __main__ - INFO - 缓冲区诊断信息
+2025-12-22 16:54:44 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:44 - __main__ - INFO - 融合系统: 全局目标=6, JSON缓冲=262
+2025-12-22 16:54:44 - __main__ - INFO - C1跟踪器: 活跃轨迹=4, 丢失轨迹=0
+2025-12-22 16:54:44 - __main__ - INFO - C2跟踪器: 活跃轨迹=0, 丢失轨迹=0
+2025-12-22 16:54:44 - __main__ - INFO - C3跟踪器: 活跃轨迹=5, 丢失轨迹=0
+2025-12-22 16:54:44 - __main__ - INFO - 结果缓冲: C1=35, C2=28, C3=9
+2025-12-22 16:54:44 - __main__ - INFO - 内存使用: 244.4MB
+2025-12-22 16:54:44 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:44 - __main__ - INFO - 可以达到 109.5 FPS 的实时处理
+2025-12-22 16:54:44 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:44.949, 目标数: 12
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.953, objs=12
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:44.977, 目标数: 1
+2025-12-22 16:54:44 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393684.979, objs=1
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:44 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:45.112, 目标数: 2
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.115, objs=2
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:45.150, 目标数: 12
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.157, objs=12
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:45.313, 目标数: 2
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.318, objs=2
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:45 - RadarFusion - INFO - 📊 雷达融合性能统计 (已处理 100 帧)
+2025-12-22 16:54:45 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:45 - RadarFusion - INFO - 
 📈 每一步的耗时统计 (单位: 毫秒):
-2025-12-22 14:50:38 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:38 - RadarFusion - INFO -   bipartite_matching        |    0.40ms (min:  0.32ms, max:  0.50ms) | 
-2025-12-22 14:50:38 - RadarFusion - INFO -   timestamp_matching        |    0.07ms (min:  0.05ms, max:  0.11ms) | 
-2025-12-22 14:50:38 - RadarFusion - INFO -   trajectory_prediction     |    0.03ms (min:  0.02ms, max:  0.07ms) | 
-2025-12-22 14:50:38 - RadarFusion - INFO -   coordinate_calibration    |    0.02ms (min:  0.01ms, max:  0.06ms) | 
-2025-12-22 14:50:38 - RadarFusion - INFO -   data_validation           |    0.02ms (min:  0.01ms, max:  0.02ms) | 
-2025-12-22 14:50:38 - RadarFusion - INFO -   result_processing         |    0.02ms (min:  0.01ms, max:  0.02ms) | 
-2025-12-22 14:50:38 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:38 - RadarFusion - INFO -   总耗时                       |    0.58ms (min:  0.45ms, max:  0.73ms)
-2025-12-22 14:50:38 - RadarFusion - INFO - 
+2025-12-22 16:54:45 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:45 - RadarFusion - INFO -   bipartite_matching        |    0.42ms (min:  0.39ms, max:  0.47ms) | 
+2025-12-22 16:54:45 - RadarFusion - INFO -   timestamp_matching        |    0.07ms (min:  0.06ms, max:  0.10ms) | 
+2025-12-22 16:54:45 - RadarFusion - INFO -   coordinate_calibration    |    0.03ms (min:  0.02ms, max:  0.06ms) | 
+2025-12-22 16:54:45 - RadarFusion - INFO -   data_validation           |    0.02ms (min:  0.02ms, max:  0.03ms) | 
+2025-12-22 16:54:45 - RadarFusion - INFO -   result_processing         |    0.02ms (min:  0.01ms, max:  0.05ms) | 
+2025-12-22 16:54:45 - RadarFusion - INFO -   trajectory_prediction     |    0.01ms (min:  0.01ms, max:  0.01ms) | 
+2025-12-22 16:54:45 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:45 - RadarFusion - INFO -   总耗时                       |    0.59ms (min:  0.54ms, max:  0.64ms)
+2025-12-22 16:54:45 - RadarFusion - INFO - 
 🔴 性能瓶颈分析:
-2025-12-22 14:50:38 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:38 - RadarFusion - INFO - 
+2025-12-22 16:54:45 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:45 - RadarFusion - INFO - 
 📊 业务统计:
-2025-12-22 14:50:38 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:38 - RadarFusion - INFO -   雷达目标总数: 100
-2025-12-22 14:50:38 - RadarFusion - INFO -   视觉目标总数: 227
-2025-12-22 14:50:38 - RadarFusion - INFO -   成功匹配数: 91
-2025-12-22 14:50:38 - RadarFusion - INFO -   失败匹配数: 9
-2025-12-22 14:50:38 - RadarFusion - INFO -   车道过滤数: 0
-2025-12-22 14:50:38 - RadarFusion - INFO -   匹配成功率: 91.0%
-2025-12-22 14:50:38 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:45 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:45 - RadarFusion - INFO -   雷达目标总数: 100
+2025-12-22 16:54:45 - RadarFusion - INFO -   视觉目标总数: 246
+2025-12-22 16:54:45 - RadarFusion - INFO -   成功匹配数: 100
+2025-12-22 16:54:45 - RadarFusion - INFO -   失败匹配数: 0
+2025-12-22 16:54:45 - RadarFusion - INFO -   车道过滤数: 0
+2025-12-22 16:54:45 - RadarFusion - INFO -   匹配成功率: 100.0%
+2025-12-22 16:54:45 - RadarFusion - INFO - ================================================================================
 
-2025-12-22 14:50:38 - vision.SDKinfer - DEBUG - C2 F100: 18 boxes
-2025-12-22 14:50:38 - core.Basic - DEBUG - C1 Frame 200: 4 tracked objects
-2025-12-22 14:50:38 - radar.RadarFusionOrchestrator - INFO - Frame 200: 雷达过滤 总数=53, 融合区内=24, 融合区外=29
-2025-12-22 14:50:38 - radar.RadarFusionOrchestrator - INFO - Frame 200 C1: 雷达匹配 1/3 个目标 (耗时: 0.63ms)
-2025-12-22 14:50:38 - radar.RadarFusionOrchestrator - INFO - 📊 雷达协调器性能 (Frame 200): 过滤=1.43ms, 融合=0.78ms, 总计=2.22ms
-2025-12-22 14:50:38 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:38 - __main__ - INFO - 📊 性能统计 (截至Frame 200, 最近100帧)
-2025-12-22 14:50:38 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:38 - __main__ - INFO - 总处理时间: 7.31ms/帧 (实际FPS: 136.7)
-2025-12-22 14:50:38 - __main__ - INFO -   ├─ 队列读取: 0.41ms
-2025-12-22 14:50:38 - __main__ - INFO -   ├─ 帧处理(跟踪+融合): 3.93ms
-2025-12-22 14:50:38 - __main__ - INFO -   ├─ 匹配处理: 0.12ms
-2025-12-22 14:50:38 - __main__ - INFO -   ├─ 结果缓冲: 0.39ms
-2025-12-22 14:50:38 - __main__ - INFO -   ├─ 雷达快进: 0.27ms
-2025-12-22 14:50:38 - __main__ - INFO -   └─ 雷达协调: 3.74ms
-2025-12-22 14:50:38 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:38 - __main__ - INFO - 缓冲区诊断信息
-2025-12-22 14:50:38 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:38 - __main__ - INFO - 融合系统: 全局目标=6, JSON缓冲=280
-2025-12-22 14:50:38 - __main__ - INFO - C1跟踪器: 活跃轨迹=4, 丢失轨迹=0
-2025-12-22 14:50:38 - __main__ - INFO - C2跟踪器: 活跃轨迹=0, 丢失轨迹=0
-2025-12-22 14:50:38 - __main__ - INFO - C3跟踪器: 活跃轨迹=5, 丢失轨迹=0
-2025-12-22 14:50:38 - __main__ - INFO - 结果缓冲: C1=27, C2=23, C3=0
-2025-12-22 14:50:38 - __main__ - INFO - 内存使用: 245.0MB
-2025-12-22 14:50:38 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:38 - __main__ - INFO - 可以达到 136.7 FPS 的实时处理
-2025-12-22 14:50:38 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:39 - vision.SDKinfer - DEBUG - C3 F100: 32 boxes
-2025-12-22 14:50:39 - RadarFusion - INFO - ================================================================================
-2025-12-22 14:50:39 - RadarFusion - INFO - 📊 雷达融合性能统计 (已处理 100 帧)
-2025-12-22 14:50:39 - RadarFusion - INFO - ================================================================================
-2025-12-22 14:50:39 - RadarFusion - INFO - 
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:45.358, 目标数: 12
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.366, objs=12
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:45.181, 目标数: 2
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.393, objs=2
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:45.379, 目标数: 2
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.395, objs=2
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:45.497, 目标数: 2
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.502, objs=2
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:45.536, 目标数: 12
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.546, objs=12
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:45.580, 目标数: 2
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.582, objs=2
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - vision.SDKinfer - DEBUG - C3 F100: 32 boxes
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:45.694, 目标数: 2
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.699, objs=2
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:45.739, 目标数: 12
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.744, objs=12
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:45.781, 目标数: 2
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.785, objs=2
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:45.895, 目标数: 2
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.898, objs=2
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:45.944, 目标数: 12
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.948, objs=12
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:45.982, 目标数: 2
+2025-12-22 16:54:45 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393685.984, objs=2
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:46. 96, 目标数: 2
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.100, objs=2
+2025-12-22 16:54:46 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:46 - RadarFusion - INFO - 📊 雷达融合性能统计 (已处理 100 帧)
+2025-12-22 16:54:46 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:46 - RadarFusion - INFO - 
 📈 每一步的耗时统计 (单位: 毫秒):
-2025-12-22 14:50:39 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:39 - RadarFusion - INFO -   bipartite_matching        |    0.43ms (min:  0.30ms, max:  2.46ms) | 
-2025-12-22 14:50:39 - RadarFusion - INFO -   timestamp_matching        |    0.08ms (min:  0.05ms, max:  0.12ms) | 
-2025-12-22 14:50:39 - RadarFusion - INFO -   coordinate_calibration    |    0.02ms (min:  0.02ms, max:  0.03ms) | 
-2025-12-22 14:50:39 - RadarFusion - INFO -   data_validation           |    0.02ms (min:  0.02ms, max:  0.04ms) | 
-2025-12-22 14:50:39 - RadarFusion - INFO -   result_processing         |    0.02ms (min:  0.01ms, max:  0.03ms) | 
-2025-12-22 14:50:39 - RadarFusion - INFO -   trajectory_prediction     |    0.01ms (min:  0.01ms, max:  0.01ms) | 
-2025-12-22 14:50:39 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:39 - RadarFusion - INFO -   总耗时                       |    0.60ms (min:  0.44ms, max:  2.64ms)
-2025-12-22 14:50:39 - RadarFusion - INFO - 
+2025-12-22 16:54:46 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:46 - RadarFusion - INFO -   bipartite_matching        |    0.39ms (min:  0.30ms, max:  0.54ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   timestamp_matching        |    0.07ms (min:  0.05ms, max:  0.11ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   trajectory_prediction     |    0.03ms (min:  0.02ms, max:  0.03ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   coordinate_calibration    |    0.02ms (min:  0.02ms, max:  0.03ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   data_validation           |    0.02ms (min:  0.02ms, max:  0.02ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   result_processing         |    0.02ms (min:  0.01ms, max:  0.02ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:46 - RadarFusion - INFO -   总耗时                       |    0.57ms (min:  0.45ms, max:  0.73ms)
+2025-12-22 16:54:46 - RadarFusion - INFO - 
 🔴 性能瓶颈分析:
-2025-12-22 14:50:39 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:39 - RadarFusion - INFO - 
+2025-12-22 16:54:46 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:46 - RadarFusion - INFO - 
 📊 业务统计:
-2025-12-22 14:50:39 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:39 - RadarFusion - INFO -   雷达目标总数: 100
-2025-12-22 14:50:39 - RadarFusion - INFO -   视觉目标总数: 300
-2025-12-22 14:50:39 - RadarFusion - INFO -   成功匹配数: 100
-2025-12-22 14:50:39 - RadarFusion - INFO -   失败匹配数: 0
-2025-12-22 14:50:39 - RadarFusion - INFO -   车道过滤数: 0
-2025-12-22 14:50:39 - RadarFusion - INFO -   匹配成功率: 100.0%
-2025-12-22 14:50:39 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:46 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:46 - RadarFusion - INFO -   雷达目标总数: 100
+2025-12-22 16:54:46 - RadarFusion - INFO -   视觉目标总数: 300
+2025-12-22 16:54:46 - RadarFusion - INFO -   成功匹配数: 100
+2025-12-22 16:54:46 - RadarFusion - INFO -   失败匹配数: 0
+2025-12-22 16:54:46 - RadarFusion - INFO -   车道过滤数: 0
+2025-12-22 16:54:46 - RadarFusion - INFO -   匹配成功率: 100.0%
+2025-12-22 16:54:46 - RadarFusion - INFO - ================================================================================
 
-2025-12-22 14:50:40 - RadarFusion - INFO - ================================================================================
-2025-12-22 14:50:40 - RadarFusion - INFO - 📊 雷达融合性能统计 (已处理 150 帧)
-2025-12-22 14:50:40 - RadarFusion - INFO - ================================================================================
-2025-12-22 14:50:40 - RadarFusion - INFO - 
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:46.141, 目标数: 12
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.148, objs=12
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:46.298, 目标数: 2
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.301, objs=2
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:46.342, 目标数: 12
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.354, objs=12
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:46.169, 目标数: 2
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.391, objs=2
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:46.370, 目标数: 2
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.394, objs=2
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.Basic - DEBUG - C1 Frame 300: 3 tracked objects
+2025-12-22 16:54:46 - radar.RadarFusionOrchestrator - INFO - Frame 300: 雷达过滤 总数=62, 融合区内=31, 融合区外=31
+2025-12-22 16:54:46 - radar.RadarFusionOrchestrator - INFO - Frame 300 C1: 雷达匹配 1/3 个目标 (耗时: 0.60ms)
+2025-12-22 16:54:46 - radar.RadarFusionOrchestrator - INFO - 📊 雷达协调器性能 (Frame 300): 过滤=1.57ms, 融合=1.11ms, 总计=2.69ms
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:46 - __main__ - INFO - 📊 性能统计 (截至Frame 300, 最近100帧)
+2025-12-22 16:54:46 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:46 - __main__ - INFO - 总处理时间: 10.09ms/帧 (实际FPS: 99.1)
+2025-12-22 16:54:46 - __main__ - INFO -   ├─ 队列读取: 0.47ms
+2025-12-22 16:54:46 - __main__ - INFO -   ├─ 帧处理(跟踪+融合): 4.93ms
+2025-12-22 16:54:46 - __main__ - INFO -   ├─ 匹配处理: 0.17ms
+2025-12-22 16:54:46 - __main__ - INFO -   ├─ 结果缓冲: 2.11ms
+2025-12-22 16:54:46 - __main__ - INFO -   ├─ 雷达快进: 0.19ms
+2025-12-22 16:54:46 - __main__ - INFO -   └─ 雷达协调: 3.37ms
+2025-12-22 16:54:46 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:46 - __main__ - INFO - 缓冲区诊断信息
+2025-12-22 16:54:46 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:46 - __main__ - INFO - 融合系统: 全局目标=8, JSON缓冲=400
+2025-12-22 16:54:46 - __main__ - INFO - C1跟踪器: 活跃轨迹=3, 丢失轨迹=1
+2025-12-22 16:54:46 - __main__ - INFO - C2跟踪器: 活跃轨迹=2, 丢失轨迹=0
+2025-12-22 16:54:46 - __main__ - INFO - C3跟踪器: 活跃轨迹=4, 丢失轨迹=1
+2025-12-22 16:54:46 - __main__ - INFO - 结果缓冲: C1=47, C2=42, C3=9
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:46.498, 目标数: 2
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.504, objs=2
+2025-12-22 16:54:46 - __main__ - INFO - 内存使用: 245.8MB
+2025-12-22 16:54:46 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:46 - __main__ - INFO - 可以达到 99.1 FPS 的实时处理
+2025-12-22 16:54:46 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:46 - __main__ - INFO - 队列状态 (截至帧 300)
+2025-12-22 16:54:46 - __main__ - INFO - C1: 队列大小 0
+2025-12-22 16:54:46 - __main__ - INFO - C2: 队列大小 1
+2025-12-22 16:54:46 - __main__ - INFO - C3: 队列大小 1
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:46.545, 目标数: 12
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.549, objs=12
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:46.571, 目标数: 2
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.579, objs=2
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:46.699, 目标数: 2
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.705, objs=2
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:46.748, 目标数: 12
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.758, objs=12
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:46.774, 目标数: 2
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.782, objs=2
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:46 - RadarFusion - INFO - 📊 雷达融合性能统计 (已处理 50 帧)
+2025-12-22 16:54:46 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:46 - RadarFusion - INFO - 
 📈 每一步的耗时统计 (单位: 毫秒):
-2025-12-22 14:50:40 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:40 - RadarFusion - INFO -   bipartite_matching        |    0.35ms (min:  0.28ms, max:  0.52ms) | 
-2025-12-22 14:50:40 - RadarFusion - INFO -   timestamp_matching        |    0.09ms (min:  0.07ms, max:  0.13ms) | 
-2025-12-22 14:50:40 - RadarFusion - INFO -   result_processing         |    0.03ms (min:  0.02ms, max:  0.04ms) | 
-2025-12-22 14:50:40 - RadarFusion - INFO -   trajectory_prediction     |    0.03ms (min:  0.02ms, max:  0.06ms) | 
-2025-12-22 14:50:40 - RadarFusion - INFO -   coordinate_calibration    |    0.02ms (min:  0.02ms, max:  0.05ms) | 
-2025-12-22 14:50:40 - RadarFusion - INFO -   data_validation           |    0.02ms (min:  0.02ms, max:  0.02ms) | 
-2025-12-22 14:50:40 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:40 - RadarFusion - INFO -   总耗时                       |    0.56ms (min:  0.49ms, max:  0.74ms)
-2025-12-22 14:50:40 - RadarFusion - INFO - 
+2025-12-22 16:54:46 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:46 - RadarFusion - INFO -   bipartite_matching        |    0.28ms (min:  0.22ms, max:  0.39ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   timestamp_matching        |    0.08ms (min:  0.05ms, max:  0.10ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   coordinate_calibration    |    0.02ms (min:  0.01ms, max:  0.06ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   result_processing         |    0.01ms (min:  0.01ms, max:  0.03ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   data_validation           |    0.01ms (min:  0.01ms, max:  0.02ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   trajectory_prediction     |    0.00ms (min:  0.00ms, max:  0.00ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:46 - RadarFusion - INFO -   总耗时                       |    0.43ms (min:  0.33ms, max:  0.58ms)
+2025-12-22 16:54:46 - RadarFusion - INFO - 
 🔴 性能瓶颈分析:
-2025-12-22 14:50:40 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:40 - RadarFusion - INFO - 
+2025-12-22 16:54:46 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:46 - RadarFusion - INFO - 
 📊 业务统计:
-2025-12-22 14:50:40 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:40 - RadarFusion - INFO -   雷达目标总数: 150
-2025-12-22 14:50:40 - RadarFusion - INFO -   视觉目标总数: 377
-2025-12-22 14:50:40 - RadarFusion - INFO -   成功匹配数: 103
-2025-12-22 14:50:40 - RadarFusion - INFO -   失败匹配数: 47
-2025-12-22 14:50:40 - RadarFusion - INFO -   车道过滤数: 0
-2025-12-22 14:50:40 - RadarFusion - INFO -   匹配成功率: 68.7%
-2025-12-22 14:50:40 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:46 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:46 - RadarFusion - INFO -   雷达目标总数: 50
+2025-12-22 16:54:46 - RadarFusion - INFO -   视觉目标总数: 70
+2025-12-22 16:54:46 - RadarFusion - INFO -   成功匹配数: 0
+2025-12-22 16:54:46 - RadarFusion - INFO -   失败匹配数: 50
+2025-12-22 16:54:46 - RadarFusion - INFO -   车道过滤数: 0
+2025-12-22 16:54:46 - RadarFusion - INFO -   匹配成功率: 0.0%
+2025-12-22 16:54:46 - RadarFusion - INFO - ================================================================================
 
-2025-12-22 14:50:40 - core.Basic - DEBUG - C1 Frame 300: 3 tracked objects
-2025-12-22 14:50:40 - core.Basic - DEBUG - C2 Frame 300: 2 tracked objects
-2025-12-22 14:50:40 - radar.RadarFusionOrchestrator - INFO - Frame 300: 雷达过滤 总数=79, 融合区内=36, 融合区外=43
-2025-12-22 14:50:40 - radar.RadarFusionOrchestrator - INFO - Frame 300 C1: 雷达匹配 1/3 个目标 (耗时: 0.59ms)
-2025-12-22 14:50:40 - radar.RadarFusionOrchestrator - INFO - Frame 300 C2: 雷达匹配 1/2 个目标 (耗时: 0.45ms)
-2025-12-22 14:50:40 - radar.RadarFusionOrchestrator - INFO - 📊 雷达协调器性能 (Frame 300): 过滤=2.16ms, 融合=1.03ms, 总计=3.20ms
-2025-12-22 14:50:40 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:40 - __main__ - INFO - 📊 性能统计 (截至Frame 300, 最近100帧)
-2025-12-22 14:50:40 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:40 - __main__ - INFO - 总处理时间: 7.93ms/帧 (实际FPS: 126.2)
-2025-12-22 14:50:40 - __main__ - INFO -   ├─ 队列读取: 0.40ms
-2025-12-22 14:50:40 - __main__ - INFO -   ├─ 帧处理(跟踪+融合): 4.03ms
-2025-12-22 14:50:40 - __main__ - INFO -   ├─ 匹配处理: 0.12ms
-2025-12-22 14:50:40 - __main__ - INFO -   ├─ 结果缓冲: 0.47ms
-2025-12-22 14:50:40 - __main__ - INFO -   ├─ 雷达快进: 0.20ms
-2025-12-22 14:50:40 - __main__ - INFO -   └─ 雷达协调: 5.31ms
-2025-12-22 14:50:40 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:40 - __main__ - INFO - 缓冲区诊断信息
-2025-12-22 14:50:40 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:40 - __main__ - INFO - 融合系统: 全局目标=8, JSON缓冲=417
-2025-12-22 14:50:40 - __main__ - INFO - C1跟踪器: 活跃轨迹=3, 丢失轨迹=1
-2025-12-22 14:50:40 - __main__ - INFO - C2跟踪器: 活跃轨迹=2, 丢失轨迹=0
-2025-12-22 14:50:40 - __main__ - INFO - C3跟踪器: 活跃轨迹=4, 丢失轨迹=1
-2025-12-22 14:50:40 - __main__ - INFO - 结果缓冲: C1=38, C2=37, C3=0
-2025-12-22 14:50:40 - __main__ - INFO - 内存使用: 246.6MB
-2025-12-22 14:50:40 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:40 - __main__ - INFO - 可以达到 126.2 FPS 的实时处理
-2025-12-22 14:50:40 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:40 - __main__ - INFO - 队列状态 (截至帧 300)
-2025-12-22 14:50:40 - __main__ - INFO - C1: 队列大小 0
-2025-12-22 14:50:40 - __main__ - INFO - C2: 队列大小 0
-2025-12-22 14:50:40 - __main__ - INFO - C3: 队列大小 1
-2025-12-22 14:50:40 - RadarFusion - INFO - ================================================================================
-2025-12-22 14:50:40 - RadarFusion - INFO - 📊 雷达融合性能统计 (已处理 50 帧)
-2025-12-22 14:50:40 - RadarFusion - INFO - ================================================================================
-2025-12-22 14:50:40 - RadarFusion - INFO - 
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:46 - RadarFusion - INFO - 📊 雷达融合性能统计 (已处理 150 帧)
+2025-12-22 16:54:46 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:46 - RadarFusion - INFO - 
 📈 每一步的耗时统计 (单位: 毫秒):
-2025-12-22 14:50:40 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:40 - RadarFusion - INFO -   bipartite_matching        |    0.29ms (min:  0.22ms, max:  0.43ms) | 
-2025-12-22 14:50:40 - RadarFusion - INFO -   timestamp_matching        |    0.07ms (min:  0.05ms, max:  0.11ms) | 
-2025-12-22 14:50:40 - RadarFusion - INFO -   trajectory_prediction     |    0.02ms (min:  0.00ms, max:  0.03ms) | 
-2025-12-22 14:50:40 - RadarFusion - INFO -   result_processing         |    0.01ms (min:  0.00ms, max:  0.03ms) | 
-2025-12-22 14:50:40 - RadarFusion - INFO -   coordinate_calibration    |    0.01ms (min:  0.01ms, max:  0.02ms) | 
-2025-12-22 14:50:40 - RadarFusion - INFO -   data_validation           |    0.01ms (min:  0.01ms, max:  0.02ms) | 
-2025-12-22 14:50:40 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:40 - RadarFusion - INFO -   总耗时                       |    0.44ms (min:  0.34ms, max:  0.63ms)
-2025-12-22 14:50:40 - RadarFusion - INFO - 
+2025-12-22 16:54:46 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:46 - RadarFusion - INFO -   bipartite_matching        |    0.41ms (min:  0.37ms, max:  0.45ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   timestamp_matching        |    0.08ms (min:  0.07ms, max:  0.09ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   coordinate_calibration    |    0.03ms (min:  0.02ms, max:  0.06ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   data_validation           |    0.02ms (min:  0.02ms, max:  0.05ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   result_processing         |    0.02ms (min:  0.01ms, max:  0.02ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO -   trajectory_prediction     |    0.01ms (min:  0.01ms, max:  0.03ms) | 
+2025-12-22 16:54:46 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:46 - RadarFusion - INFO -   总耗时                       |    0.59ms (min:  0.54ms, max:  0.64ms)
+2025-12-22 16:54:46 - RadarFusion - INFO - 
 🔴 性能瓶颈分析:
-2025-12-22 14:50:40 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:40 - RadarFusion - INFO - 
+2025-12-22 16:54:46 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:46 - RadarFusion - INFO - 
 📊 业务统计:
-2025-12-22 14:50:40 - RadarFusion - INFO - --------------------------------------------------------------------------------
-2025-12-22 14:50:40 - RadarFusion - INFO -   雷达目标总数: 50
-2025-12-22 14:50:40 - RadarFusion - INFO -   视觉目标总数: 70
-2025-12-22 14:50:40 - RadarFusion - INFO -   成功匹配数: 13
-2025-12-22 14:50:40 - RadarFusion - INFO -   失败匹配数: 37
-2025-12-22 14:50:40 - RadarFusion - INFO -   车道过滤数: 0
-2025-12-22 14:50:40 - RadarFusion - INFO -   匹配成功率: 26.0%
-2025-12-22 14:50:40 - RadarFusion - INFO - ================================================================================
+2025-12-22 16:54:46 - RadarFusion - INFO - --------------------------------------------------------------------------------
+2025-12-22 16:54:46 - RadarFusion - INFO -   雷达目标总数: 150
+2025-12-22 16:54:46 - RadarFusion - INFO -   视觉目标总数: 386
+2025-12-22 16:54:46 - RadarFusion - INFO -   成功匹配数: 150
+2025-12-22 16:54:46 - RadarFusion - INFO -   失败匹配数: 0
+2025-12-22 16:54:46 - RadarFusion - INFO -   车道过滤数: 0
+2025-12-22 16:54:46 - RadarFusion - INFO -   匹配成功率: 100.0%
+2025-12-22 16:54:46 - RadarFusion - INFO - ================================================================================
 
-2025-12-22 14:50:40 - __main__ - INFO - 收到停止信号，正在退出...
-2025-12-22 14:50:40 - __main__ - INFO - 所有处理完成
-2025-12-22 14:50:40 - __main__ - INFO - 收到停止信号，正在退出...
-2025-12-22 14:50:40 - __main__ - INFO - 准备保存 469 帧的JSON数据
-2025-12-22 14:50:40 - __main__ - INFO - 收到停止信号，正在退出...
-2025-12-22 14:50:40 - __main__ - INFO - 收到停止信号，正在退出...
-2025-12-22 14:50:41 - __main__ - INFO - ============================================================
-2025-12-22 14:50:41 - __main__ - INFO - 最终处理统计报告
-2025-12-22 14:50:41 - __main__ - INFO - 成功处理的帧数: 338帧
-2025-12-22 14:50:41 - __main__ - INFO - ============================================================
-2025-12-22 14:50:41 - __main__ - INFO - 雷达数据处理统计
-2025-12-22 14:50:41 - __main__ - INFO - 直接输出的雷达数据: 9186 个
-2025-12-22 14:50:41 - __main__ - INFO - 送入融合系统的雷达数据: 351 个
-2025-12-22 14:50:41 - __main__ - INFO - 雷达数据总计: 9537 个
-2025-12-22 14:50:41 - __main__ - INFO - ============================================================
-2025-12-22 14:50:41 - __main__ - INFO - 最终ByteTracker优化统计
-2025-12-22 14:50:41 - __main__ - INFO - DEBUG - 跟踪器输入统计:
-2025-12-22 14:50:41 - __main__ - INFO - C1: 调用175次, 空输入0次, 非空175次, 总检测数630, 平均3.6个/帧
-2025-12-22 14:50:41 - __main__ - INFO - C2: 调用173次, 空输入112次, 非空61次, 总检测数94, 平均0.5个/帧
-2025-12-22 14:50:41 - __main__ - INFO - C3: 调用131次, 空输入0次, 非空131次, 总检测数579, 平均4.4个/帧
-2025-12-22 14:50:41 - __main__ - INFO - C1:
-2025-12-22 14:50:41 - __main__ - INFO -   总帧数: 175
-2025-12-22 14:50:41 - __main__ - INFO -   跟踪帧: 88 (50.3%)
-2025-12-22 14:50:41 - __main__ - INFO -   预测帧: 87 (49.7%)
-2025-12-22 14:50:41 - __main__ - INFO -   性能提升: 1.00x
-2025-12-22 14:50:41 - __main__ - INFO -   平均跟踪耗时: 0.003s
-2025-12-22 14:50:41 - __main__ - INFO -   平均预测耗时: 0.001s
-2025-12-22 14:50:41 - __main__ - INFO - C2:
-2025-12-22 14:50:41 - __main__ - INFO -   总帧数: 173
-2025-12-22 14:50:41 - __main__ - INFO -   跟踪帧: 143 (82.7%)
-2025-12-22 14:50:41 - __main__ - INFO -   预测帧: 30 (17.3%)
-2025-12-22 14:50:41 - __main__ - INFO -   性能提升: 1.00x
-2025-12-22 14:50:41 - __main__ - INFO -   平均跟踪耗时: 0.001s
-2025-12-22 14:50:41 - __main__ - INFO -   平均预测耗时: 0.000s
-2025-12-22 14:50:41 - __main__ - INFO - C3:
-2025-12-22 14:50:41 - __main__ - INFO -   总帧数: 131
-2025-12-22 14:50:41 - __main__ - INFO -   跟踪帧: 66 (50.4%)
-2025-12-22 14:50:41 - __main__ - INFO -   预测帧: 65 (49.6%)
-2025-12-22 14:50:41 - __main__ - INFO -   性能提升: 1.00x
-2025-12-22 14:50:41 - __main__ - INFO -   平均跟踪耗时: 0.003s
-2025-12-22 14:50:41 - __main__ - INFO -   平均预测耗时: 0.001s
-2025-12-22 14:50:41 - __main__ - INFO - ============================================================
-2025-12-22 14:50:41 - __main__ - INFO - 程序结束，刷新缓冲区...
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO - 
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:46.900, 目标数: 2
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.905, objs=2
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:46.949, 目标数: 12
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.954, objs=12
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:46.982, 目标数: 2
+2025-12-22 16:54:46 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393686.985, objs=2
+2025-12-22 16:54:46 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:47.101, 目标数: 2
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.106, objs=2
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:47.152, 目标数: 11
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.157, objs=11
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:47.183, 目标数: 1
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.191, objs=1
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:47.301, 目标数: 2
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.307, objs=2
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:47.353, 目标数: 11
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.357, objs=11
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - __main__ - INFO - 收到停止信号，正在退出...
+2025-12-22 16:54:47 - __main__ - INFO - 收到停止信号，正在退出...
+2025-12-22 16:54:47 - __main__ - INFO - 收到停止信号，正在退出...
+2025-12-22 16:54:47 - core.mqtt_publisher - INFO - 消息已发布到主题: GRGUpload/grg_box_1030/RSM
+2025-12-22 16:54:47 - __main__ - INFO - 所有处理完成
+2025-12-22 16:54:47 - __main__ - INFO - 准备保存 481 帧的JSON数据
+2025-12-22 16:54:47 - __main__ - INFO - 收到停止信号，正在退出...
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:47.385, 目标数: 1
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.394, objs=1
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:47.506, 目标数: 2
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:47.553, 目标数: 11
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.572, objs=2
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:47.585, 目标数: 1
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.623, objs=11
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.703, objs=1
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:47.706, 目标数: 2
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:47.734, 目标数: 11
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.781, objs=2
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.803, objs=11
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:47.786, 目标数: 1
+2025-12-22 16:54:47 - __main__ - INFO - ============================================================
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.847, objs=1
+2025-12-22 16:54:47 - __main__ - INFO - 最终处理统计报告
+2025-12-22 16:54:47 - __main__ - INFO - 成功处理的帧数: 360帧
+2025-12-22 16:54:47 - __main__ - INFO - ============================================================
+2025-12-22 16:54:47 - __main__ - INFO - 雷达数据处理统计
+2025-12-22 16:54:47 - __main__ - INFO - 直接输出的雷达数据: 6523 个
+2025-12-22 16:54:47 - __main__ - INFO - 送入融合系统的雷达数据: 298 个
+2025-12-22 16:54:47 - __main__ - INFO - 雷达数据总计: 6821 个
+2025-12-22 16:54:47 - __main__ - INFO - ============================================================
+2025-12-22 16:54:47 - __main__ - INFO - 最终ByteTracker优化统计
+2025-12-22 16:54:47 - __main__ - INFO - DEBUG - 跟踪器输入统计:
+2025-12-22 16:54:47 - __main__ - INFO - C1: 调用189次, 空输入0次, 非空189次, 总检测数670, 平均3.5个/帧
+2025-12-22 16:54:47 - __main__ - INFO - C2: 调用181次, 空输入112次, 非空69次, 总检测数110, 平均0.6个/帧
+2025-12-22 16:54:47 - __main__ - INFO - C3: 调用141次, 空输入0次, 非空141次, 总检测数632, 平均4.5个/帧
+2025-12-22 16:54:47 - __main__ - INFO - C1:
+2025-12-22 16:54:47 - __main__ - INFO -   总帧数: 189
+2025-12-22 16:54:47 - __main__ - INFO -   跟踪帧: 95 (50.3%)
+2025-12-22 16:54:47 - __main__ - INFO -   预测帧: 94 (49.7%)
+2025-12-22 16:54:47 - __main__ - INFO -   性能提升: 1.00x
+2025-12-22 16:54:47 - __main__ - INFO -   平均跟踪耗时: 0.003s
+2025-12-22 16:54:47 - __main__ - INFO -   平均预测耗时: 0.001s
+2025-12-22 16:54:47 - __main__ - INFO - C2:
+2025-12-22 16:54:47 - __main__ - INFO -   总帧数: 181
+2025-12-22 16:54:47 - __main__ - INFO -   跟踪帧: 147 (81.2%)
+2025-12-22 16:54:47 - __main__ - INFO -   预测帧: 34 (18.8%)
+2025-12-22 16:54:47 - __main__ - INFO -   性能提升: 1.00x
+2025-12-22 16:54:47 - __main__ - INFO -   平均跟踪耗时: 0.001s
+2025-12-22 16:54:47 - __main__ - INFO -   平均预测耗时: 0.001s
+2025-12-22 16:54:47 - __main__ - INFO - C3:
+2025-12-22 16:54:47 - __main__ - INFO -   总帧数: 141
+2025-12-22 16:54:47 - __main__ - INFO -   跟踪帧: 71 (50.4%)
+2025-12-22 16:54:47 - __main__ - INFO -   预测帧: 70 (49.6%)
+2025-12-22 16:54:47 - __main__ - INFO -   性能提升: 1.00x
+2025-12-22 16:54:47 - __main__ - INFO -   平均跟踪耗时: 0.003s
+2025-12-22 16:54:47 - __main__ - INFO -   平均预测耗时: 0.001s
+2025-12-22 16:54:47 - __main__ - INFO - ============================================================
+2025-12-22 16:54:47 - __main__ - INFO - 程序结束，刷新缓冲区...
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO - 
 ================================================================================
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO - 【雷达视觉融合 - 全摄像头统计】
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO - ================================================================================
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO - 
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO - 【雷达视觉融合 - 全摄像头统计】
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO - ================================================================================
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO - 
 【摄像头 C1】
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   雷达目标:          173 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   视觉目标:          432 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   成功匹配:          103 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   失败匹配:           70 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   车道过滤:            0 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   雷达匹配率:       59.5%
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   视觉匹配率:       23.8%
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO - 
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   雷达目标:          168 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   视觉目标:          422 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   成功匹配:          168 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   失败匹配:            0 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   车道过滤:            0 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   雷达匹配率:      100.0%
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   视觉匹配率:       39.8%
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO - 
 【摄像头 C2】
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   雷达目标:           58 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   视觉目标:           86 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   成功匹配:           13 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   失败匹配:           45 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   车道过滤:            0 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   雷达匹配率:       22.4%
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   视觉匹配率:       15.1%
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO - 
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   雷达目标:           66 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   视觉目标:          102 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   成功匹配:            0 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   失败匹配:           66 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   车道过滤:            0 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   雷达匹配率:        0.0%
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   视觉匹配率:        0.0%
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO - 
 【摄像头 C3】
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   雷达目标:          129 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   视觉目标:          387 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   成功匹配:          129 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   失败匹配:            0 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   车道过滤:            0 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   雷达匹配率:      100.0%
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   视觉匹配率:       33.3%
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO - 
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   雷达目标:          130 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   视觉目标:          390 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   成功匹配:          126 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   失败匹配:            4 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   车道过滤:            0 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   雷达匹配率:       96.9%
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   视觉匹配率:       32.3%
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO - 
 --------------------------------------------------------------------------------
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO - 【总体统计】
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   雷达目标总数:      360 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   视觉目标总数:      905 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   成功匹配总数:      245 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   失败匹配总数:      115 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   车道过滤总数:        0 个
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   总体雷达匹配率:   68.1%
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO -   总体视觉匹配率:   27.1%
-2025-12-22 14:50:41 - radar.RadarFusionOrchestrator - INFO - ================================================================================
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO - 【总体统计】
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   雷达目标总数:      364 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   视觉目标总数:      914 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   成功匹配总数:      294 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   失败匹配总数:       70 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   车道过滤总数:        0 个
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   总体雷达匹配率:   80.8%
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO -   总体视觉匹配率:   32.2%
+2025-12-22 16:54:47 - radar.RadarFusionOrchestrator - INFO - ================================================================================
 
-2025-12-22 14:50:41 - __main__ - INFO - 正在保存JSON数据
-2025-12-22 14:50:41 - __main__ - INFO - 准备保存 469 帧的JSON数据
-2025-12-22 14:50:42 - vision.CameraManager - INFO - 停止所有摄像头进程
-2025-12-22 14:50:42 - vision.CameraManager - INFO - 终止Camera1进程
-2025-12-22 14:50:42 - vision.CameraManager - INFO - 终止Camera2进程
-2025-12-22 14:50:43 - vision.CameraManager - INFO - 终止Camera3进程
-2025-12-22 14:50:43 - vision.CameraManager - INFO - 所有摄像头进程已停止
-2025-12-22 14:50:43 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:43 - __main__ - INFO - 融合系统已停止
-2025-12-22 14:50:43 - __main__ - INFO - 日志文件: /zhw/no-frame-sync/logs/fusion_system.log
-2025-12-22 14:50:43 - __main__ - INFO - ======================================================================
-2025-12-22 14:50:43 - __main__ - INFO - 资源清理完成
+2025-12-22 16:54:47 - __main__ - INFO - 正在保存JSON数据
+2025-12-22 16:54:47 - __main__ - INFO - 准备保存 481 帧的JSON数据
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:47.934, 目标数: 11
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.939, objs=11
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:47.907, 目标数: 2
+2025-12-22 16:54:47 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393687.945, objs=2
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:47.987, 目标数: 1
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:48.108, 目标数: 2
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:48.135, 目标数: 11
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.191, objs=1
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.200, objs=2
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.226, objs=11
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:48.189, 目标数: 1
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.312, objs=1
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:48.309, 目标数: 2
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.314, objs=2
+2025-12-22 16:54:48 - vision.CameraManager - INFO - 停止所有摄像头进程
+2025-12-22 16:54:48 - vision.CameraManager - INFO - 终止Camera1进程
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:48.337, 目标数: 11
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.339, objs=11
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:48.370, 目标数: 1
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.373, objs=1
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:48.511, 目标数: 2
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.515, objs=2
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:48.537, 目标数: 11
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.540, objs=11
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:48.571, 目标数: 1
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.572, objs=1
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:48.712, 目标数: 2
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.714, objs=2
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:48.738, 目标数: 11
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.743, objs=11
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:48.776, 目标数: 1
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.779, objs=1
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:48.895, 目标数: 2
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.897, objs=2
+2025-12-22 16:54:48 - vision.CameraManager - INFO - 终止Camera2进程
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:48.943, 目标数: 11
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.947, objs=11
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:48.979, 目标数: 1
+2025-12-22 16:54:48 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393688.981, objs=1
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:49. 96, 目标数: 2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.098, objs=2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:49.143, 目标数: 11
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.146, objs=11
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:49.181, 目标数: 1
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.184, objs=1
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:49.298, 目标数: 2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.301, objs=2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:49.346, 目标数: 11
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.350, objs=11
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:49.380, 目标数: 2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.382, objs=2
+2025-12-22 16:54:49 - vision.CameraManager - INFO - 终止Camera3进程
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:49.499, 目标数: 2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.502, objs=2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:49.533, 目标数: 11
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.537, objs=11
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:49.585, 目标数: 2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.588, objs=2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:49.700, 目标数: 2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.702, objs=2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:49.733, 目标数: 11
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.735, objs=11
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:49.787, 目标数: 2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.791, objs=2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:49.901, 目标数: 2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.905, objs=2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:49.934, 目标数: 12
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.939, objs=12
+2025-12-22 16:54:49 - vision.CameraManager - INFO - 所有摄像头进程已停止
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:49.990, 目标数: 2
+2025-12-22 16:54:49 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393689.991, objs=2
+2025-12-22 16:54:50 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:50.105, 目标数: 2
+2025-12-22 16:54:50 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393690.109, objs=2
+2025-12-22 16:54:50 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:50.136, 目标数: 12
+2025-12-22 16:54:50 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393690.141, objs=12
+2025-12-22 16:54:50 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:50.190, 目标数: 2
+2025-12-22 16:54:50 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393690.193, objs=2
+2025-12-22 16:54:50 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10106, 时间: 2025-12-22 16:54:50.306, 目标数: 2
+2025-12-22 16:54:50 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393690.308, objs=2
+2025-12-22 16:54:50 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10083, 时间: 2025-12-22 16:54:50.336, 目标数: 12
+2025-12-22 16:54:50 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393690.340, objs=12
+2025-12-22 16:54:50 - core.RadarDataSource - DEBUG - ✅ Proto 解码成功，设备: 9ac43ad10089, 时间: 2025-12-22 16:54:50.374, 目标数: 2
+2025-12-22 16:54:50 - core.RadarDataSource - DEBUG - 📦 缓冲区已更新: ts=1766393690.377, objs=2
+2025-12-22 16:54:50 - core.mqtt_publisher - INFO - MQTT 已断开
+2025-12-22 16:54:50 - core.mqtt_publisher - INFO - MQTT 已断开
+2025-12-22 16:54:50 - __main__ - INFO - MQTT连接已断开
+2025-12-22 16:54:50 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:50 - __main__ - INFO - 融合系统已停止
+2025-12-22 16:54:50 - __main__ - INFO - 日志文件: /zhw/no-frame-sync/logs/fusion_system.log
+2025-12-22 16:54:50 - __main__ - INFO - ======================================================================
+2025-12-22 16:54:50 - __main__ - INFO - 资源清理完成

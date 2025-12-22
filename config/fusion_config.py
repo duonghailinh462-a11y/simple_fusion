@@ -48,7 +48,7 @@ class RadarConfig:
 
 # 全局配置实例 - 这是唯一的配置入口
 CURRENT_CONFIG = SystemConfig(
-    mode="TEST"  # 去现场前改为 "PROD" 即可
+    mode="PROD"  # 去现场前改为 "PROD" 即可
 )
 
 # 默认配置（向后兼容）

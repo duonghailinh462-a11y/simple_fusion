@@ -148,17 +148,17 @@ class FileRadarSource(BaseRadarSource):
 
 
 class RealtimeRadarSource(BaseRadarSource):
-    """工程模式: UDP接收 + Proto解码"""
+    """工程模式: TCP接收 + Proto解码"""
     
     def __init__(self, port=12400):
         """
         初始化实时雷达数据源
         
         Args:
-            port: UDP监听端口
+            port: TCP监听端口
         """
         self.port = port
-        self.sock = None
+        self.server_sock = None
         self.running = False
         self.thread = None
         # 只保留最新一帧，自动丢弃旧数据
@@ -166,55 +166,114 @@ class RealtimeRadarSource(BaseRadarSource):
         logger.info(f"✅ RealtimeRadarSource 初始化成功: port={port}")
 
     def start(self):
-        """启动UDP接收"""
+        """启动TCP接收"""
         if not PROTO_AVAILABLE:
             logger.error("无法导入 radar_pb2，请先编译 proto 文件！")
             return
         
         try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            logger.info(f"🔧 正在创建TCP socket...")
+            self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            logger.info(f"🔧 设置socket选项...")
             # 设置socket选项以允许地址重用
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            logger.info(f"🔧 正在绑定端口 {self.port}...")
             # 现场可能需要绑定特定IP，或者 0.0.0.0
-            self.sock.bind(('0.0.0.0', self.port))
+            self.server_sock.bind(('0.0.0.0', self.port))
+            self.server_sock.listen(10)
+            logger.info(f"✅ 端口 {self.port} 绑定成功，开始监听连接...")
             self.running = True
-            self.thread = threading.Thread(target=self._receive_loop, daemon=True)
+            self.thread = threading.Thread(target=self._accept_loop, daemon=True)
             self.thread.start()
             logger.info(f"✅ 实时雷达接收已启动，监听端口: {self.port}")
         except Exception as e:
-            logger.error(f"❌ 启动UDP接收失败: {e}")
+            logger.error(f"❌ 启动TCP接收失败: {e}", exc_info=True)
             self.running = False
 
-    def _receive_loop(self):
-        """后台接收线程 (参考 server_multi.py)"""
+    def _accept_loop(self):
+        """接受TCP连接的线程"""
+        logger.info(f"🔧 TCP接受线程已启动，等待连接...")
         while self.running:
             try:
-                # 接收数据
-                data, addr = self.sock.recvfrom(65535)
-                
-                # Proto 解码
-                radar_frame = radar_pb2.ObjLocus()
-                radar_frame.ParseFromString(data)
-                
-                # 转换为系统的 RadarObject 格式
-                radar_objs = []
-                for locus in radar_frame.locusList:
-                    radar_obj = self._convert_proto_to_object(locus, addr[0])
-                    radar_objs.append(radar_obj)
-                
-                # 存入缓冲区，使用系统当前时间
-                timestamp = time.time()
-                self.buffer.append((timestamp, radar_objs))
-                
+                conn, addr = self.server_sock.accept()
+                logger.info(f"--- [新连接] 设备 {addr[0]} 已接入 ---")
+                # 为每个连接创建一个处理线程
+                t = threading.Thread(target=self._handle_connection, args=(conn, addr), daemon=True)
+                t.start()
             except Exception as e:
-                logger.warning(f"雷达接收异常: {e}")
+                if self.running:
+                    logger.warning(f"❌ 接受连接异常: {e}")
+    
+    def _handle_connection(self, conn, addr):
+        """处理单个TCP连接"""
+        try:
+            while self.running:
+                # 读取头部（8字节）
+                head_data = self._read_exactly(conn, 8)
+                if not head_data:
+                    break
+                
+                # 检查头部标识
+                if head_data[:4] != b'\xAA\xAB\xAC\xAD':
+                    continue
+                
+                # 读取数据长度
+                import struct
+                total_len = struct.unpack('<I', head_data[4:8])[0]
+                
+                # 读取数据体
+                body_data = self._read_exactly(conn, total_len)
+                if not body_data:
+                    break
+                
+                # 解码数据
+                if len(body_data) > 36:
+                    proto_content = body_data[30:-6]
+                    try:
+                        radar_frame = radar_pb2.ObjLocus()
+                        radar_frame.ParseFromString(proto_content)
+                        logger.debug(f"✅ Proto 解码成功，设备: {radar_frame.deviceSn}, 时间: {radar_frame.time}, 目标数: {radar_frame.count}")
+                        
+                        # 转换为系统的 RadarObject 格式
+                        radar_objs = []
+                        for locus in radar_frame.locusList:
+                            radar_obj = self._convert_proto_to_object(locus, radar_frame.time, addr[0])
+                            radar_objs.append(radar_obj)
+                        
+                        # 存入缓冲区，使用系统当前时间
+                        timestamp = time.time()
+                        self.buffer.append((timestamp, radar_objs))
+                        logger.debug(f"📦 缓冲区已更新: ts={timestamp:.3f}, objs={len(radar_objs)}")
+                        
+                    except Exception as e:
+                        logger.warning(f"[{addr[0]}] 解码错误: {e}", exc_info=True)
+        
+        except Exception as e:
+            logger.warning(f"[{addr[0]}] 连接异常: {e}")
+        finally:
+            conn.close()
+            logger.info(f"--- [断开] 设备 {addr[0]} 已下线 ---")
+    
+    def _read_exactly(self, sock, num_bytes):
+        """读取指定字节数的数据"""
+        data = b''
+        while len(data) < num_bytes:
+            try:
+                packet = sock.recv(num_bytes - len(data))
+                if not packet:
+                    return None
+                data += packet
+            except Exception:
+                return None
+        return data
 
-    def _convert_proto_to_object(self, locus, source_ip):
+    def _convert_proto_to_object(self, locus, frame_time, source_ip):
         """
         将Protobuf对象转换为内部RadarObject
         
         Args:
             locus: Protobuf Locus 对象
+            frame_time: ObjLocus 消息中的时间戳
             source_ip: 数据源IP地址
         
         Returns:
@@ -224,13 +283,13 @@ class RealtimeRadarSource(BaseRadarSource):
         
         # 根据 radar.proto 的字段定义进行转换
         radar_obj = RadarObject(
-            id=locus.id,
+            radar_id=locus.id,
             latitude=locus.latitude,
             longitude=locus.longitude,
             speed=locus.speed,
             azimuth=locus.azimuth,
             lane=locus.lane if locus.lane > 0 else None,  # lane 字段存在
-            timestamp_str=locus.time,  # 使用proto中的时间戳
+            timestamp_str=frame_time,  # 使用ObjLocus中的时间戳
             source_ip=source_ip  # 记录数据源IP
         )
         
@@ -251,11 +310,11 @@ class RealtimeRadarSource(BaseRadarSource):
         return None
 
     def stop(self):
-        """停止UDP接收"""
+        """停止TCP接收"""
         self.running = False
-        if self.sock:
+        if self.server_sock:
             try:
-                self.sock.close()
+                self.server_sock.close()
             except:
                 pass
 

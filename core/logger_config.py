@@ -31,6 +31,7 @@ class FusionLogger:
         'radar.RadarDataFilter': logging.INFO,
         'core.FusionComponents': logging.INFO,
         'core.Fusion': logging.INFO,
+        'core.RadarDataSource': logging.DEBUG,  # 雷达数据源调试日志
     }
     
     @classmethod
