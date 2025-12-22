@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class RadarFusionOrchestrator:
     """雷达融合协调器 - 统一处理雷达融合的完整流程"""
     
-    def __init__(self, radar_data_loader, radar_filter, radar_fusion_processors):
+    def __init__(self, radar_data_loader, radar_filter, radar_fusion_processors, enable_detailed_logging=False):
         """
         初始化雷达融合协调器
         
@@ -31,10 +31,20 @@ class RadarFusionOrchestrator:
             radar_data_loader: 雷达数据加载器
             radar_filter: 雷达数据过滤器
             radar_fusion_processors: 按摄像头的融合处理器字典 {camera_id: processor}
+            enable_detailed_logging: 是否启用详细的性能日志（默认关闭，避免性能影响）
         """
         self.radar_data_loader = radar_data_loader
         self.radar_filter = radar_filter
         self.radar_fusion_processors = radar_fusion_processors
+        self.enable_detailed_logging = enable_detailed_logging
+        
+        # 性能统计
+        self.perf_stats = {
+            'filtering_times': [],
+            'fusion_times': [],
+            'collect_times': [],
+            'total_times': []
+        }
     
     def process_radar_fusion(self, current_frame: int, current_frame_results: Dict,
                             all_global_targets: List, all_local_targets: List,
@@ -54,6 +64,7 @@ class RadarFusionOrchestrator:
             - radar_id_map: {track_id: radar_id} 映射
             - direct_radar_outputs: 直接输出的雷达数据列表
         """
+        frame_start = time.time()
         radar_id_map = {}
         direct_radar_outputs = []
         
@@ -61,38 +72,40 @@ class RadarFusionOrchestrator:
             return radar_id_map, direct_radar_outputs
         
         # ===== 第一道关卡：地理区域过滤 =====
+        filter_start = time.time()
         if perf_monitor:
             perf_monitor.start_timer('radar_filtering')
         
+        # 从所有摄像头的buffer中收集雷达数据
+        all_radar_data_from_buffers = []
+        for camera_id in [1, 2, 3]:
+            if camera_id in self.radar_fusion_processors:
+                processor = self.radar_fusion_processors[camera_id]
+                # 遍历该摄像头buffer中的所有雷达数据
+                for ts, radar_objs in processor.radar_buffer.items():
+                    all_radar_data_from_buffers.extend(radar_objs)
+        
+        # 执行地理区域过滤
         fusion_radar_data = []
-        radar_timestamps_list = list(self.radar_data_loader.radar_data.keys()) if self.radar_data_loader else []
-        
-        if radar_timestamps_list and current_frame_results:
-            # 获取视觉时间戳（以第一个摄像头为基准）
-            vision_timestamp = current_frame_results.get(1, {}).get('timestamp')
+        if all_radar_data_from_buffers:
+            fusion_radar_data, direct_radar_outputs = self.radar_filter.batch_filter_radar_data(
+                all_radar_data_from_buffers
+            )
             
-            if vision_timestamp:
-                # 找到最接近的雷达时间戳
-                closest_radar_ts = self._find_closest_radar_timestamp(
-                    vision_timestamp, radar_timestamps_list, current_frame
-                )
-                
-                if closest_radar_ts and closest_radar_ts in self.radar_data_loader.radar_data:
-                    all_radar_data = self.radar_data_loader.radar_data[closest_radar_ts]
-                    
-                    # 执行地理区域过滤
-                    fusion_radar_data, direct_radar_outputs = self.radar_filter.batch_filter_radar_data(
-                        all_radar_data
-                    )
-                    
-                    if current_frame % 100 == 0:
-                        logger.debug(f"Frame {current_frame}: 雷达过滤 总数={len(all_radar_data)}, "
-                                   f"融合区内={len(fusion_radar_data)}, 融合区外={len(direct_radar_outputs)}")
+            if self.enable_detailed_logging and current_frame % 100 == 0:
+                logger.info(f"Frame {current_frame}: 雷达过滤 总数={len(all_radar_data_from_buffers)}, "
+                           f"融合区内={len(fusion_radar_data)}, 融合区外={len(direct_radar_outputs)}")
+        else:
+            # Buffer 为空时，初始化空列表
+            if self.enable_detailed_logging and current_frame % 100 == 0:
+                logger.info(f"Frame {current_frame}: 雷达buffer为空，无数据过滤")
         
+        filter_time = (time.time() - filter_start) * 1000  # 转毫秒
         if perf_monitor:
             perf_monitor.end_timer('radar_filtering')
         
         # ===== 第二道关卡：按摄像头进行雷达融合 =====
+        fusion_start = time.time()
         if perf_monitor:
             perf_monitor.start_timer('radar_fusion_processing')
         
@@ -101,9 +114,11 @@ class RadarFusionOrchestrator:
                 continue
             
             # 收集该摄像头的所有目标（全局+本地已匹配）
+            collect_start = time.time()
             vision_objects = self._collect_vision_objects(
                 camera_id, all_global_targets, all_local_targets
             )
+            collect_time = (time.time() - collect_start) * 1000
             
             if not vision_objects:
                 continue
@@ -111,31 +126,45 @@ class RadarFusionOrchestrator:
             # 获取该摄像头的原始时间戳
             original_timestamp = self._get_camera_timestamp(camera_id, current_frame_results)
             
-            # 诊断输出：显示当前处理的摄像头和时间戳
-            logger.info(f"[RADAR_FUSION_ORCHESTRATOR] Frame {current_frame} C{camera_id}: 原始时间戳={original_timestamp}, 视觉目标数={len(vision_objects)}")
-            
             # 执行雷达融合
+            process_start = time.time()
             updated_vision_objects = self.radar_fusion_processors[camera_id].process_frame(
                 original_timestamp, vision_objects
             )
+            process_time = (time.time() - process_start) * 1000
             
             # 构建雷达ID映射
             for vision_obj in updated_vision_objects:
                 if vision_obj.radar_id is not None:
                     radar_id_map[vision_obj.track_id] = vision_obj.radar_id
                     
-                    if current_frame % 100 == 0:
+                    if self.enable_detailed_logging and current_frame % 100 == 0:
                         logger.debug(f"Frame {current_frame} C{camera_id}: 雷达ID映射 "
                                    f"track_id={vision_obj.track_id} -> radar_id={vision_obj.radar_id}")
             
             # 统计信息
             matched_count = sum(1 for v in updated_vision_objects if v.radar_id is not None)
-            if current_frame % 100 == 0 and matched_count > 0:
+            if self.enable_detailed_logging and current_frame % 100 == 0 and matched_count > 0:
                 logger.info(f"Frame {current_frame} C{camera_id}: 雷达匹配 "
-                           f"{matched_count}/{len(updated_vision_objects)} 个目标")
+                           f"{matched_count}/{len(updated_vision_objects)} 个目标 (耗时: {process_time:.2f}ms)")
         
+        fusion_time = (time.time() - fusion_start) * 1000
         if perf_monitor:
             perf_monitor.end_timer('radar_fusion_processing')
+        
+        # 记录性能统计
+        total_time = (time.time() - frame_start) * 1000
+        self.perf_stats['filtering_times'].append(filter_time)
+        self.perf_stats['fusion_times'].append(fusion_time)
+        self.perf_stats['total_times'].append(total_time)
+        
+        # 定期输出性能统计
+        if current_frame % 100 == 0:
+            avg_filter = sum(self.perf_stats['filtering_times'][-100:]) / min(100, len(self.perf_stats['filtering_times']))
+            avg_fusion = sum(self.perf_stats['fusion_times'][-100:]) / min(100, len(self.perf_stats['fusion_times']))
+            avg_total = sum(self.perf_stats['total_times'][-100:]) / min(100, len(self.perf_stats['total_times']))
+            logger.info(f"📊 雷达协调器性能 (Frame {current_frame}): "
+                       f"过滤={avg_filter:.2f}ms, 融合={avg_fusion:.2f}ms, 总计={avg_total:.2f}ms")
         
         return radar_id_map, direct_radar_outputs
     

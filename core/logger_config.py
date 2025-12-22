@@ -23,6 +23,16 @@ class FusionLogger:
     LOG_DIR = Path(__file__).parent.parent / 'logs'
     LOG_FILE = LOG_DIR / 'fusion_system.log'
     
+    # 模块日志级别控制
+    _module_log_levels = {
+        'radar.RadarFusionOrchestrator': logging.INFO,
+        'RadarFusion': logging.INFO,
+        'core.ResultBuffer': logging.INFO,
+        'radar.RadarDataFilter': logging.INFO,
+        'core.FusionComponents': logging.INFO,
+        'core.Fusion': logging.INFO,
+    }
+    
     @classmethod
     def setup(cls):
         """一次性设置日志系统（由main.py调用）"""
@@ -60,6 +70,9 @@ class FusionLogger:
         cls._logger = logging.getLogger(__name__)
         cls._handlers_initialized = True
         
+        # 应用模块日志级别
+        cls._apply_module_log_levels()
+        
         # 记录初始化信息
         cls._logger.info("=" * 70)
         cls._logger.info("融合系统启动")
@@ -69,6 +82,36 @@ class FusionLogger:
         cls._logger.info("=" * 70)
         
         return cls._logger
+    
+    @classmethod
+    def _apply_module_log_levels(cls):
+        """应用模块日志级别配置"""
+        for module_name, level in cls._module_log_levels.items():
+            module_logger = logging.getLogger(module_name)
+            module_logger.setLevel(level)
+    
+    @classmethod
+    def set_module_log_level(cls, module_name: str, level: int):
+        """
+        设置特定模块的日志级别
+        
+        Args:
+            module_name: 模块名称，如 'radar.RadarFusionOrchestrator'
+            level: 日志级别，如 logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL
+        """
+        cls._module_log_levels[module_name] = level
+        module_logger = logging.getLogger(module_name)
+        module_logger.setLevel(level)
+    
+    @classmethod
+    def disable_module_logs(cls, module_name: str):
+        """禁用特定模块的日志（设置为CRITICAL级别）"""
+        cls.set_module_log_level(module_name, logging.CRITICAL)
+    
+    @classmethod
+    def enable_module_logs(cls, module_name: str, level: int = logging.INFO):
+        """启用特定模块的日志"""
+        cls.set_module_log_level(module_name, level)
     
     @classmethod
     def get_logger(cls, name: str = None) -> logging.Logger:
@@ -118,4 +161,19 @@ def get_logger(name: str = None) -> logging.Logger:
 def setup_logger():
     """初始化日志系统"""
     return FusionLogger.setup()
+
+
+def set_module_log_level(module_name: str, level: int):
+    """设置特定模块的日志级别"""
+    return FusionLogger.set_module_log_level(module_name, level)
+
+
+def disable_module_logs(module_name: str):
+    """禁用特定模块的日志"""
+    return FusionLogger.disable_module_logs(module_name)
+
+
+def enable_module_logs(module_name: str, level: int = logging.INFO):
+    """启用特定模块的日志"""
+    return FusionLogger.enable_module_logs(module_name, level)
 

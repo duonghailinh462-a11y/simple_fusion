@@ -274,6 +274,7 @@ class RadarVisionFusionProcessor:
         # 雷达缓冲区 (时间戳 -> 雷达目标列表)
         self.radar_buffer = defaultdict(list)
         self.radar_timestamps = deque(maxlen=100)  # 保留最近100个时间戳
+        self.radar_timestamps_sorted = []  # 📊 有序时间戳列表（用于二分查找）
         
         # 匹配映射 (track_id -> radar_id)
         self.radar_id_map = {}  # 雷达ID -> 融合ID
@@ -440,9 +441,22 @@ class RadarVisionFusionProcessor:
             del self.radar_buffer[oldest_ts]
             logger.debug(f"📊 雷达缓冲区已清理: 移除时间戳 {oldest_ts}, 当前大小 {len(self.radar_buffer)}")
 
+    def _convert_timestamp_to_numeric(self, ts):
+        """将时间戳转换为数字格式（Unix timestamp float）"""
+        if isinstance(ts, (int, float)):
+            return float(ts)
+        if isinstance(ts, str):
+            try:
+                from datetime import datetime
+                dt = datetime.strptime(ts, '%Y-%m-%d %H:%M:%S.%f')
+                return dt.timestamp()
+            except (ValueError, TypeError):
+                return None
+        return None
+
     def find_closest_radar_timestamp(self, vision_timestamp, max_time_diff=None):
         """
-        找到最接近的雷达时间戳
+        找到最接近的雷达时间戳 (二分查找优化版)
         视觉为准，雷达靠拢
         
         Args:
@@ -455,55 +469,52 @@ class RadarVisionFusionProcessor:
         if max_time_diff is None:
             max_time_diff = self.MAX_TIME_DIFF
 
-        # 🔧 修复：直接从 radar_buffer 的键中查找，而不是从受限的 deque 中查找
-        # 这样可以访问所有已加载的雷达时间戳，而不会因为 deque 的 maxlen 限制而丢失早期数据
-        radar_timestamps_list = list(self.radar_buffer.keys())
-        
-        if not radar_timestamps_list:
+        if not self.radar_buffer:
             return None
 
+        # 转换视觉时间戳为数字格式
+        vision_ts_numeric = self._convert_timestamp_to_numeric(vision_timestamp)
+        if vision_ts_numeric is None:
+            logger.warning(f"无法解析视觉时间戳: {vision_timestamp}")
+            return None
+
+        # 获取所有雷达时间戳的数字版本 (缓存以提高性能)
+        radar_timestamps_list = list(self.radar_buffer.keys())
+        radar_ts_numeric_list = []
+        
+        for ts in radar_timestamps_list:
+            ts_num = self._convert_timestamp_to_numeric(ts)
+            if ts_num is not None:
+                radar_ts_numeric_list.append((ts_num, ts))
+        
+        if not radar_ts_numeric_list:
+            return None
+        
+        # 按数字时间戳排序 (用于二分查找)
+        radar_ts_numeric_list.sort(key=lambda x: x[0])
+        numeric_only = [x[0] for x in radar_ts_numeric_list]
+        
+        # 二分查找：找到最接近的位置
+        import bisect
+        idx = bisect.bisect_left(numeric_only, vision_ts_numeric)
+        
+        # 检查左右两个候选
+        candidates = []
+        if idx > 0:
+            candidates.append(radar_ts_numeric_list[idx - 1])
+        if idx < len(radar_ts_numeric_list):
+            candidates.append(radar_ts_numeric_list[idx])
+        
+        # 找到最接近的时间戳
         closest_ts = None
         min_diff = float('inf')
-
-        # 🔧 修复：正确处理时间戳格式转换
-        # 将所有时间戳转换为秒级 Unix 时间戳用于比较
-        from datetime import datetime
         
-        # 首先转换 vision_timestamp 为秒级 Unix 时间戳
-        if isinstance(vision_timestamp, str):
-            # 假设格式为 "2025-11-21 11:59:10.171"
-            try:
-                vision_dt = datetime.strptime(vision_timestamp, '%Y-%m-%d %H:%M:%S.%f')
-                vision_ts_numeric = vision_dt.timestamp()
-            except (ValueError, TypeError):
-                # 降级：如果解析失败，尝试其他格式或使用当前时间
-                logger.warning(f"无法解析视觉时间戳: {vision_timestamp}")
-                return None
-        else:
-            # 假设已经是 Unix 时间戳
-            vision_ts_numeric = float(vision_timestamp)
-        
-        # 然后处理雷达时间戳列表
-        for radar_ts in radar_timestamps_list:
-            if isinstance(radar_ts, str):
-                # 字符串时间戳：转换为 Unix 时间戳
-                # 格式: "2025-11-21 11:59:10.171"
-                try:
-                    radar_dt = datetime.strptime(radar_ts, '%Y-%m-%d %H:%M:%S.%f')
-                    radar_ts_numeric = radar_dt.timestamp()
-                except (ValueError, TypeError):
-                    logger.warning(f"无法解析雷达时间戳: {radar_ts}")
-                    continue
-            else:
-                # 数字时间戳：直接使用
-                radar_ts_numeric = float(radar_ts)
-            
-            # 计算时间差（秒级）
-            diff = abs(radar_ts_numeric - vision_ts_numeric)
+        for ts_num, ts_orig in candidates:
+            diff = abs(ts_num - vision_ts_numeric)
             if diff < min_diff:
                 min_diff = diff
-                closest_ts = radar_ts
-
+                closest_ts = ts_orig
+        
         # 尝试多个阈值来找到匹配
         # 1. 严格阈值：0.5秒（MAX_TIME_DIFF）
         if closest_ts is not None and min_diff <= max_time_diff:
@@ -515,8 +526,8 @@ class RadarVisionFusionProcessor:
         
         # 3. 诊断输出：如果两个阈值都不满足，输出警告信息
         if closest_ts is not None and time.time() - self.last_diag_time > self.diag_interval:
-            min_ts = min(radar_timestamps_list)
-            max_ts = max(radar_timestamps_list)
+            min_ts = min(numeric_only)
+            max_ts = max(numeric_only)
             logger.warning(f"⚠️ [RADAR_FUSION DIAGNOSTIC] 视觉时间戳: {vision_timestamp}")
             logger.warning(f"   最接近的雷达时间戳: {closest_ts}")
             logger.warning(f"   时间差: {min_diff:.3f}秒 (严格阈值: {max_time_diff}秒, 宽松阈值: {self.MAX_TIME_DIFF_LOOSE}秒)")
@@ -652,57 +663,36 @@ class RadarVisionFusionProcessor:
         n_valid_vision = len(valid_vision_indices)
         cost_matrix = np.full((n_valid_radar, n_valid_vision), 1e6, dtype=np.float32)
         
+        # 获取所有雷达的动态阈值（用于向量化过滤）
+        long_threshs = np.array([self.get_dynamic_long_threshold(radar_objects[i].speed) 
+                                 for i in valid_radar_indices], dtype=np.float32)[:, np.newaxis]
+        
+        # 向量化应用距离阈值过滤
+        invalid_mask = (lon_diffs > self.MAX_LANE_DIFF) | (lat_diffs > long_threshs)
+        cost_matrix[invalid_mask] = 1e6
+        
+        # 计算有效位置的基础成本（向量化）
+        valid_positions = ~invalid_mask
+        cost_matrix[valid_positions] = (10.0 * lat_diffs[valid_positions]) + (1.0 * lon_diffs[valid_positions])
+        
+        # 循环处理特殊逻辑（车道兼容性、忠诚度奖励）
+        # 注意：必须在所有位置都计算了基础成本之后再做这些检查
         for vi, i in enumerate(valid_radar_indices):
             radar_obj = radar_objects[i]
-            long_thresh = self.get_dynamic_long_threshold(radar_obj.speed)
             
             for vj, j in enumerate(valid_vision_indices):
                 v_obj = vision_objects[j]
                 
-                dy = lat_diffs[vi, vj]
-                dx = lon_diffs[vi, vj]
-                dist = distances[vi, vj]
-                
-                # 诊断：打印所有距离较近的目标对
-                if self.enable_fusion_logs and dist < 50:
-                    logger.info(f"    [成本矩阵] 雷达[{i}]({radar_obj.latitude:.6f},{radar_obj.longitude:.6f}) vs 视觉[{j}]({v_obj.calib_lat:.6f},{v_obj.calib_lon:.6f})")
-                    logger.info(f"      dx={dx:.2f}m, dy={dy:.2f}m, 总距离={dist:.2f}m")
-                    logger.info(f"      lon_diff(横向)={dx:.2f}m(阈值{self.MAX_LANE_DIFF}m), lat_diff(纵向)={dy:.2f}m(阈值{long_thresh}m)")
-                
-                # 数据有效性检查（防止NaN/Inf）
-                if np.isnan(dy) or np.isnan(dx) or np.isinf(dy) or np.isinf(dx):
-                    cost_matrix[vi, vj] = 1e6
+                # 只处理通过距离阈值的候选
+                if cost_matrix[vi, vj] >= 1e5:
                     continue
                 
-                # 距离阈值检查（第二层过滤：S-L）
-                if dx > self.MAX_LANE_DIFF or dy > long_thresh:
-                    if self.enable_fusion_logs and dist < 50:
-                        logger.info(f"      ❌ 距离超过阈值，设为1e6")
-                    cost_matrix[vi, vj] = 1e6
-                    continue
-                
-                # 车道兼容性检查（第三层过滤：车道）
+                # 车道兼容性检查
                 lane_compatible, lane_reason = self.check_lane_compatibility(radar_obj, v_obj)
                 if not lane_compatible:
                     self.stats['lane_filtered_candidates'] = self.stats.get('lane_filtered_candidates', 0) + 1
-                    if self.enable_fusion_logs and dist < 50:
-                        radar_lane = radar_obj.lane if hasattr(radar_obj, 'lane') else None
-                        vision_lane = v_obj.lane if hasattr(v_obj, 'lane') else None
-                        pixel_x = v_obj.pixel_x if hasattr(v_obj, 'pixel_x') else None
-                        camera_id = v_obj.cameraid if hasattr(v_obj, 'cameraid') else 'N/A'
-                        logger.info(f"      ❌ 车道不兼容: {lane_reason}，设为1e6")
-                        logger.info(f"         📹 摄像头: C{camera_id} | 🛣️  雷达车道: {radar_lane} | 🛣️  视觉车道: {vision_lane} (像素X: {pixel_x})")
                     cost_matrix[vi, vj] = 1e6
                     continue
-                else:
-                    if self.enable_fusion_logs and dist < 50:
-                        radar_lane = radar_obj.lane if hasattr(radar_obj, 'lane') else None
-                        vision_lane = v_obj.lane if hasattr(v_obj, 'lane') else None
-                        pixel_x = v_obj.pixel_x if hasattr(v_obj, 'pixel_x') else None
-                        logger.info(f"      ✅ 车道兼容: {lane_reason} | 雷达车道: {radar_lane}, 视觉车道: {vision_lane} (像素X: {pixel_x})")
-                
-                # 计算总成本
-                cost = (10.0 * dy) + (1.0 * dx)
                 
                 # 忠诚度奖励：强制保持已绑定的对
                 v_key = str(v_obj.track_id)
@@ -710,14 +700,21 @@ class RadarVisionFusionProcessor:
                 prev_fusion_id_vision = self.vision_id_map.get(v_key)
                 
                 if prev_fusion_id_radar and prev_fusion_id_radar == prev_fusion_id_vision:
-                    original_cost = cost
-                    cost = cost / self.LOYALTY_BONUS
-                    if self.enable_fusion_logs and dist < 50:
-                        logger.info(f"      💰 忠诚度绑定（已匹配过）: {original_cost:.4f} -> {cost:.6f} (系数1/{self.LOYALTY_BONUS:.0f})")
+                    cost_matrix[vi, vj] = cost_matrix[vi, vj] / self.LOYALTY_BONUS
+        
+        # 诊断日志（仅当启用时，且仅输出距离近的对）
+        if self.enable_fusion_logs:
+            close_pairs = np.argwhere(distances < 50)
+            for vi, vj in close_pairs:
+                i = valid_radar_indices[vi]
+                j = valid_vision_indices[vj]
+                radar_obj = radar_objects[i]
+                v_obj = vision_objects[j]
+                cost = cost_matrix[vi, vj]
                 
-                cost_matrix[vi, vj] = cost
-                if self.enable_fusion_logs and dist < 50:
-                    logger.info(f"      ✅ 成本矩阵设置: cost_matrix[{vi},{vj}] = {cost:.6f}")
+                logger.info(f"    [成本矩阵] 雷达[{i}]({radar_obj.latitude:.6f},{radar_obj.longitude:.6f}) vs 视觉[{j}]({v_obj.calib_lat:.6f},{v_obj.calib_lon:.6f})")
+                logger.info(f"      dx={lon_diffs[vi, vj]:.2f}m, dy={lat_diffs[vi, vj]:.2f}m, 总距离={distances[vi, vj]:.2f}m")
+                logger.info(f"      成本={cost:.6f} {'✅' if cost < 1e5 else '❌'}")
         
         # ===== 第四步：匈牙利算法求解 =====
         valid_radar_indices_array, valid_vision_indices_array = linear_sum_assignment(cost_matrix)
@@ -813,10 +810,12 @@ class RadarVisionFusionProcessor:
                 max_ts = max(radar_timestamps_list)
                 time_diff_min = abs(vision_timestamp - min_ts)
                 time_diff_max = abs(vision_timestamp - max_ts)
-            logger.warning(f"[RADAR_FUSION] 警告: 视觉时间戳{vision_timestamp:.3f}无法匹配雷达数据")
-            logger.warning(f"  雷达时间戳范围: [{min_ts:.3f}, {max_ts:.3f}]")
-            logger.warning(f"  时间差范围: [{time_diff_min:.3f}, {time_diff_max:.3f}]秒")
-            logger.warning(f"  MAX_TIME_DIFF阈值: {self.MAX_TIME_DIFF}秒")
+                logger.warning(f"[RADAR_FUSION] 警告: 视觉时间戳{vision_timestamp:.3f}无法匹配雷达数据")
+                logger.warning(f"  雷达时间戳范围: [{min_ts:.3f}, {max_ts:.3f}]")
+                logger.warning(f"  时间差范围: [{time_diff_min:.3f}, {time_diff_max:.3f}]秒")
+                logger.warning(f"  MAX_TIME_DIFF阈值: {self.MAX_TIME_DIFF}秒")
+            else:
+                logger.warning(f"[RADAR_FUSION] 警告: 视觉时间戳{vision_timestamp:.3f}无法匹配雷达数据（雷达缓冲区为空）")
             step3_time = (time.time() - step3_start) * 1000
             self.perf_stats['timestamp_matching'].append(step3_time)
             return vision_objects
@@ -1122,6 +1121,11 @@ class RadarVisionFusionProcessor:
             logger.info(f"  匹配成功率: {match_rate:.1f}%")
         
         logger.info("=" * 80 + "\n")
+        
+        # 🔧 优化：打印完后立即清空统计列表，防止内存无限增长
+        for key in self.perf_stats:
+            self.perf_stats[key] = []
+        logger.debug("✅ 性能统计列表已清空，防止内存泄漏")
 
     def clear_old_radar_data(self, current_timestamp, max_age=1.0):
         """
@@ -1284,11 +1288,49 @@ class RadarDataLoader:
             logger.info(f"   C1: {len(self.camera_timestamps[1])} 帧")
             logger.info(f"   C2: {len(self.camera_timestamps[2])} 帧")
             logger.info(f"   C3: {len(self.camera_timestamps[3])} 帧")
+            
+            # 🔧 优化：构建时间戳缓存用于二分查找
+            self._build_timestamp_cache()
             return True
 
         except Exception as e:
             logger.error(f"❌ 加载雷达数据失败: {e}")
             return False
+    
+    def _build_timestamp_cache(self):
+        """构建排序的时间戳缓存用于二分查找（O(log N)查询）"""
+        import bisect
+        self._radar_ts_cache = {}
+        
+        for camera_id in [1, 2, 3]:
+            ts_list = []
+            for ts in self.camera_timestamps.get(camera_id, set()):
+                try:
+                    # 转换时间戳为数字格式
+                    if isinstance(ts, str):
+                        try:
+                            dt = datetime.strptime(ts, '%Y-%m-%d %H:%M:%S.%f')
+                        except ValueError:
+                            parts = ts.split('.')
+                            if len(parts) == 2:
+                                second_part = parts[0]
+                                ms_part = parts[1]
+                                us_part = ms_part.ljust(6, '0')
+                                ts_with_us = f"{second_part}.{us_part}"
+                                dt = datetime.strptime(ts_with_us, '%Y-%m-%d %H:%M:%S.%f')
+                            else:
+                                continue
+                        ts_num = dt.timestamp()
+                    else:
+                        ts_num = float(ts)
+                    ts_list.append((ts_num, ts))
+                except:
+                    continue
+            
+            ts_list.sort(key=lambda x: x[0])
+            self._radar_ts_cache[camera_id] = ts_list
+        
+        logger.debug(f"✅ 时间戳缓存已构建 (C1: {len(self._radar_ts_cache.get(1, []))} 帧, C2: {len(self._radar_ts_cache.get(2, []))} 帧, C3: {len(self._radar_ts_cache.get(3, []))} 帧)")
 
     def get_radar_data(self, timestamp):
         """获取指定时间戳的雷达数据（全局，向后兼容）"""
@@ -1306,6 +1348,149 @@ class RadarDataLoader:
     def get_camera_timestamps(self, camera_id):
         """获取指定摄像头的所有时间戳"""
         return sorted(self.camera_timestamps.get(camera_id, set()))
+    
+    def find_closest_radar_timestamp(self, camera_id, vision_timestamp, max_time_diff=0.5):
+        """
+        使用二分查找快速找到最接近的雷达时间戳 (O(log N))
+        
+        Args:
+            camera_id: 摄像头ID
+            vision_timestamp: 视觉时间戳 (字符串或浮点数)
+            max_time_diff: 最大时间差 (秒)
+        
+        Returns:
+            最接近的雷达时间戳，或 None
+        """
+        import bisect
+        
+        if not hasattr(self, '_radar_ts_cache') or camera_id not in self._radar_ts_cache:
+            return None
+        
+        try:
+            # 转换视觉时间戳为数字格式
+            if isinstance(vision_timestamp, str):
+                try:
+                    dt = datetime.strptime(vision_timestamp, '%Y-%m-%d %H:%M:%S.%f')
+                except ValueError:
+                    parts = vision_timestamp.split('.')
+                    if len(parts) == 2:
+                        second_part = parts[0]
+                        ms_part = parts[1]
+                        us_part = ms_part.ljust(6, '0')
+                        ts_with_us = f"{second_part}.{us_part}"
+                        dt = datetime.strptime(ts_with_us, '%Y-%m-%d %H:%M:%S.%f')
+                    else:
+                        return None
+                vision_ts_num = dt.timestamp()
+            else:
+                vision_ts_num = float(vision_timestamp)
+            
+            # 二分查找
+            ts_list = self._radar_ts_cache[camera_id]
+            numeric_only = [x[0] for x in ts_list]
+            idx = bisect.bisect_left(numeric_only, vision_ts_num)
+            
+            # 检查左右两个候选
+            closest_radar_ts = None
+            min_diff = float('inf')
+            
+            for check_idx in [idx - 1, idx]:
+                if 0 <= check_idx < len(ts_list):
+                    ts_num, ts_orig = ts_list[check_idx]
+                    diff = abs(ts_num - vision_ts_num)
+                    if diff < min_diff and diff <= max_time_diff:
+                        min_diff = diff
+                        closest_radar_ts = ts_orig
+            
+            return closest_radar_ts
+        except:
+            return None
+    
+    def stream_radar_data(self):
+        """
+        🔧 [新增] 流式读取雷达数据生成器
+        
+        使用 yield 关键字，每次返回一个元组 (timestamp_float, radar_obj_list)
+        这样可以避免一次性加载所有数据到内存中，实现真正的流式处理
+        
+        Yields:
+            tuple: (timestamp_float, radar_objects_list)
+        """
+        try:
+            with open(self.radar_file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    try:
+                        data = json.loads(line)
+                        source_ip = data.get('source_ip', '')
+                        camera_id = self._get_camera_id_from_ip(source_ip)
+                        
+                        if camera_id is None:
+                            continue
+                        
+                        # 获取原始时间字符串
+                        time_str = data.get('time', '')
+                        if not time_str:
+                            continue
+                        
+                        # 解析雷达对象列表（复用 load() 中的逻辑）
+                        locus = []
+                        for x in data.get('locusList', []):
+                            if x.get('objType') in VALID_RADAR_TYPES:
+                                # 将雷达的 lane (1-5) 转换为字符串格式 (lane_1 到 lane_5)
+                                radar_lane = x.get('lane', None)
+                                lane_str = f'lane_{radar_lane}' if radar_lane is not None else None
+                                
+                                # 安全处理 azimuth：如果为 None 或无效，使用 0
+                                azimuth_val = x.get('azimuth')
+                                if azimuth_val is None:
+                                    azimuth_val = 0.0
+                                else:
+                                    try:
+                                        azimuth_val = float(azimuth_val)
+                                        # 检查是否为有效数值
+                                        if math.isnan(azimuth_val) or math.isinf(azimuth_val):
+                                            azimuth_val = 0.0
+                                    except (ValueError, TypeError):
+                                        azimuth_val = 0.0
+                                
+                                radar_obj = RadarObject(
+                                    radar_id=x.get('id', ''),
+                                    latitude=float(x.get('latitude', 0)),
+                                    longitude=float(x.get('longitude', 0)),
+                                    speed=float(x.get('speed', 0)),
+                                    azimuth=azimuth_val,
+                                    lane=lane_str,
+                                    timestamp_str=time_str,
+                                    source_ip=source_ip
+                                )
+                                locus.append(radar_obj)
+                        
+                        if locus:
+                            # 转换时间戳为浮点数格式
+                            try:
+                                dt = datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S.%f')
+                                ts_float = dt.timestamp()
+                            except ValueError:
+                                # 处理毫秒格式
+                                parts = time_str.split('.')
+                                if len(parts) == 2:
+                                    second_part = parts[0]
+                                    ms_part = parts[1]
+                                    us_part = ms_part.ljust(6, '0')
+                                    ts_with_us = f"{second_part}.{us_part}"
+                                    dt = datetime.strptime(ts_with_us, '%Y-%m-%d %H:%M:%S.%f')
+                                    ts_float = dt.timestamp()
+                                else:
+                                    continue
+                            
+                            yield ts_float, locus
+                    
+                    except Exception as e:
+                        logger.debug(f"流式读取雷达数据行失败: {e}")
+                        continue
+        
+        except Exception as e:
+            logger.error(f"❌ 流式读取雷达数据失败: {e}")
 
 
 # ==========================================

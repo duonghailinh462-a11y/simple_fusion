@@ -21,11 +21,21 @@ from statistics import mean, median
 sys.path.append('/usr/local/lynxi/sdk/sdk-samples/python')
 
 # 导入统一的日志配置
-from core.logger_config import FusionLogger, get_logger
+from core.logger_config import FusionLogger, get_logger, disable_module_logs
 
 # 初始化日志系统（必须在导入其他模块之前）
 FusionLogger.setup()
 logger = get_logger(__name__)
+
+# ===== 日志控制配置 =====
+# 禁用以下模块的日志输出（减少日志文件大小）
+# 取消注释以下行来禁用相应模块的日志
+#disable_module_logs('radar.RadarFusionOrchestrator')
+#disable_module_logs('RadarFusion')
+disable_module_logs('core.ResultBuffer')
+disable_module_logs('radar.RadarDataFilter')
+disable_module_logs('core.FusionComponents')
+disable_module_logs('core.Fusion')
 
 import numpy as np
 import cv2
@@ -66,6 +76,10 @@ from vision.CameraManager import CameraManager
 from core.ResultBuffer import ResultOutputManager
 from config.region_config import get_lane_for_point
 
+# 🔧 新增：导入融合配置和雷达数据源
+from config.fusion_config import CURRENT_CONFIG
+from core.RadarDataSource import create_radar_source
+
 # 创建共享布尔值用于停止运行线程
 cancel_flag = multiprocessing.Value('b', False)
 
@@ -103,9 +117,17 @@ def create_sdk_worker_process(camera_id: int, video_path: str, result_queue: mul
         logger.info(f"Camera{camera_id} 初始化yolov5_SDK")
         logger.info(f"Camera{camera_id} 如果出现 'av.open' 错误，请检查RTSP URL/网络/视频文件")
         
-        # 🔧 从配置中获取初始时间和fps
-        start_datetime_str = Config.CAMERA_START_DATETIMES.get(camera_id)
-        fps = Config.FPS
+        # 🔧 根据运行模式决定时间戳策略
+        if CURRENT_CONFIG.mode == "PROD":
+            # 工程模式：传 None，SDKinfer 会使用 datetime.now()
+            start_datetime_str = None
+            fps = Config.FPS
+            logger.info(f"Camera{camera_id} 模式: PROD (RTSP流), 使用实时系统时间")
+        else:
+            # 测试模式：传配置文件的固定开始时间，用于回放对齐
+            start_datetime_str = Config.CAMERA_START_DATETIMES.get(camera_id)
+            fps = Config.FPS
+            logger.info(f"Camera{camera_id} 模式: TEST (文件回放), 使用计算时间戳: {start_datetime_str}")
         
         # 注意：SDK初始化可能会在这里失败，如果RTSP连接不可用
         worker = yolov5_SDK(attr, result_queue, start_datetime_str=start_datetime_str, fps=fps) 
@@ -197,62 +219,75 @@ if __name__ == "__main__":
     radar_filter = RadarDataFilter()
     logger.info("✓ RadarDataFilter初始化成功")
     
-    # 2.2 初始化雷达融合模块 (第二道关卡：融合处理)
-    logger.info("初始化雷达融合模块")
+    # 2.2 🔧 初始化雷达数据源 (使用新的统一接口)
+    logger.info(f"🔧 系统运行模式: {CURRENT_CONFIG.mode}")
+    radar_source = None
     radar_fusion_enabled = False
     radar_data_loader = None
     radar_fusion_processors = {}  # 按摄像头存储融合处理器
     
-    # 雷达数据文件路径 (可配置)
-    radar_data_path = '/root/yolov5-7.0_lyngor1.17.0/project-simple-video/videos/radar_data.jsonl'
-        
     try:
-        if os.path.exists(radar_data_path):
-            # 初始化雷达数据加载器
-            radar_data_loader = RadarDataLoader(radar_data_path)
-            if radar_data_loader.load():
-                # 为每个摄像头初始化独立的融合处理器
-                for camera_id in [1, 2, 3]:
-                    radar_fusion_processors[camera_id] = RadarVisionFusionProcessor(
-                        fusion_area_geo=None,  # 使用融合区域判断已在GlobalID分配时完成
-                        lat_offset=0.0,
-                        lon_offset=0.0,
-                        enable_lane_filtering=True,  # 禁用车道过滤（过滤太严格，导致匹配率低）
-                        camera_id=camera_id,  # 传入摄像头ID，用于调整阈值
-                        enable_perf_stats=True,  # 📊 性能统计开关（True=启用，False=禁用）
-                        enable_fusion_logs=False  # 📝 融合详细日志开关（True=启用，False=禁用）
-                    )
-                    
-                    # 将该摄像头的雷达数据添加到对应的处理器
-                    camera_timestamps = radar_data_loader.get_camera_timestamps(camera_id)
-                    for ts in camera_timestamps:
-                        radar_objs = radar_data_loader.get_radar_data_by_camera(camera_id, ts)
-                        radar_fusion_processors[camera_id].add_radar_data(ts, radar_objs)
-                    
-                    logger.info(f"C{camera_id} 雷达融合处理器初始化成功, 雷达数据帧数: {len(camera_timestamps)}")
-                
-                radar_fusion_enabled = True
-                logger.info(f"雷达融合模块初始化成功")
-            else:
-                logger.warning("雷达数据加载失败，将不使用雷达融合")
+        # 创建雷达数据源
+        radar_source = create_radar_source(CURRENT_CONFIG)
+        if radar_source:
+            radar_source.start()
+            logger.info(f"✅ 雷达数据源已启动")
+            
+            # 为每个摄像头初始化独立的融合处理器
+            for camera_id in [1, 2, 3]:
+                radar_fusion_processors[camera_id] = RadarVisionFusionProcessor(
+                    fusion_area_geo=None,  # 使用融合区域判断已在GlobalID分配时完成
+                    lat_offset=0.0,
+                    lon_offset=0.0,
+                    enable_lane_filtering=False,  # 禁用车道过滤（过滤太严格，导致匹配率低）
+                    camera_id=camera_id,  # 传入摄像头ID，用于调整阈值
+                    enable_perf_stats=True,  # 📊 性能统计开关（True=启用，False=禁用）
+                    enable_fusion_logs=False  # 📝 融合详细日志开关（True=启用，False=禁用）
+                )
+            
+            # 获取初始雷达数据
+            initial_radar_data = radar_source.get_latest_data()
+            if initial_radar_data:
+                radar_ts, radar_objs = initial_radar_data
+                logger.info(f"✅ 获取初始雷达数据: ts={radar_ts:.3f}, objs={len(radar_objs)}")
+                # 添加到各摄像头缓冲区
+                if radar_objs:
+                    for radar_obj in radar_objs:
+                        source_ip = getattr(radar_obj, 'source_ip', None)
+                        camera_id = RadarDataLoader.RADAR_IP_TO_CAMERA.get(source_ip, None)
+                        if camera_id and camera_id in radar_fusion_processors:
+                            if radar_ts not in radar_fusion_processors[camera_id].radar_buffer:
+                                radar_fusion_processors[camera_id].add_radar_data(radar_ts, [radar_obj])
+            
+            # 为了兼容性，获取 radar_data_loader (如果是文件模式)
+            if hasattr(radar_source, 'loader'):
+                radar_data_loader = radar_source.loader
+            
+            logger.info(f"✅ 雷达融合模块初始化成功 ({CURRENT_CONFIG.mode}模式)")
+            radar_fusion_enabled = True
         else:
-            logger.warning(f"雷达数据文件不存在: {radar_data_path}")
-            logger.warning("将不使用雷达融合功能")
+            logger.warning("❌ 无法创建雷达数据源")
+            radar_fusion_enabled = False
+            
     except Exception as e:
-        logger.warning(f"雷达融合模块初始化失败: {e}")
+        logger.warning(f"❌ 雷达融合模块初始化失败: {e}")
         logger.warning("将不使用雷达融合功能")
         radar_fusion_enabled = False
     
     # 初始化雷达融合协调器
+    # 🔧 配置开关：控制雷达协调器的详细日志输出
+    RADAR_DETAILED_LOGGING = True  # 设为 True 启用详细性能日志，False 关闭以提升性能
+    
     radar_fusion_orchestrator = None
     radar_filter = None
     if radar_fusion_enabled:
         try:
             radar_filter = RadarDataFilter()
             radar_fusion_orchestrator = RadarFusionOrchestrator(
-                radar_data_loader, radar_filter, radar_fusion_processors
+                radar_data_loader, radar_filter, radar_fusion_processors,
+                enable_detailed_logging=RADAR_DETAILED_LOGGING
             )
-            logger.info("雷达融合协调器已初始化")
+            logger.info(f"雷达融合协调器已初始化 (详细日志: {'启用' if RADAR_DETAILED_LOGGING else '禁用'})")
         except Exception as e:
             logger.warning(f"雷达融合协调器初始化失败: {e}")
             radar_fusion_orchestrator = None
@@ -316,6 +351,11 @@ if __name__ == "__main__":
     
     # 初始化单路结果存储
     camera_results = {1: [], 2: [], 3: []}  # 存储每个摄像头的处理结果
+
+    # --- 在主循环外定义雷达状态变量 ---
+    # 用于暂存"未来"的雷达帧，因为读多了没法退回去，只能暂存给下一帧用
+    pending_radar_frame = None
+    latest_radar_frame = None
 
     try:
         current_frame = 0
@@ -470,12 +510,75 @@ if __name__ == "__main__":
             perf_monitor.start_timer('matching_processing')
             active_global_targets = list(fusion_system.global_targets.values())
             fusion_system._perform_matching(all_local_targets, active_global_targets, perf_monitor)
-            
             # 更新全局状态
             fusion_system.update_global_state(all_global_targets, all_local_targets)
             matching_time = perf_monitor.end_timer('matching_processing')
 
+            # D. 🔧 零阶保持（Zero-Order Hold）：基于时间的智能对齐 - 快进逻辑
+            perf_monitor.start_timer('radar_fastforward')
+            if radar_fusion_enabled and radar_source:
+                # --- 1. 获取当前视觉基准时间 ---
+                current_vision_ts = None
+                valid_ts_list = []
+                for cid in [1, 2, 3]:
+                    if cid in current_frame_results:
+                        res = current_frame_results[cid]
+                        ts = res.get('timestamp')
+                        if ts:
+                            # 转换为浮点数格式
+                            if isinstance(ts, str):
+                                try:
+                                    from datetime import datetime
+                                    try:
+                                        dt = datetime.strptime(ts, '%Y-%m-%d %H:%M:%S.%f')
+                                    except ValueError:
+                                        parts = ts.split('.')
+                                        if len(parts) == 2:
+                                            second_part = parts[0]
+                                            ms_part = parts[1]
+                                            us_part = ms_part.ljust(6, '0')
+                                            ts_with_us = f"{second_part}.{us_part}"
+                                            dt = datetime.strptime(ts_with_us, '%Y-%m-%d %H:%M:%S.%f')
+                                        else:
+                                            continue
+                                    valid_ts_list.append(dt.timestamp())
+                                except:
+                                    pass
+                            else:
+                                valid_ts_list.append(float(ts))
+                
+                if valid_ts_list:
+                    current_vision_ts = min(valid_ts_list)  # 以最慢的摄像头为基准
+                
+                # --- 2. 通过统一接口获取雷达数据 (支持TEST和PROD模式) ---
+                if current_vision_ts is not None:
+                    # 🔧 使用新的统一接口，传入参考时间用于快进
+                    latest_radar_frame = radar_source.get_latest_data(current_time=current_vision_ts)
+                
+                # --- 3. 对齐与分发 (Alignment) ---
+                if current_vision_ts and latest_radar_frame:
+                    radar_ts, radar_objs = latest_radar_frame
+                    time_diff = abs(current_vision_ts - radar_ts)
+                    
+                    # 使用配置中的时间阈值 (默认0.5秒)
+                    if time_diff <= 0.5:
+                        # 将数据分发给各摄像头处理器
+                        if radar_objs:
+                            for radar_obj in radar_objs:
+                                source_ip = getattr(radar_obj, 'source_ip', None)
+                                cam_id = RadarDataLoader.RADAR_IP_TO_CAMERA.get(source_ip, None)
+                                if cam_id and cam_id in radar_fusion_processors:
+                                    if radar_ts not in radar_fusion_processors[cam_id].radar_buffer:
+                                        radar_fusion_processors[cam_id].add_radar_data(radar_ts, [radar_obj])
+                    else:
+                        # 只有真的差太远了才警告 (比如超过1秒)
+                        if time_diff > 1.0 and current_frame % 30 == 0:
+                            logger.warning(f"⚠️ 雷达同步滞后: 差 {time_diff:.2f}s (视觉{current_vision_ts:.3f}, 雷达{radar_ts:.3f})")
+            
+            radar_fastforward_time = perf_monitor.end_timer('radar_fastforward')
+            
             # D. 雷达融合处理 (使用协调器)
+            perf_monitor.start_timer('radar_orchestrator')
             radar_id_map = {}
             direct_radar_outputs = []
             
@@ -530,6 +633,7 @@ if __name__ == "__main__":
                     )
             
             perf_monitor.end_timer('store_single_camera_results')
+            radar_orchestrator_time = perf_monitor.end_timer('radar_orchestrator')
             
             # D.2 每一帧都处理缓冲区中的结果（实时输出三路融合结果）
             perf_monitor.start_timer('result_buffer_processing')
@@ -543,18 +647,12 @@ if __name__ == "__main__":
             while result_output_manager.process_and_output():
                 output_count += 1
             
-            if output_count > 0:
-                logger.info(f"Frame {current_frame}: 输出 {output_count} 组三路融合结果")
-            
-            # 独立输出融合区外的雷达数据（不依赖三路匹配）
-            if result_output_manager.output_pending_radar_data():
-                logger.info(f"Frame {current_frame}: 输出融合区外的雷达直接数据")
+            result_output_manager.output_pending_radar_data()
             
             # 定期记录缓冲区状态（每100帧）
             if current_frame > 0 and current_frame % 100 == 0:
                 buffer_status = result_output_manager.get_buffer_status()
-                logger.info(f"缓冲区状态: C1={buffer_status['c1_size']} "
-                           f"C2={buffer_status['c2_size']} C3={buffer_status['c3_size']}")
+                
             
             result_buffer_time = perf_monitor.end_timer('result_buffer_processing')
             
@@ -604,16 +702,53 @@ if __name__ == "__main__":
                         if avg_radar > 0:
                             logger.info(f"  ├─ 雷达融合: {avg_radar*1000:.2f}ms")
                     if component_times['result_buffer']:
-                        logger.info(f"  └─ 结果缓冲: {mean(component_times['result_buffer'])*1000:.2f}ms")
+                        logger.info(f"  ├─ 结果缓冲: {mean(component_times['result_buffer'])*1000:.2f}ms")
+                    
+                    # 显示雷达相关时间（如果启用）
+                    if radar_fusion_enabled:
+                        logger.info(f"  ├─ 雷达快进: {radar_fastforward_time/1000.0*1000:.2f}ms")
+                        logger.info(f"  └─ 雷达协调: {radar_orchestrator_time/1000.0*1000:.2f}ms")
+                    
+                    # 缓冲区和内存诊断
+                    logger.info("="*70)
+                    logger.info("缓冲区诊断信息")
+                    logger.info("="*70)
+                    
+                    # 融合系统状态
+                    global_target_count = len(fusion_system.global_targets) if fusion_system.global_targets else 0
+                    json_data_count = len(fusion_system.json_output_data) if fusion_system.json_output_data else 0
+                    logger.info(f"融合系统: 全局目标={global_target_count}, JSON缓冲={json_data_count}")
+                    
+                    # 跟踪器状态
+                    for cam_id in [1, 2, 3]:
+                        tracker = trackers[cam_id]
+                        tracked_count = len(tracker.tracked_stracks) if hasattr(tracker, 'tracked_stracks') else 0
+                        lost_count = len(tracker.lost_stracks) if hasattr(tracker, 'lost_stracks') else 0
+                        logger.info(f"C{cam_id}跟踪器: 活跃轨迹={tracked_count}, 丢失轨迹={lost_count}")
+                    
+                    # 结果缓冲区状态
+                    buffer_status = result_output_manager.get_buffer_status()
+                    logger.info(f"结果缓冲: C1={buffer_status['c1_size']}, C2={buffer_status['c2_size']}, C3={buffer_status['c3_size']}")
+                    
+                    # 内存使用（如果可用）
+                    try:
+                        import psutil
+                        process = psutil.Process()
+                        mem_mb = process.memory_info().rss / 1024 / 1024
+                        logger.info(f"内存使用: {mem_mb:.1f}MB")
+                    except:
+                        pass
+                    
+                    logger.info("="*70)
                     
                     # 实时性评估
                     required_fps = 30  # 目标30FPS
                     required_time = 1.0 / required_fps  # 约33.3ms
                     if avg_total > required_time:
-                        logger.warning(f"⚠️  实时性告警：平均处理时间({avg_total*1000:.2f}ms) > 目标时间({required_time*1000:.1f}ms)")
+                        logger.warning(f"实时性告警：平均处理时间({avg_total*1000:.2f}ms) > 目标时间({required_time*1000:.1f}ms)")
                         logger.warning(f"    瓶颈可能在: 帧处理或匹配处理阶段")
                     else:
-                        logger.info(f"✅ 可以达到 {fps_actual:.1f} FPS 的实时处理")
+                        logger.info(f"可以达到 {fps_actual:.1f} FPS 的实时处理")
                 
                 logger.info("="*70)
 
