@@ -246,14 +246,13 @@ class ResultOutputManager:
                                 timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                             
                             radar_participant = {
-                                "timestamp": timestamp_str,
-                                "source": "radar",
-                                "type": radar_data.get('type', 'vehicle'),
-                                "confidence": radar_data.get('confidence', radar_data.get('rcs', 0.0)),
-                                "track_id": radar_data.get('track_id', -1),
-                                "radar_id": radar_data.get('radar_id', -1),
-                                "lon": lon,
-                                "lat": lat
+                                "pid": radar_data.get('radar_id', '')[-6:],
+                                "cameraid": 1,  # 雷达数据源标记
+                                "type": "car",
+                                "plate": "GID1",
+                                "heading": 0,
+                                "lng": lon*1e7,
+                                "lat": lat*1e7
                             }
                             output_data['participant'].append(radar_participant)
                     else:
@@ -278,15 +277,15 @@ class ResultOutputManager:
                                     logger.warning(f"   雷达对象属性: {vars(radar_data)}")
                                     timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                                 
+                                radar_id_str = str(getattr(radar_data, 'id', ''))
                                 radar_participant = {
-                                    "timestamp": timestamp_str,
-                                    "source": "radar",
-                                    "type": getattr(radar_data, 'type', 'vehicle'),
-                                    "confidence": getattr(radar_data, 'rcs', 0.0),
-                                    "track_id": getattr(radar_data, 'track_id', -1),
-                                    "radar_id": getattr(radar_data, 'id', -1),
-                                    "lon": lng,
-                                    "lat": lat
+                                    "pid": radar_id_str[-6:] if radar_id_str else '',
+                                    "cameraid": 1,  # 雷达数据源标记
+                                    "plate": "GID1",
+                                    "type": "car",
+                                    "heading": 0,
+                                    "lng": lng*1e7,
+                                    "lat": lat*1e7
                                 }
                                 output_data['participant'].append(radar_participant)
                 except Exception as e:
@@ -412,17 +411,18 @@ class ResultOutputManager:
                 # 获取置信度（使用最新的）
                 confidence = global_target.confidence_history[-1] if global_target.confidence_history else 0.0
                 
+                # 合并track_id和radar_id：如果匹配上了就是trackid_radarid后六位，否则只用trackid
+                #track_id = f"{global_target.global_id}_{radar_id[-6:]}" if radar_id else global_target.global_id
+                
                 # 构建participant对象
                 participant = {
-                    "timestamp": datetime.fromtimestamp(result1['timestamp']).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
-                    "source": "camera",  # 改为source字段，值为camera
-                    "cameraid": global_target.camera_id,
-                    "type": global_target.class_name,
-                    "confidence": confidence,
-                    "track_id": global_target.global_id,  # 使用global_id
-                    "radar_id": radar_id,
-                    "lon": lng,
-                    "lat": lat
+                    "pid": global_target.global_id,
+                    "cameraid": 1,  # 视觉数据源标记
+                    "type":"car",
+                    "plate": radar_id[-6:] if radar_id else global_target.global_id,
+                    "heading": 0,
+                    "lng": lng*1e7,
+                    "lat": lat*1e7
                 }
                 participants.append(participant)
         except Exception as e:

@@ -535,13 +535,12 @@ class CrossCameraFusion:
             # 新格式输出 - 只输出有视觉检测（经纬度）的结果
             # 经纬度坐标以视觉为准（以经纬度计算之后的结果为准）
             # 雷达的唯一作用就是匹配上之后把ID填进来，不输出雷达的经纬度
-            track_id = f"{global_target.global_id}_{radar_id[-6:]}" if radar_id else local_target.matched_global_id
+            #track_id = f"{global_target.global_id}_{radar_id[-6:]}" if radar_id else local_target.matched_global_id
             participant = {
-                "timestamp": current_timestamp,
-                "cameraid": "camera",  # 视觉数据源标记
-                "type": global_target.class_name,
-                "confidence": global_target.confidence_history[-1] if global_target.confidence_history else 0.0,
-                "pid": track_id,
+                "cameraid": 1,  # 视觉数据源标记
+                "type": "car",
+                "plate": radar_id[-6:],
+                "pid": global_target.global_id,
                 "heading": 0,
                 "lng": lng*1e7,
                 "lat": lat*1e7
@@ -576,11 +575,10 @@ class CrossCameraFusion:
                 # 合并track_id和radar_id：如果匹配上了就是trackid_radarid后六位，否则只用trackid
                 track_id = f"{local_target.matched_global_id}_{radar_id[-6:]}" if radar_id else local_target.matched_global_id
                 participant = {
-                    "pid": track_id,
-                    "timestamp": current_timestamp,
-                    "cameraid": "camera",  # 视觉数据源标记
-                    "type": local_target.class_name,
-                    "confidence": local_target.confidence,           
+                    "pid": local_target.matched_global_id,
+                    "cameraid": 1,  # 视觉数据源标记
+                    "type": "car",           
+                    "plate": radar_id[-6:],
                     "heading": 0,
                     "lng": lng*1e7,
                     "lat": lat*1e7
@@ -640,10 +638,9 @@ class CrossCameraFusion:
         # 添加雷达对象
         for radar_obj in radar_objects:
             participant = {
-                "timestamp": current_timestamp or radar_obj.get('timestamp', ''),
-                "cameraid": "radar",  # 雷达数据源标记
-                "type": radar_obj.get('type', 'unknown'),
-                "confidence": radar_obj.get('confidence', 0.0),
+                "cameraid": 1,  
+                "type": "car",
+                "plate": "GID1",
                 "pid": radar_obj.get('radar_id', '')[-6:], 
                 "heading": 0,
                 "lng": radar_obj.get('lon')*1e7,
