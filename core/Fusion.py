@@ -637,11 +637,18 @@ class CrossCameraFusion:
         
         # 添加雷达对象
         for radar_obj in radar_objects:
+            radar_id = radar_obj.get('radar_id', '')
+            radar_id_last6 = radar_id[-6:] if len(radar_id) >= 6 else radar_id
+            try:
+                pid = int(radar_id_last6, 16) if radar_id_last6 else 0
+            except ValueError:
+                pid = 0
+            
             participant = {
                 "cameraid": 1,  
                 "type": "car",
-                "plate": "GID1",
-                "pid": radar_obj.get('radar_id', '')[-6:], 
+                "plate": radar_id_last6,
+                "pid": pid, 
                 "heading": 0,
                 "lng": radar_obj.get('lon')*1e7,
                 "lat": radar_obj.get('lat')*1e7

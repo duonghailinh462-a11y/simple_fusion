@@ -245,11 +245,18 @@ class ResultOutputManager:
                                 logger.warning(f"   雷达数据键: {list(radar_data.keys())}")
                                 timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                             
+                            radar_id = radar_data.get('radar_id', '')
+                            radar_id_last6 = radar_id[-6:] if len(radar_id) >= 6 else radar_id
+                            try:
+                                pid = int(radar_id_last6, 16) if radar_id_last6 else 0
+                            except ValueError:
+                                pid = 0
+                            
                             radar_participant = {
-                                "pid": radar_data.get('radar_id', '')[-6:],
-                                "cameraid": 1,  # 雷达数据源标记
+                                "pid": pid,
+                                "cameraid": 1,  
                                 "type": "car",
-                                "plate": "GID1",
+                                "plate": radar_id_last6,
                                 "heading": 0,
                                 "lng": lon*1e7,
                                 "lat": lat*1e7
@@ -278,10 +285,16 @@ class ResultOutputManager:
                                     timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                                 
                                 radar_id_str = str(getattr(radar_data, 'id', ''))
+                                radar_id_last6 = radar_id_str[-6:] if len(radar_id_str) >= 6 else radar_id_str
+                                try:
+                                    pid = int(radar_id_last6, 16) if radar_id_last6 else 0
+                                except ValueError:
+                                    pid = 0
+                                
                                 radar_participant = {
-                                    "pid": radar_id_str[-6:] if radar_id_str else '',
+                                    "pid": pid,
                                     "cameraid": 1,  # 雷达数据源标记
-                                    "plate": "GID1",
+                                    "plate": radar_id_last6,
                                     "type": "car",
                                     "heading": 0,
                                     "lng": lng*1e7,
