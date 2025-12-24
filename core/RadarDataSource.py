@@ -232,7 +232,7 @@ class RealtimeRadarSource(BaseRadarSource):
                     try:
                         radar_frame = radar_pb2.ObjLocus()
                         radar_frame.ParseFromString(proto_content)
-                        logger.debug(f"✅ Proto 解码成功，设备: {radar_frame.deviceSn}, 时间: {radar_frame.time}, 目标数: {radar_frame.count}")
+                        #logger.debug(f"✅ Proto 解码成功，设备: {radar_frame.deviceSn}, 时间: {radar_frame.time}, 目标数: {radar_frame.count}")
                         
                         # 转换为系统的 RadarObject 格式
                         radar_objs = []
@@ -243,7 +243,7 @@ class RealtimeRadarSource(BaseRadarSource):
                         # 存入缓冲区，使用系统当前时间
                         timestamp = time.time()
                         self.buffer.append((timestamp, radar_objs))
-                        logger.debug(f"📦 缓冲区已更新: ts={timestamp:.3f}, objs={len(radar_objs)}")
+                        #logger.debug(f"📦 缓冲区已更新: ts={timestamp:.3f}, objs={len(radar_objs)}")
                         
                     except Exception as e:
                         logger.warning(f"[{addr[0]}] 解码错误: {e}", exc_info=True)

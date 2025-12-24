@@ -78,12 +78,14 @@ class RadarFusionOrchestrator:
         
         # 从所有摄像头的buffer中收集雷达数据
         all_radar_data_from_buffers = []
+        processed_timestamps = set()  # 🔧 新增：记录已处理的时间戳
         for camera_id in [1, 2, 3]:
             if camera_id in self.radar_fusion_processors:
                 processor = self.radar_fusion_processors[camera_id]
                 # 遍历该摄像头buffer中的所有雷达数据
                 for ts, radar_objs in processor.radar_buffer.items():
                     all_radar_data_from_buffers.extend(radar_objs)
+                    processed_timestamps.add((camera_id, ts))  # 🔧 新增：记录时间戳
         
         # 执行地理区域过滤
         fusion_radar_data = []
@@ -165,6 +167,13 @@ class RadarFusionOrchestrator:
             avg_total = sum(self.perf_stats['total_times'][-100:]) / min(100, len(self.perf_stats['total_times']))
             logger.info(f"📊 雷达协调器性能 (Frame {current_frame}): "
                        f"过滤={avg_filter:.2f}ms, 融合={avg_fusion:.2f}ms, 总计={avg_total:.2f}ms")
+        
+        # 🔧 新增：处理完后清理已处理的雷达数据，防止重复输出
+        for camera_id, ts in processed_timestamps:
+            if camera_id in self.radar_fusion_processors:
+                processor = self.radar_fusion_processors[camera_id]
+                if ts in processor.radar_buffer:
+                    del processor.radar_buffer[ts]
         
         return radar_id_map, direct_radar_outputs
     

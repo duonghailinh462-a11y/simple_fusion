@@ -183,6 +183,7 @@ class ResultOutputManager:
         self.matcher = TripleResultMatcher(time_threshold)
         self.output_count = 0
         self.pending_radar_data = []  # 存储待输出的雷达数据
+        self.processed_radar_ids = set()  # 🔧 新增：记录已输出的雷达ID，防止重复输出
     
     def add_single_camera_result(self, camera_id: int, timestamp: float,
                                 global_targets: List[GlobalTarget],
@@ -197,8 +198,17 @@ class ResultOutputManager:
             radar_data_list: 直接输出的雷达数据列表（在融合区外的数据）
         """
         if radar_data_list:
-            logger.debug(f"📡 添加 {len(radar_data_list)} 条雷达数据到待输出列表 (当前待输出总数: {len(self.pending_radar_data) + len(radar_data_list)})")
-            self.pending_radar_data.extend(radar_data_list)
+            # 🔧 新增：对雷达数据进行去重，防止同一个雷达ID被多次输出
+            added_count = 0
+            for radar_data in radar_data_list:
+                radar_id = radar_data.get('radar_id', '') if isinstance(radar_data, dict) else getattr(radar_data, 'id', '')
+                if radar_id not in self.processed_radar_ids:
+                    self.pending_radar_data.append(radar_data)
+                    self.processed_radar_ids.add(radar_id)
+                    added_count += 1
+            
+            logger.debug(f"📡 添加 {added_count}/{len(radar_data_list)} 条雷达数据到待输出列表 "
+                        f"(去重后: {added_count}条, 当前待输出总数: {len(self.pending_radar_data)})")
         else:
             logger.debug(f"📡 无雷达数据添加 (radar_data_list为空或为None)")
     
@@ -312,6 +322,7 @@ class ResultOutputManager:
             
             # 清空已处理的雷达数据
             self.pending_radar_data.clear()
+            # 🔧 注意：不清空 processed_radar_ids，防止同一个雷达ID在整个运行周期内被重复输出
             
             return len(output_data['participant']) > 0
             
