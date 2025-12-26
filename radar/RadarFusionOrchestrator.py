@@ -12,6 +12,7 @@ import time
 import logging
 from typing import List, Dict, Tuple, Optional
 from datetime import datetime
+from collections import deque
 
 from core.Basic import GeometryUtils
 from core.RadarVisionFusion import OutputObject
@@ -38,12 +39,12 @@ class RadarFusionOrchestrator:
         self.radar_fusion_processors = radar_fusion_processors
         self.enable_detailed_logging = enable_detailed_logging
         
-        # 性能统计
+        # 性能统计 - 使用 deque 限制大小，防止无限增长
         self.perf_stats = {
-            'filtering_times': [],
-            'fusion_times': [],
-            'collect_times': [],
-            'total_times': []
+            'filtering_times': deque(maxlen=1000),  # 保留最近1000次
+            'fusion_times': deque(maxlen=1000),
+            'collect_times': deque(maxlen=1000),
+            'total_times': deque(maxlen=1000)
         }
     
     def process_radar_fusion(self, current_frame: int, current_frame_results: Dict,
@@ -78,12 +79,18 @@ class RadarFusionOrchestrator:
         
         # 从所有摄像头的buffer中收集雷达数据
         all_radar_data_from_buffers = []
+        seen_radar_ids = set()  # 🔧 新增：记录已收集的雷达ID，防止重复
         for camera_id in [1, 2, 3]:
             if camera_id in self.radar_fusion_processors:
                 processor = self.radar_fusion_processors[camera_id]
                 # 遍历该摄像头buffer中的所有雷达数据
                 for ts, radar_objs in processor.radar_buffer.items():
-                    all_radar_data_from_buffers.extend(radar_objs)
+                    for radar_obj in radar_objs:
+                        # 🔧 改进：按雷达ID去重，防止同一个雷达被多次收集
+                        radar_id = getattr(radar_obj, 'id', None)
+                        if radar_id and radar_id not in seen_radar_ids:
+                            all_radar_data_from_buffers.append(radar_obj)
+                            seen_radar_ids.add(radar_id)
         
         # 执行地理区域过滤
         fusion_radar_data = []
@@ -160,11 +167,21 @@ class RadarFusionOrchestrator:
         
         # 定期输出性能统计
         if current_frame % 100 == 0:
-            avg_filter = sum(self.perf_stats['filtering_times'][-100:]) / min(100, len(self.perf_stats['filtering_times']))
-            avg_fusion = sum(self.perf_stats['fusion_times'][-100:]) / min(100, len(self.perf_stats['fusion_times']))
-            avg_total = sum(self.perf_stats['total_times'][-100:]) / min(100, len(self.perf_stats['total_times']))
+            # 🔧 修复：deque 不支持切片，需要转换为 list
+            filtering_times = list(self.perf_stats['filtering_times'])[-100:]
+            fusion_times = list(self.perf_stats['fusion_times'])[-100:]
+            total_times = list(self.perf_stats['total_times'])[-100:]
+            
+            avg_filter = sum(filtering_times) / len(filtering_times) if filtering_times else 0
+            avg_fusion = sum(fusion_times) / len(fusion_times) if fusion_times else 0
+            avg_total = sum(total_times) / len(total_times) if total_times else 0
             logger.info(f"📊 雷达协调器性能 (Frame {current_frame}): "
                        f"过滤={avg_filter:.2f}ms, 融合={avg_fusion:.2f}ms, 总计={avg_total:.2f}ms")
+        
+        # 🔧 注意：不在这里清理radar_buffer，因为：
+        # 1. add_radar_data()中已有自动清理机制（保留最近200个时间戳）
+        # 2. 过早清理会导致下一帧无法找到数据
+        # 3. 粘性绑定逻辑会防止重复输出
         
         return radar_id_map, direct_radar_outputs
     

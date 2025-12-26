@@ -240,8 +240,10 @@ class RadarVisionFusionProcessor:
         # 所有摄像头：横向15.0米，纵向20.0米（宽松策略，因为坐标校准误差较大）
         self.MAX_LANE_DIFF = 20.0     # 横向距离阈值 (米) - 增加到20m以适应坐标偏移
         self.MAX_LONG_DIFF = 20.0     # 纵向距离阈值 (米)
-        self.MAX_TIME_DIFF = 0.5      # 最大时间差 (秒) - 25fps=40ms/帧，0.5秒容纳约12帧延迟
-        self.MAX_TIME_DIFF_LOOSE = 2.0  # 宽松的时间差（用于容错）- 允许最多2秒偏差
+        # 🔧 优化：增加时间戳匹配阈值，解决雷达延迟问题
+        # 原因：雷达数据可能有较大延迟（10+秒），需要更宽松的匹配策略
+        self.MAX_TIME_DIFF = 5.0      # 最大时间差 (秒) - 允许最多5秒延迟
+        self.MAX_TIME_DIFF_LOOSE = 0.5  # 宽松的时间差（用于容错）- 允许最多0.5秒偏差
         self.MAX_COAST_TIME = 2.0     # 最大漂移时间 (秒)
         self.LOYALTY_BONUS = 10000.0  # 忠诚度系数：已匹配对的成本除以此值，强制保持绑定
         
@@ -274,7 +276,7 @@ class RadarVisionFusionProcessor:
         # 雷达缓冲区 (时间戳 -> 雷达目标列表)
         self.radar_buffer = defaultdict(list)
         self.radar_timestamps = deque(maxlen=100)  # 保留最近100个时间戳
-        self.radar_timestamps_sorted = []  # 📊 有序时间戳列表（用于二分查找）
+        self.radar_timestamps_sorted = deque(maxlen=100)  # 📊 有序时间戳列表（用于二分查找，限制大小防止内存泄漏）
         
         # 匹配映射 (track_id -> radar_id)
         self.radar_id_map = {}  # 雷达ID -> 融合ID
@@ -285,7 +287,22 @@ class RadarVisionFusionProcessor:
         
         # 🔧 新增：track_id -> radar_id 的持久化映射（轨迹忠诚度）
         # 一旦某个track_id匹配过某个radar_id，就永远保留这个映射
+        # 注：这个字典会随着新的track_id出现而增长，但由于track_id是有限的（活跃轨迹），不会无限增长
         self.track_radar_history = {}  # track_id -> radar_id
+        
+        # 🔧 新增：粘性绑定状态追踪
+        # vision_track_id -> radar_id: 记录当前的绑定关系
+        self.vision_to_radar_binding = {}  # {vision_track_id: radar_id}
+        # radar_id -> vision_track_id: 反向映射，防止一个雷达被多个视觉目标使用
+        self.radar_to_vision_binding = {}  # {radar_id: vision_track_id}
+        # radar_id -> last_seen_timestamp: 记录雷达最后出现时间
+        self.radar_last_seen_time = {}  # {radar_id: timestamp}
+        
+        # 🔧 新增：航位推算 (Dead Reckoning) 状态
+        # radar_id -> {position: (lat, lon), velocity: (v_lat, v_lon), timestamp: float}
+        self.radar_dead_reckoning_state = {}  # 存储每个雷达的推算状态
+        self.MAX_DEAD_RECKONING_TIME = 2.0  # 最大推算时间（秒），超过此时间停止推算
+        self.VELOCITY_SMOOTHING_ALPHA = 0.3  # 速度平滑系数（0-1，越小越平滑）
         
         # 统计信息
         self.stats = {
@@ -296,19 +313,19 @@ class RadarVisionFusionProcessor:
             'lane_filtered_candidates': 0,  # 被车道过滤排除的候选
         }
         
-        # � 性能统计：每一步的耗时（毫秒）
+        # 📊 性能统计：每一步的耗时（毫秒）- 使用 deque 限制大小，防止无限增长
         self.perf_stats = {
-            'trajectory_prediction': [],      # 步骤1：轨迹预测与清理
-            'coordinate_calibration': [],     # 步骤2：坐标校准
-            'timestamp_matching': [],         # 步骤3：时间戳匹配
-            'data_validation': [],            # 步骤4：数据有效性检查
-            'bipartite_matching': [],         # 步骤5：最优二部图匹配
-            'result_processing': [],          # 步骤6：结果处理
-            'total_frame': [],                # 总耗时
+            'trajectory_prediction': deque(maxlen=1000),      # 步骤1：轨迹预测与清理
+            'coordinate_calibration': deque(maxlen=1000),     # 步骤2：坐标校准
+            'timestamp_matching': deque(maxlen=1000),         # 步骤3：时间戳匹配
+            'data_validation': deque(maxlen=1000),            # 步骤4：数据有效性检查
+            'bipartite_matching': deque(maxlen=1000),         # 步骤5：最优二部图匹配
+            'result_processing': deque(maxlen=1000),          # 步骤6：结果处理
+            'total_frame': deque(maxlen=1000),                # 总耗时
         }
         self.perf_frame_count = 0  # 已处理的帧数
         
-        # � 初始化摄像头IP映射
+        # 📊 初始化摄像头IP映射
         if self.camera_id:
             logger.info(f"📡 C{self.camera_id} RadarVisionFusion: 允许的雷达IP = {self.allowed_radar_ips}")
 
@@ -403,6 +420,179 @@ class RadarVisionFusionProcessor:
             # print(f"      [DEBUG] 车道不匹配详情: 雷达={radar_obj.lane}, 视觉={vision_obj.lane}, 像素X={vision_obj.pixel_x if hasattr(vision_obj, 'pixel_x') else 'N/A'}")
             return False, "lane_mismatch"
             
+    def _cleanup_expired_bindings(self, current_radar_ids, current_vision_track_ids):
+        """
+        清理过期的绑定关系
+        
+        规则：
+        1. 只清理消失的雷达的绑定（雷达真的不在融合范围内了）
+        2. 不清理暂时不在当前帧的视觉目标的绑定（可能只是暂时离开视野）
+        
+        Args:
+            current_radar_ids: 当前帧中存在的雷达ID集合
+            current_vision_track_ids: 当前帧中存在的视觉track_id集合
+        """
+        # 🔧 改进：只清理消失的雷达的绑定，不清理暂时不在当前帧的视觉目标
+        # 原因：视觉目标可能只是暂时离开视野，不应该释放其绑定
+        # 视觉目标的真正消失应该由上层的跟踪器生命周期管理
+        
+        # 清理消失的雷达的绑定
+        radar_ids_to_remove = []
+        for radar_id in self.radar_to_vision_binding.keys():
+            if radar_id not in current_radar_ids:
+                vision_track_id = self.radar_to_vision_binding[radar_id]
+                # 释放正向映射
+                if vision_track_id in self.vision_to_radar_binding:
+                    del self.vision_to_radar_binding[vision_track_id]
+                radar_ids_to_remove.append(radar_id)
+                logger.debug(f"🔧 释放绑定: 雷达 {radar_id} 消失，释放视觉目标 {vision_track_id}")
+        
+        for radar_id in radar_ids_to_remove:
+            del self.radar_to_vision_binding[radar_id]
+            if radar_id in self.radar_last_seen_time:
+                del self.radar_last_seen_time[radar_id]
+    
+    def _update_dead_reckoning_state(self, radar_obj, current_timestamp):
+        """
+        更新航位推算状态 - 当收到新的雷达数据时调用
+        
+        Args:
+            radar_obj: 雷达目标对象
+            current_timestamp: 当前时间戳
+        """
+        radar_id = radar_obj.id
+        current_pos = (radar_obj.latitude, radar_obj.longitude)
+        
+        if radar_id not in self.radar_dead_reckoning_state:
+            # 首次出现，初始化状态
+            self.radar_dead_reckoning_state[radar_id] = {
+                'position': current_pos,
+                'velocity': (0.0, 0.0),
+                'timestamp': current_timestamp
+            }
+            logger.debug(f"[航位推算] 初始化雷达 {radar_id}: pos={current_pos}")
+        else:
+            # 更新状态：计算速度并平滑
+            prev_state = self.radar_dead_reckoning_state[radar_id]
+            prev_pos = prev_state['position']
+            prev_vel = prev_state['velocity']
+            prev_timestamp = prev_state['timestamp']
+            
+            # 计算时间差
+            time_delta = current_timestamp - prev_timestamp
+            if time_delta <= 0:
+                logger.debug(f"[航位推算] 雷达 {radar_id} 时间差为0或负数，跳过速度计算")
+                return
+            
+            # 计算新的速度
+            new_vel_lat = (current_pos[0] - prev_pos[0]) / time_delta
+            new_vel_lon = (current_pos[1] - prev_pos[1]) / time_delta
+            
+            # 速度平滑：使用指数移动平均
+            smoothed_vel_lat = self.VELOCITY_SMOOTHING_ALPHA * new_vel_lat + (1 - self.VELOCITY_SMOOTHING_ALPHA) * prev_vel[0]
+            smoothed_vel_lon = self.VELOCITY_SMOOTHING_ALPHA * new_vel_lon + (1 - self.VELOCITY_SMOOTHING_ALPHA) * prev_vel[1]
+            
+            # 更新状态
+            self.radar_dead_reckoning_state[radar_id] = {
+                'position': current_pos,
+                'velocity': (smoothed_vel_lat, smoothed_vel_lon),
+                'timestamp': current_timestamp
+            }
+            
+            logger.debug(f"[航位推算] 更新雷达 {radar_id}: pos={current_pos}, vel=({smoothed_vel_lat:.4f}, {smoothed_vel_lon:.4f}), Δt={time_delta:.3f}s")
+    
+    def _apply_dead_reckoning(self, radar_obj, current_timestamp):
+        """
+        应用航位推算 - 在视觉帧到达时调用，推算雷达目标的当前位置
+        
+        Args:
+            radar_obj: 雷达目标对象（会被修改）
+            current_timestamp: 当前视觉帧的时间戳
+        
+        Returns:
+            是否应用了推算（True=已推算，False=未推算）
+        """
+        radar_id = radar_obj.id
+        
+        if radar_id not in self.radar_dead_reckoning_state:
+            # 没有历史状态，无法推算
+            return False
+        
+        state = self.radar_dead_reckoning_state[radar_id]
+        last_update_time = state['timestamp']
+        time_delta = current_timestamp - last_update_time
+        
+        # 检查推算时间是否超过最大值
+        if time_delta > self.MAX_DEAD_RECKONING_TIME:
+            logger.debug(f"[航位推算] 雷达 {radar_id} 推算时间过长 ({time_delta:.2f}s > {self.MAX_DEAD_RECKONING_TIME}s)，停止推算")
+            return False
+        
+        if time_delta <= 0:
+            # 时间没有推进，不需要推算
+            return False
+        
+        # 应用推算
+        base_pos = state['position']
+        velocity = state['velocity']
+        
+        predicted_lat = base_pos[0] + velocity[0] * time_delta
+        predicted_lon = base_pos[1] + velocity[1] * time_delta
+        
+        # 修改雷达对象的位置
+        radar_obj.latitude = predicted_lat
+        radar_obj.longitude = predicted_lon
+        
+        logger.debug(f"[航位推算] 应用推算 雷达 {radar_id}: "
+                    f"原始=({base_pos[0]:.6f}, {base_pos[1]:.6f}), "
+                    f"推算=({predicted_lat:.6f}, {predicted_lon:.6f}), "
+                    f"Δt={time_delta:.3f}s")
+        
+        return True
+    
+    def _cleanup_dead_reckoning_state(self, current_radar_ids):
+        """
+        清理不存在的雷达的推算状态
+        
+        Args:
+            current_radar_ids: 当前帧中存在的雷达ID集合
+        """
+        radar_ids_to_remove = []
+        for radar_id in self.radar_dead_reckoning_state.keys():
+            if radar_id not in current_radar_ids:
+                radar_ids_to_remove.append(radar_id)
+        
+        for radar_id in radar_ids_to_remove:
+            del self.radar_dead_reckoning_state[radar_id]
+            logger.debug(f"[航位推算] 清理消失的雷达 {radar_id} 的推算状态")
+
+    def _separate_bound_and_free(self, radar_objects, vision_objects):
+        """
+        分离已绑定和自由的目标
+        
+        Returns:
+            (bound_radar_objs, free_radar_objs, bound_vision_objs, free_vision_objs)
+        """
+        bound_radar_objs = []
+        free_radar_objs = []
+        bound_vision_objs = []
+        free_vision_objs = []
+        
+        # 分离雷达目标
+        for radar_obj in radar_objects:
+            if radar_obj.id in self.radar_to_vision_binding:
+                bound_radar_objs.append(radar_obj)
+            else:
+                free_radar_objs.append(radar_obj)
+        
+        # 分离视觉目标
+        for vision_obj in vision_objects:
+            if vision_obj.track_id in self.vision_to_radar_binding:
+                bound_vision_objs.append(vision_obj)
+            else:
+                free_vision_objs.append(vision_obj)
+        
+        return bound_radar_objs, free_radar_objs, bound_vision_objs, free_vision_objs
+    
     def add_radar_data(self, timestamp, radar_objects):
         """
         添加雷达数据到缓冲区 (已优化：自动清理过期数据)
@@ -432,9 +622,10 @@ class RadarVisionFusionProcessor:
         self.radar_buffer[timestamp] = filtered_objects
         
         # ===== 步骤3：自动清理过期数据（防止内存无限增长） =====
-        # 保留最近 200 个时间戳（约 8-10 秒历史数据，足够匹配使用）
+        # 🔧 优化：减小缓冲区大小到150，只保留最近3-5秒数据
+        # 原因：雷达数据本身有3-5秒延迟，无需保留更久的历史数据
         # 使用 LRU 策略：移除最旧的时间戳
-        MAX_BUFFER_SIZE = 200
+        MAX_BUFFER_SIZE = 150
         if len(self.radar_buffer) > MAX_BUFFER_SIZE:
             # 获取最旧的时间戳（字典第一个键，Python 3.7+ 保证有序）
             oldest_ts = next(iter(self.radar_buffer))
@@ -747,8 +938,12 @@ class RadarVisionFusionProcessor:
 
     def process_frame(self, vision_timestamp, vision_objects):
         """
-        处理单帧的雷视融合 - 集成高级融合逻辑 + 性能统计
-        使用贪婪匹配、去重机制、轨迹预测
+        处理单帧的雷视融合 - 集成粘性绑定逻辑
+        
+        核心规则：
+        1. 一个雷达最多只能绑定到一个视觉目标
+        2. 一旦绑定，就持续输出该雷达ID，直到目标或雷达消失
+        3. 自由目标使用匈牙利算法进行最优匹配
         
         Args:
             vision_timestamp: 视觉帧时间戳
@@ -760,21 +955,9 @@ class RadarVisionFusionProcessor:
         # 📊 开始计时
         frame_start_time = time.time()
         
-        # ===== 步骤 1：轨迹预测与清理 =====
+        # ===== 步骤 1：初始化当前帧的视觉目标ID集合 =====
         step1_start = time.time()
-        dead_ids = []
-        for fusion_id, track in self.active_tracks.items():
-            dt = vision_timestamp - track.last_update_time
-            if dt > 0:
-                track.predict(dt)  # 预测轨迹位置
-            if dt > self.MAX_COAST_TIME:
-                dead_ids.append(fusion_id)
-        
-        # 清理过期轨迹
-        for fusion_id in dead_ids:
-            del self.active_tracks[fusion_id]
-            self.vision_id_map = {k: v for k, v in self.vision_id_map.items() if v != fusion_id}
-            self.radar_id_map = {k: v for k, v in self.radar_id_map.items() if v != fusion_id}
+        current_vision_track_ids = set(v.track_id for v in vision_objects)
         
         step1_time = (time.time() - step1_start) * 1000  # 转换为毫秒
         self.perf_stats['trajectory_prediction'].append(step1_time)
@@ -835,6 +1018,33 @@ class RadarVisionFusionProcessor:
         step3_time = (time.time() - step3_start) * 1000
         self.perf_stats['timestamp_matching'].append(step3_time)
         
+        # ===== 步骤 3.5：清理过期绑定（在获取雷达数据后） =====
+        # 🔧 新增：获取当前帧的雷达ID集合，用于清理过期绑定
+        current_radar_ids = set(radar_obj.id for radar_obj in radar_objects)
+        # 更新所有雷达的最后出现时间
+        for radar_obj in radar_objects:
+            self.radar_last_seen_time[radar_obj.id] = vision_timestamp
+        # 清理过期绑定（视觉目标消失或雷达消失）
+        self._cleanup_expired_bindings(current_radar_ids, current_vision_track_ids)
+        
+        # ===== 步骤 3.6：【航位推算】更新雷达状态并应用推算 =====
+        step3_6_start = time.time()
+        
+        # 首先，更新所有当前帧的雷达数据到推算状态
+        for radar_obj in radar_objects:
+            self._update_dead_reckoning_state(radar_obj, vision_timestamp)
+        
+        # 然后，对所有雷达对象应用航位推算（如果需要）
+        for radar_obj in radar_objects:
+            self._apply_dead_reckoning(radar_obj, vision_timestamp)
+        
+        # 清理消失的雷达的推算状态
+        self._cleanup_dead_reckoning_state(current_radar_ids)
+        
+        step3_6_time = (time.time() - step3_6_start) * 1000
+        # 注：航位推算的耗时添加到timestamp_matching中（作为扩展）
+        self.perf_stats['timestamp_matching'].append(step3_6_time)
+        
         # ===== 步骤 4：数据有效性检查 =====
         step4_start = time.time()
         
@@ -881,85 +1091,78 @@ class RadarVisionFusionProcessor:
         self.stats['radar_objects_processed'] += len(radar_objects)
         # vision_objects_processed会在后面处理所有视觉对象时统计
         
-        # ===== 步骤 5：初始化本帧的ID占用表（去重机制） =====
-        used_fusion_ids = set()
-        matched_vision_track_ids = set()
-        
-        # ===== 步骤 6：【改进】最优二部图匹配（替代贪心算法） =====
+        # ===== 步骤 5：【粘性绑定】分离已绑定和自由的目标 =====
         step5_start = time.time()
-        # 使用匈牙利算法找到全局最优匹配，避免前期贪心造成后期缺配
-        radar_indices, vision_indices = self.optimal_bipartite_matching(radar_objects, vision_objects_to_match)
+        bound_radar_objs, free_radar_objs, bound_vision_objs, free_vision_objs = \
+            self._separate_bound_and_free(radar_objects, vision_objects_to_match)
         
-        # 诊断输出：匹配结果
-        if self.enable_fusion_logs:
-            logger.info(f"[RADAR_FUSION] 匹配结果 - 雷达目标数: {len(radar_objects)}, 视觉目标数: {len(vision_objects_to_match)}, 成功匹配: {len(radar_indices)}")
+        logger.debug(f"[粘性绑定] 已绑定雷达: {len(bound_radar_objs)}, 自由雷达: {len(free_radar_objs)}, "
+                    f"已绑定视觉: {len(bound_vision_objs)}, 自由视觉: {len(free_vision_objs)}")
         
-        # 诊断：显示雷达和视觉目标的坐标
-        if len(radar_objects) > 0 and len(vision_objects_to_match) > 0:
-            logger.debug(f"  雷达目标示例: {radar_objects[0].latitude:.6f}, {radar_objects[0].longitude:.6f}")
-            logger.debug(f"  视觉目标示例: {vision_objects_to_match[0].lat:.6f}, {vision_objects_to_match[0].lon:.6f}")
-            # 计算距离
-            dy = (vision_objects_to_match[0].lat - radar_objects[0].latitude) * 111000  # 米/度
-            dx = (vision_objects_to_match[0].lon - radar_objects[0].longitude) * 111000 * 0.7  # 米/度（纬度修正）
-            dist = (dx**2 + dy**2)**0.5
-            logger.debug(f"  距离: {dist:.2f}米 (阈值: 横向{self.MAX_LANE_DIFF}米, 纵向{self.MAX_LONG_DIFF}米)")
+        # ===== 步骤 5.1：处理已绑定的目标（直接输出，无需重新匹配） =====
+        matched_vision_track_ids = set()
+        used_fusion_ids = set()
         
-        # 处理匹配对
-        for radar_idx, vision_idx in zip(radar_indices, vision_indices):
-            radar_obj = radar_objects[radar_idx]
-            v_obj = vision_objects_to_match[vision_idx]
-            v_key = str(v_obj.track_id)
+        for v_obj in bound_vision_objs:
+            # 获取已绑定的雷达ID
+            radar_id = self.vision_to_radar_binding.get(v_obj.track_id)
+            if radar_id:
+                # 直接输出已绑定的雷达ID，无需重新匹配
+                v_obj.radar_id = radar_id
+                matched_vision_track_ids.add(v_obj.track_id)
+                
+                # 更新原始vision_objects中对应的目标
+                for orig_v_obj in vision_objects:
+                    if orig_v_obj.track_id == v_obj.track_id:
+                        orig_v_obj.radar_id = radar_id
+                        break
+                
+                logger.debug(f"[粘性绑定] 视觉目标 {v_obj.track_id} 继续使用雷达 {radar_id}")
+        
+        # ===== 步骤 5.2：对自由目标进行匹配（使用匈牙利算法） =====
+        if free_radar_objs and free_vision_objs:
+            radar_indices, vision_indices = self.optimal_bipartite_matching(free_radar_objs, free_vision_objs)
             
-            # 只统计成功匹配数（雷达和视觉对象数已在前面统计）
-            self.stats['successful_matches'] += 1
+            # 诊断输出：匹配结果
+            if self.enable_fusion_logs:
+                logger.info(f"[RADAR_FUSION] 自由目标匹配 - 雷达: {len(free_radar_objs)}, 视觉: {len(free_vision_objs)}, "
+                           f"成功匹配: {len(radar_indices)}")
             
-            matched_vision_track_ids.add(v_obj.track_id)
+            # 处理新的匹配对
+            for radar_idx, vision_idx in zip(radar_indices, vision_indices):
+                radar_obj = free_radar_objs[radar_idx]
+                v_obj = free_vision_objs[vision_idx]
+                
+                # 建立新的粘性绑定
+                self.vision_to_radar_binding[v_obj.track_id] = radar_obj.id
+                self.radar_to_vision_binding[radar_obj.id] = v_obj.track_id
+                self.radar_last_seen_time[radar_obj.id] = vision_timestamp
+                
+                # 设置雷达ID
+                v_obj.radar_id = radar_obj.id
+                matched_vision_track_ids.add(v_obj.track_id)
+                
+                # 更新原始vision_objects中对应的目标
+                for orig_v_obj in vision_objects:
+                    if orig_v_obj.track_id == v_obj.track_id:
+                        orig_v_obj.radar_id = radar_obj.id
+                        break
+                
+                # 统计成功匹配
+                self.stats['successful_matches'] += 1
+                logger.debug(f"[粘性绑定] 新建绑定: 视觉目标 {v_obj.track_id} -> 雷达 {radar_obj.id}")
             
-            # 确定融合ID
-            fusion_id = self.vision_id_map.get(v_key) or self.radar_id_map.get(radar_obj.id)
-            if not fusion_id:
-                fusion_id = f"r{radar_obj.id[-4:]}-v{v_key}"
-            
-            # 去重检查
-            if fusion_id in used_fusion_ids:
-                fusion_id = f"r{radar_obj.id[-4:]}-v{v_key}-{int(vision_timestamp*1000)%1000}"
-            
-            used_fusion_ids.add(fusion_id)
-            
-            # 更新映射
-            self.vision_id_map[v_key] = fusion_id
-            self.radar_id_map[radar_obj.id] = fusion_id
-            
-            # 创建或更新轨迹
-            track = Track(fusion_id, v_obj.calib_lat, v_obj.calib_lon, 
-                         radar_obj.speed, radar_obj.azimuth)
-            track.last_update_time = vision_timestamp
-            track.radar_id_ref = radar_obj.id
-            track.vision_id_ref = v_key
-            self.active_tracks[fusion_id] = track
-            
-            # 设置视觉目标的雷达ID（不更新坐标，保持视觉坐标）
-            v_obj.radar_id = radar_obj.id
-            
-            # 🔧 新增：保存track_id到radar_id的历史映射（轨迹忠诚度）
-            self.track_radar_history[v_obj.track_id] = radar_obj.id
-            
-            # 关键修复：同时更新原始vision_objects中对应的目标
-            # 因为vision_objects_to_match只是valid_vision_objects的别名，
-            # 但最后返回的是原始vision_objects，所以需要找到并更新原始对象
-            for orig_v_obj in vision_objects:
-                if orig_v_obj.track_id == v_obj.track_id:
-                    orig_v_obj.radar_id = radar_obj.id
-                    break
+            # 统计未匹配的雷达
+            unmatched_radar_count = len(free_radar_objs) - len(radar_indices)
+            self.stats['failed_matches'] += unmatched_radar_count
+        else:
+            # 没有自由目标可匹配
+            unmatched_radar_count = len(free_radar_objs)
+            if unmatched_radar_count > 0:
+                self.stats['failed_matches'] += unmatched_radar_count
         
         step5_time = (time.time() - step5_start) * 1000
         self.perf_stats['bipartite_matching'].append(step5_time)
-        
-        # 统计本帧的匹配情况
-        matched_radar_count = len(radar_indices)
-        unmatched_radar_count = len(radar_objects) - matched_radar_count
-        # 累加本帧未匹配的雷达对象数
-        self.stats['failed_matches'] += unmatched_radar_count
         
         # ===== 步骤 7：处理未匹配的视觉目标 =====
         step6_start = time.time()
@@ -972,48 +1175,16 @@ class RadarVisionFusionProcessor:
             if v_obj.track_id in matched_vision_track_ids:
                 continue  # 已匹配，跳过
             
-            # 尝试获取已有的融合ID
-            fusion_id = self.vision_id_map.get(v_key)
-            
-            # 去重检查：如果融合ID已被占用，清除
-            if fusion_id and fusion_id in used_fusion_ids:
-                fusion_id = None
-            
-            # 幽灵复活：尝试继承已有的融合ID
-            if not fusion_id:
-                min_dist = 5.0
-                best_ghost = None
-                
-                for exist_fusion_id, track in self.active_tracks.items():
-                    # 只能继承含雷达历史的轨迹
-                    if "r" in exist_fusion_id and track.last_update_time < vision_timestamp and exist_fusion_id not in used_fusion_ids:
-                        dist_m = math.sqrt(
-                            ((track.lat - v_obj.calib_lat) * LAT_TO_M)**2 +
-                            ((track.lon - v_obj.calib_lon) * LON_TO_M)**2
-                        )
-                        if dist_m < min_dist:
-                            min_dist = dist_m
-                            best_ghost = exist_fusion_id
-                
-                if best_ghost:
-                    fusion_id = best_ghost
-                    self.vision_id_map[v_key] = fusion_id
-            
-            # 最终确定融合ID
-            if not fusion_id:
-                fusion_id = f"v{v_key}"
-            
-            # 去重检查（双保险）
-            if fusion_id in used_fusion_ids and "r" in fusion_id:
-                fusion_id = f"v{v_key}"
-            
-            used_fusion_ids.add(fusion_id)
-            
-            # 🔧 改进：检查历史映射，保留曾经匹配过的radar_id（轨迹忠诚度）
-            if v_obj.track_id in self.track_radar_history:
-                v_obj.radar_id = self.track_radar_history[v_obj.track_id]
+            # 🔧 粘性绑定：检查是否有历史绑定的雷达ID
+            if v_obj.track_id in self.vision_to_radar_binding:
+                # 继续使用历史绑定的雷达ID
+                radar_id = self.vision_to_radar_binding[v_obj.track_id]
+                v_obj.radar_id = radar_id
+                logger.debug(f"[粘性绑定] 未匹配视觉目标 {v_obj.track_id} 继续使用历史雷达 {radar_id}")
             else:
-                v_obj.radar_id = None  # 从未匹配过的视觉目标没有雷达ID
+                # 没有历史绑定，设置为None
+                v_obj.radar_id = None
+                logger.debug(f"[粘性绑定] 未匹配视觉目标 {v_obj.track_id} 无历史绑定")
         
         step6_time = (time.time() - step6_start) * 1000
         self.perf_stats['result_processing'].append(step6_time)
@@ -1026,6 +1197,11 @@ class RadarVisionFusionProcessor:
         # 每处理50帧输出一次性能统计
         if self.perf_frame_count % 50 == 0:
             self._print_performance_stats()
+        
+        # 🔧 清理过期的雷达数据 - 防止 radar_buffer 无限增长
+        # 清理超过15秒的旧数据（与MAX_TIME_DIFF对应）
+        # 这样可以保留足够长的历史数据来处理延迟的雷达数据
+        self.clear_old_radar_data(vision_timestamp, max_age=15.0)
         
         return vision_objects
 
@@ -1123,24 +1299,33 @@ class RadarVisionFusionProcessor:
         logger.info("=" * 80 + "\n")
         
         # 🔧 优化：打印完后立即清空统计列表，防止内存无限增长
-        for key in self.perf_stats:
-            self.perf_stats[key] = []
-        logger.debug("✅ 性能统计列表已清空，防止内存泄漏")
+        # 注：使用 deque(maxlen=N) 会自动限制大小，无需手动清空
+        logger.debug("✅ 性能统计已输出，deque 自动限制大小防止内存泄漏")
 
-    def clear_old_radar_data(self, current_timestamp, max_age=1.0):
+    def clear_old_radar_data(self, current_timestamp, max_age=15.0):
         """
-        清理过期的雷达数据
+        清理过期的雷达数据 - 防止 radar_buffer 无限增长
         
         Args:
             current_timestamp: 当前时间戳
-            max_age: 最大年龄 (秒)
+            max_age: 最大年龄 (秒) - 默认15秒，与MAX_TIME_DIFF_LOOSE对应
         """
+        if not self.radar_buffer:
+            return
+        
         old_timestamps = [
             ts for ts in self.radar_buffer.keys()
             if current_timestamp - ts > max_age
         ]
-        for ts in old_timestamps:
-            del self.radar_buffer[ts]
+        
+        if old_timestamps:
+            for ts in old_timestamps:
+                del self.radar_buffer[ts]
+            
+            # 诊断日志：仅在清理了数据时输出
+            if len(old_timestamps) > 0:
+                logger.debug(f"🧹 清理过期雷达数据: 移除 {len(old_timestamps)} 个时间戳, "
+                           f"缓冲区大小: {len(self.radar_buffer)}")
 
     def get_stats(self):
         """获取统计信息"""

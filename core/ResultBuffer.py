@@ -15,6 +15,7 @@
 from typing import Dict, List, Tuple, Optional
 from collections import deque
 import logging
+import time
 from vision.TargetTrack import LocalTarget, GlobalTarget
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,8 @@ class TripleResultMatcher:
             time_threshold: 时间阈值（秒），超过此阈值的结果不进行匹配
         """
         self.time_threshold = time_threshold
+        self.last_cleanup_time = time.time()
+        self.cleanup_interval = 5.0  # 每5秒清理一次超时数据
         self.buffers = {
             1: CameraResultBuffer(1),
             2: CameraResultBuffer(2),
@@ -96,6 +99,12 @@ class TripleResultMatcher:
             (ts1, ts2, ts3, result1, result2, result3) 或 None
             其中 ts_i 是摄像头i的时间戳，result_i 是对应的结果
         """
+        # 🔧 定期清理超时的缓冲数据（防止5秒周期性刷新）
+        current_time = time.time()
+        if current_time - self.last_cleanup_time > self.cleanup_interval:
+            self._cleanup_stale_data()
+            self.last_cleanup_time = current_time
+        
         timestamps_c1 = self.buffers[1].get_all_timestamps()
         timestamps_c2 = self.buffers[2].get_all_timestamps()
         timestamps_c3 = self.buffers[3].get_all_timestamps()
@@ -145,6 +154,26 @@ class TripleResultMatcher:
         
         return (ts1, ts2, ts3, result1, result2, result3)
     
+    def _cleanup_stale_data(self, max_age: float = 10.0):
+        """
+        清理超时的缓冲数据
+        
+        Args:
+            max_age: 最大年龄（秒），超过此时间的数据将被清理
+        """
+        current_time = time.time()
+        
+        for camera_id in [1, 2, 3]:
+            buffer = self.buffers[camera_id]
+            stale_timestamps = [
+                ts for ts in buffer.get_all_timestamps()
+                if current_time - ts > max_age
+            ]
+            
+            for ts in stale_timestamps:
+                buffer.remove_result(ts)
+                logger.debug(f"🧹 C{camera_id} 清理超时数据: ts={ts}, 年龄={current_time - ts:.1f}s")
+    
     def remove_matched_results(self, ts1: float, ts2: float, ts3: float):
         """移除已匹配的结果"""
         self.buffers[1].remove_result(ts1)
@@ -182,7 +211,7 @@ class ResultOutputManager:
         self.mqtt_publisher = mqtt_publisher
         self.matcher = TripleResultMatcher(time_threshold)
         self.output_count = 0
-        self.pending_radar_data = []  # 存储待输出的雷达数据
+        self.pending_radar_data = []  # 存储待输出的雷达数据（融合区外的数据）
     
     def add_single_camera_result(self, camera_id: int, timestamp: float,
                                 global_targets: List[GlobalTarget],
@@ -195,133 +224,48 @@ class ResultOutputManager:
         添加雷达数据到待输出列表
         Args:
             radar_data_list: 直接输出的雷达数据列表（在融合区外的数据）
+        
+        🔧 [修改] 改为累积策略而不是替换策略
+        原因：雷达帧率低（5-10帧/秒），视觉帧率高（25帧/秒）
+        - 多个雷达数据可能在短时间内到达
+        - 应该累积这些数据，而不是覆盖
+        - 每个雷达数据都应该被输出一次（带有其原始时间戳）
         """
         if radar_data_list:
-            logger.debug(f"📡 添加 {len(radar_data_list)} 条雷达数据到待输出列表 (当前待输出总数: {len(self.pending_radar_data) + len(radar_data_list)})")
-            self.pending_radar_data.extend(radar_data_list)
+            # 🔧 [新策略] 累积而不是替换
+            # 为了防止重复，使用 radar_id 作为去重键
+            seen_ids = set()
+            for item in self.pending_radar_data:
+                radar_id = item.get('radar_id')
+                if radar_id:
+                    seen_ids.add(radar_id)
+            
+            # 添加新的雷达数据（去重）
+            for item in radar_data_list:
+                radar_id = item.get('radar_id')
+                # 只添加之前没有见过的雷达ID
+                if radar_id and radar_id not in seen_ids:
+                    self.pending_radar_data.append(dict(item))  # 深拷贝
+                    seen_ids.add(radar_id)
+            
+            logger.debug(f"📡 累积待输出雷达数据: 新增{len(radar_data_list)}条, 当前队列大小{len(self.pending_radar_data)}")
         else:
-            logger.debug(f"📡 无雷达数据添加 (radar_data_list为空或为None)")
+            # 当没有新的雷达数据时，保持现有数据不变
+            # （这样可以保证雷达数据被输出，直到被清理）
+            logger.debug(f"📡 本帧无新雷达数据，保持现有缓冲")
     
     def output_pending_radar_data(self) -> bool:
         """
-        独立输出所有待处理的雷达数据（融合区外的数据）
-        不依赖三路匹配，直接输出
+        🔧 已禁用：雷达数据现在在 _perform_triple_matching() 中与视觉数据合并输出
+        此方法保留用于兼容性，但不再执行任何操作
         
         Returns:
-            True 如果有雷达数据输出，False 如果没有待输出的雷达数据
+            False（始终不输出）
         """
-        if not self.pending_radar_data:
-            logger.debug("📡 待输出雷达数据为空，跳过")
-            return False
-        
-        logger.debug(f"📡 开始处理 {len(self.pending_radar_data)} 条待输出雷达数据")
-        
-        try:
-            from datetime import datetime
-            import math
-            
-            # 构建输出JSON
-            output_data = {
-                "reportTime": int(datetime.now().timestamp() * 1000),
-                "participant": []
-            }
-            
-            # 处理所有待输出的雷达数据
-            for radar_data in self.pending_radar_data:
-                try:
-                    # 支持字典格式的数据（由RadarDataFilter返回）
-                    if isinstance(radar_data, dict):
-                        # 从字典中获取经纬度
-                        lon = radar_data.get('lon')
-                        lat = radar_data.get('lat')
-                        
-                        if lon is not None and lat is not None:
-                            # 🔧 直接使用雷达数据中的原始时间戳字符串
-                            timestamp_str = radar_data.get('timestamp')
-                            
-                            if not timestamp_str:
-                                # 如果没有时间戳，使用当前时间（备选方案）
-                                logger.warning(f"⚠️ 雷达字典数据缺少时间戳，使用当前时间")
-                                logger.warning(f"   雷达数据键: {list(radar_data.keys())}")
-                                timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                            
-                            radar_id = radar_data.get('radar_id', '')
-                            radar_id_last6 = radar_id[-6:] if len(radar_id) >= 6 else radar_id
-                            try:
-                                pid = int(radar_id_last6, 16) if radar_id_last6 else 0
-                            except ValueError:
-                                pid = 0
-                            
-                            radar_participant = {
-                                "pid": pid,
-                                "cameraid": 1,  
-                                "type": "car",
-                                "plate": radar_id_last6,
-                                "heading": 0,
-                                "lng": lon*1e7,
-                                "lat": lat*1e7
-                            }
-                            output_data['participant'].append(radar_participant)
-                    else:
-                        # 支持对象格式的数据（兼容旧版本）
-                        # 从雷达极坐标(距离、角度)转换为BEV坐标
-                        if hasattr(radar_data, 'distance') and hasattr(radar_data, 'angle'):
-                            x = radar_data.distance * math.cos(math.radians(radar_data.angle))
-                            y = radar_data.distance * math.sin(math.radians(radar_data.angle))
-                            
-                            # 转换为地理坐标
-                            from core.Basic import GeometryUtils
-                            geo_result = GeometryUtils.bev_to_geo(x, y)
-                            if geo_result:
-                                lng, lat = geo_result
-                                
-                                # 🔧 使用雷达对象的原始时间戳字符串
-                                timestamp_str = getattr(radar_data, 'timestamp_str', None)
-                                
-                                if not timestamp_str:
-                                    # 如果没有时间戳，使用当前时间（备选方案）
-                                    logger.warning(f"⚠️ 雷达对象缺少时间戳，使用当前时间")
-                                    logger.warning(f"   雷达对象属性: {vars(radar_data)}")
-                                    timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                                
-                                radar_id_str = str(getattr(radar_data, 'id', ''))
-                                radar_id_last6 = radar_id_str[-6:] if len(radar_id_str) >= 6 else radar_id_str
-                                try:
-                                    pid = int(radar_id_last6, 16) if radar_id_last6 else 0
-                                except ValueError:
-                                    pid = 0
-                                
-                                radar_participant = {
-                                    "pid": pid,
-                                    "cameraid": 1,  # 雷达数据源标记
-                                    "plate": radar_id_last6,
-                                    "type": "car",
-                                    "heading": 0,
-                                    "lng": lng*1e7,
-                                    "lat": lat*1e7
-                                }
-                                output_data['participant'].append(radar_participant)
-                except Exception as e:
-                    logger.debug(f"处理单个雷达数据失败: {e}")
-                    continue
-            
-            # 如果有有效的雷达数据，输出结果
-            if output_data['participant']:
-                self._output_result(output_data)
-                self.output_count += 1
-            
-            # 清空已处理的雷达数据
-            self.pending_radar_data.clear()
-            
-            return len(output_data['participant']) > 0
-            
-        except Exception as e:
-            logger.error(f"输出雷达数据异常: {e}")
-            import traceback
-            traceback.print_exc()
-            # 清空待输出数据，避免重复处理
-            self.pending_radar_data.clear()
-            return False
+        # 🔧 不再独立输出雷达数据，所有雷达数据都在 _perform_triple_matching() 中合并到视觉输出
+        # 这样可以确保雷达和视觉在同一个 reportTime 中输出
+        logger.debug("📡 output_pending_radar_data() 已禁用，雷达数据在 _perform_triple_matching() 中合并输出")
+        return False
     
     def process_and_output(self) -> bool:
         """
@@ -389,9 +333,23 @@ class ResultOutputManager:
         combined_radar_ids.update(radar_ids_c2)
         combined_radar_ids.update(radar_ids_c3)
         
-        # 🔧 修改：reportTime 应该是当前时间，而不是数据时间戳
-        from datetime import datetime
-        reportTime_ms = int(datetime.now().timestamp() * 1000)
+        # 🔧 [修改] reportTime 直接使用 result1（摄像头1）的时间戳
+        # result1['timestamp'] 是浮点数（Unix时间戳），直接转换为毫秒
+        # 这是最稳定的时间基准，确保每一帧都有一致的时间戳
+        if 'timestamp' in result1:
+            ts = result1['timestamp']
+            if isinstance(ts, (int, float)):
+                # 如果是Unix时间戳（秒），转换为毫秒
+                reportTime_ms = int(ts * 1000)
+            else:
+                # 如果是字符串，尝试解析
+                try:
+                    dt = datetime.strptime(str(ts), '%Y-%m-%d %H:%M:%S.%f')
+                    reportTime_ms = int(dt.timestamp() * 1000)
+                except (ValueError, TypeError):
+                    reportTime_ms = int(datetime.now().timestamp() * 1000)
+        else:
+            reportTime_ms = int(datetime.now().timestamp() * 1000)
         
         # 从 global_targets 生成 participant 对象
         participants = []
@@ -427,8 +385,17 @@ class ResultOutputManager:
                 # 合并track_id和radar_id：如果匹配上了就是trackid_radarid后六位，否则只用trackid
                 #track_id = f"{global_target.global_id}_{radar_id[-6:]}" if radar_id else global_target.global_id
                 
+                # 🔧 [修改] 视觉数据使用原始的视觉时间戳（last_seen_timestamp）
+                # 这样可以保持视觉数据的原始时间信息，而不是被融合时间覆盖
+                if global_target.last_seen_timestamp:
+                    participant_timestamp = global_target.last_seen_timestamp
+                else:
+                    participant_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                
                 # 构建participant对象
                 participant = {
+                    "timestamp": participant_timestamp,  # 视觉数据的原始时间戳
+                    "source": "camera",  # 数据源标记
                     "pid": global_target.global_id,
                     "cameraid": 1,  # 视觉数据源标记
                     "type":"car",
@@ -444,8 +411,68 @@ class ResultOutputManager:
             traceback.print_exc()
             participants = []
         
-        # 注：直接输出的雷达数据不再添加到三路融合结果中
-        # 雷达数据由 output_pending_radar_data() 独立输出
+        # 🔧 新增：将待输出的雷达数据合并到视觉输出中（同一个reportTime）
+        # 这样可以确保雷达和视觉在同一时间点输出
+        # 🔧 [重要] 只在有摄像头数据（participants非空）时才输出雷达数据
+        # 这样可以防止"只有雷达数据"的帧导致的闪烁问题
+        if self.pending_radar_data:
+            if participants:
+                # 有摄像头数据，合并雷达数据输出
+                try:
+                    import math
+                    # 🔧 去重：使用 radar_id 作为键，防止同一个雷达被多次添加
+                    seen_radar_ids = set()
+                    
+                    for radar_data in self.pending_radar_data:
+                        # 支持字典格式的数据
+                        if isinstance(radar_data, dict):
+                            lon = radar_data.get('lon')
+                            lat = radar_data.get('lat')
+                            
+                            if lon is not None and lat is not None:
+                                radar_id = radar_data.get('radar_id', '')
+                                
+                                # 🔧 关键：检查是否已经添加过这个雷达ID
+                                if radar_id in seen_radar_ids:
+                                    logger.debug(f"⏭️ 跳过重复的雷达数据: {radar_id}")
+                                    continue
+                                
+                                seen_radar_ids.add(radar_id)
+                                
+                                timestamp_str = radar_data.get('timestamp')
+                                if not timestamp_str:
+                                    timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+                                
+                                radar_id_last6 = radar_id[-6:] if len(radar_id) >= 6 else radar_id
+                                try:
+                                    pid = int(radar_id_last6, 16) if radar_id_last6 else 0
+                                except ValueError:
+                                    pid = 0
+                                
+                                radar_participant = {
+                                    "timestamp": timestamp_str,  # 原始雷达时间戳（保持雷达的原始时间）
+                                    "source": "radar",  # 数据源标记
+                                    "pid": pid,
+                                    "cameraid": 2,  # 雷达数据源标记
+                                    "type": "car",
+                                    "plate": radar_id_last6,
+                                    "heading": 0,
+                                    "lng": lon*1e7,
+                                    "lat": lat*1e7
+                                }
+                                participants.append(radar_participant)
+                    
+                    logger.debug(f"📡 已合并 {len(seen_radar_ids)} 条雷达数据到视觉输出")
+                except Exception as e:
+                    logger.error(f"❌ 合并雷达数据到视觉输出失败: {e}")
+                    import traceback
+                    traceback.print_exc()
+            else:
+                # 没有摄像头数据，丢弃雷达数据（防止单独输出导致闪烁）
+                logger.debug(f"📡 本帧无摄像头数据，丢弃 {len(self.pending_radar_data)} 条待输出雷达数据（防止单独输出）")
+            
+            # 🔧 [关键] 无论如何都要清空雷达数据，防止重复输出
+            self.pending_radar_data.clear()
         
         json_data = {
             'reportTime': reportTime_ms,
@@ -465,20 +492,34 @@ class ResultOutputManager:
         # 支持两种格式：'participant' 或 'participants'
         participants = json_data.get('participant', json_data.get('participants', []))
         
-        # 尝试发送MQTT
+        # 🔧 核心：MQTT发布是主要需求，确保总是执行
         mqtt_sent = False
         if self.mqtt_publisher:
             try:
+                logger.info(f"📡 MQTT发布: 参与者数={len(participants)}")
                 mqtt_sent = self.mqtt_publisher.publish_rsm(participants)
+                if mqtt_sent:
+                    logger.info(f"✅ MQTT发布成功: {len(participants)}个参与者")
+                else:
+                    logger.warning(f"⚠️ MQTT发布失败: {len(participants)}个参与者")
             except Exception as e:
-                logger.error(f"MQTT发送异常: {e}")
+                logger.error(f"❌ MQTT发送异常: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            logger.warning(f"⚠️ MQTT未配置，无法发布数据 (参与者数: {len(participants)})")
         
-        # 保存到融合系统的输出列表（用于最终的JSON文件保存）
+        # 🔧 改进：使用流式输出而不是积累在内存中（JSON仅用于测试辅助）
         if self.fusion_system:
             try:
-                self.fusion_system.json_output_data.append(json_data)
+                # 使用新的流式输出方法
+                if hasattr(self.fusion_system, 'add_json_output'):
+                    self.fusion_system.add_json_output(json_data)
+                else:
+                    # 兼容旧版本
+                    self.fusion_system.json_output_data.append(json_data)
             except Exception as e:
-                logger.error(f"保存到融合系统输出列表失败: {e}")
+                logger.debug(f"JSON保存失败: {e}")
         
         # 记录输出信息
         if ts1 is not None and ts2 is not None and ts3 is not None:

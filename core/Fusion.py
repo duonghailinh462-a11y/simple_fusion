@@ -93,9 +93,22 @@ class CrossCameraFusion:
         
         # 帧计数
         self.frame_count = 0
-        self.json_output_data = []
         
-        logger.info("CrossCameraFusion初始化完成 (重构版)")
+        # 🔧 流式JSON输出 - 避免内存无限增长
+        self.json_output_data = []  # 保留用于兼容性，但不再积累数据
+        self.json_stream_writer = None  # 流式写入器
+        self.json_stream_file = None  # 输出文件路径
+        self.json_buffer = []  # 临时缓冲区
+        self.json_buffer_max_size = 100  # 缓冲区大小（每100条写入一次）
+        self.json_output_count = 0  # 已输出的JSON条数统计
+        
+        # 🔧 [新增] 视觉数据队列 - 基于时间戳的缓冲对齐
+        # 用于存储视觉检测数据，等待雷达数据到达后进行融合
+        # 结构: {timestamp: {'detections': [...], 'camera_id': int, 'frame_count': int}}
+        self.vision_frame_queue = {}  # 按时间戳索引的视觉帧队列
+        self.vision_queue_max_size = 200  # 最多保留200个时间戳的视觉数据（约5-10秒）
+        
+        logger.info("CrossCameraFusion初始化完成 (重构版 + 视觉队列缓冲)")
     
     def assign_new_global_id(self, camera_id: int, local_id: int) -> int:
         """分配新的全局ID (委托给 TargetManager)"""
@@ -112,6 +125,54 @@ class CrossCameraFusion:
         return self.target_manager.create_local_target(
             detection, camera_id, self.frame_count, perf_monitor
         )
+    
+    def _enqueue_vision_frame(self, detections: List[dict], camera_id: int, timestamp: str) -> None:
+        """
+        [新增] 将视觉帧数据入队，等待雷达数据进行融合
+        
+        Args:
+            detections: 检测结果列表
+            camera_id: 摄像头ID
+            timestamp: 帧时间戳
+        """
+        if not timestamp:
+            logger.warning(f"C{camera_id} 缺少时间戳，跳过入队")
+            return
+        
+        # 规范化时间戳格式（转换为字符串）
+        if isinstance(timestamp, (int, float)):
+            timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        
+        # 存入队列
+        if timestamp not in self.vision_frame_queue:
+            self.vision_frame_queue[timestamp] = {
+                'detections': detections,
+                'camera_id': camera_id,
+                'frame_count': self.frame_count
+            }
+            logger.debug(f"[VISION_QUEUE] C{camera_id} F{self.frame_count} 入队: ts={timestamp}, detections={len(detections)}")
+        
+        # 自动清理过期数据（保留最近N个时间戳）
+        if len(self.vision_frame_queue) > self.vision_queue_max_size:
+            # 删除最旧的时间戳
+            oldest_ts = min(self.vision_frame_queue.keys())
+            del self.vision_frame_queue[oldest_ts]
+            logger.debug(f"[VISION_QUEUE] 清理过期数据: 移除 {oldest_ts}, 当前队列大小={len(self.vision_frame_queue)}")
+    
+    def _get_vision_frame_by_timestamp(self, timestamp: str) -> Optional[dict]:
+        """
+        [新增] 从队列中获取指定时间戳的视觉帧数据
+        
+        Args:
+            timestamp: 时间戳
+            
+        Returns:
+            视觉帧数据字典，或 None 如果不存在
+        """
+        if isinstance(timestamp, (int, float)):
+            timestamp = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        
+        return self.vision_frame_queue.get(timestamp)
     
     def classify_targets(self, detections: List[dict], camera_id: int, timestamp: str = None, perf_monitor=None) -> Tuple[List[GlobalTarget], List[LocalTarget]]:
         """
@@ -225,6 +286,12 @@ class CrossCameraFusion:
         
         if perf_monitor:
             perf_monitor.end_timer('classify_targets')
+        
+        # 🔧 [新增] 将视觉帧数据入队，等待雷达融合
+        # 这样可以避免因为雷达延迟导致的目标批量消失
+        if timestamp:
+            self._enqueue_vision_frame(detections, camera_id, timestamp)
+        
         return global_targets, local_targets
     
     # ... (移除了 C2->C3 的旧函数) ...
@@ -500,15 +567,17 @@ class CrossCameraFusion:
         
         # 处理全局目标
         for global_target in all_global_targets:
-            # 使用时间戳判断是否应该输出（至少出现一定时间或已确认）
+            # 🔧 修复：改用时间戳判断，避免帧间隔不均导致的批量过滤
+            # 原因：基于帧计数的延时机制在帧间隔不均时会导致目标批量消失
+            # 新方案：使用时间戳判断，设置100ms的延时阈值（防止虚假目标闪烁）
             should_output = global_target.global_id in self.target_manager.confirmed_targets
             if not should_output and global_target.first_seen_timestamp and global_target.last_seen_timestamp:
                 try:
                     first_time = datetime.strptime(global_target.first_seen_timestamp, '%Y-%m-%d %H:%M:%S.%f')
                     last_time = datetime.strptime(global_target.last_seen_timestamp, '%Y-%m-%d %H:%M:%S.%f')
                     time_diff = (last_time - first_time).total_seconds()
-                    # 至少出现 2 帧的时间（假设30fps）
-                    min_time_for_output = 2 / 30.0  # 秒
+                    # 至少出现 100ms 才输出（防止虚假目标闪烁）
+                    min_time_for_output = 0.1  # 秒
                     should_output = time_diff >= min_time_for_output
                 except (ValueError, AttributeError):
                     should_output = False
@@ -537,9 +606,11 @@ class CrossCameraFusion:
             # 雷达的唯一作用就是匹配上之后把ID填进来，不输出雷达的经纬度
             #track_id = f"{global_target.global_id}_{radar_id[-6:]}" if radar_id else local_target.matched_global_id
             participant = {
+                "timestamp": current_timestamp,  # 视觉时间戳
+                "source": "camera",  # 数据源标记
                 "cameraid": 1,  # 视觉数据源标记
                 "type": "car",
-                "plate": radar_id[-6:],
+                "plate": radar_id[-6:] if radar_id else global_target.global_id,
                 "pid": global_target.global_id,
                 "heading": 0,
                 "lng": lng*1e7,
@@ -575,10 +646,12 @@ class CrossCameraFusion:
                 # 合并track_id和radar_id：如果匹配上了就是trackid_radarid后六位，否则只用trackid
                 track_id = f"{local_target.matched_global_id}_{radar_id[-6:]}" if radar_id else local_target.matched_global_id
                 participant = {
+                    "timestamp": current_timestamp,  # 视觉时间戳
+                    "source": "camera",  # 数据源标记
                     "pid": local_target.matched_global_id,
                     "cameraid": 1,  # 视觉数据源标记
                     "type": "car",           
-                    "plate": radar_id[-6:],
+                    "plate": radar_id[-6:] if radar_id else local_target.matched_global_id,
                     "heading": 0,
                     "lng": lng*1e7,
                     "lat": lat*1e7
@@ -644,8 +717,15 @@ class CrossCameraFusion:
             except ValueError:
                 pid = 0
             
+            # 获取雷达时间戳（如果没有则使用当前时间）
+            radar_timestamp = radar_obj.get('timestamp')
+            if not radar_timestamp:
+                radar_timestamp = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+            
             participant = {
-                "cameraid": 1,  
+                "timestamp": radar_timestamp,  # 原始雷达时间戳
+                "source": "radar",  # 数据源标记
+                "cameraid": 2,  # 雷达数据源标记
                 "type": "car",
                 "plate": radar_id_last6,
                 "pid": pid, 
@@ -667,12 +747,47 @@ class CrossCameraFusion:
         if self.frame_count % 20 != 0:
             return
         
-        inactive_threshold = 100
-        current_time = self.frame_count
+        # 🔧 修复：改用时间戳而不是帧计数来判断目标是否过期
+        # 原因：帧间隔不均匀（最大间隔260秒），导致所有目标在长时间停顿后被一起删除
+        # 解决方案：使用时间戳判断，设置12秒的过期阈值（足够长以容忍检测间歇性丢失）
+        from datetime import datetime
+        inactive_threshold_seconds = 12
+        
+        # 获取当前帧的时间戳（从最近的目标中获取）
+        current_timestamp = None
+        for target in self.global_targets.values():
+            if target.last_seen_timestamp:
+                current_timestamp = target.last_seen_timestamp
+                break
+        
+        # 如果有当前时间戳，用时间戳判断；否则用帧计数
+        use_timestamp = current_timestamp is not None
+        if use_timestamp:
+            try:
+                current_time_obj = datetime.strptime(current_timestamp, '%Y-%m-%d %H:%M:%S.%f')
+            except (ValueError, AttributeError):
+                use_timestamp = False
         
         inactive_global_ids = []
         for global_id, global_target in self.global_targets.items():
-            if current_time - global_target.last_seen_frame > inactive_threshold:
+            should_cleanup = False
+            
+            if use_timestamp and global_target.last_seen_timestamp:
+                try:
+                    last_time = datetime.strptime(global_target.last_seen_timestamp, '%Y-%m-%d %H:%M:%S.%f')
+                    time_diff = (current_time_obj - last_time).total_seconds()
+                    if time_diff > inactive_threshold_seconds:
+                        should_cleanup = True
+                except (ValueError, AttributeError):
+                    # 时间戳解析失败，使用帧计数作为备选
+                    if self.frame_count - global_target.last_seen_frame > 300:
+                        should_cleanup = True
+            else:
+                # 没有时间戳或时间戳不可用，使用帧计数
+                if self.frame_count - global_target.last_seen_frame > 300:
+                    should_cleanup = True
+            
+            if should_cleanup:
                 inactive_global_ids.append(global_id)
         
         inactive_local_ids_c2 = set()
@@ -693,11 +808,11 @@ class CrossCameraFusion:
         c2_buffer_timeout = Config.MAX_RETENTION_FRAMES
         active_c2_entries = [
             entry for entry in self.matching_engine.c2_buffer_from_c3
-            if (current_time - entry.first_seen_frame) <= c2_buffer_timeout
+            if (self.frame_count - entry.first_seen_frame) <= c2_buffer_timeout
         ]
         
         # 2. 清理 C2 本地跟踪器中已消失的条目 (很重要)
-        self.local_track_buffer.cleanup_inactive_tracks(current_time)
+        self.local_track_buffer.cleanup_inactive_tracks(self.frame_count)
         active_c2_local_ids = self.local_track_buffer.get_active_local_ids(camera_id=2)
         
         final_c2_buffer = []
@@ -725,8 +840,11 @@ class CrossCameraFusion:
     def _flush_logs(self):
         """刷新日志缓冲区到JSON输出数据"""
         if self.log_buffer:
-            self.json_output_data.extend(self.log_buffer)
+            # 🔧 改进：添加到JSON缓冲区而不是直接到json_output_data
+            self.json_buffer.extend(self.log_buffer)
             self.log_buffer.clear()
+            # 检查是否需要写入文件
+            self._flush_json_buffer()
     
     def store_single_camera_result(self, camera_id: int, timestamp: float, local_targets: List[LocalTarget], radar_ids: Dict[int, int]):
         """
@@ -746,6 +864,11 @@ class CrossCameraFusion:
             'local_targets': local_targets,
             'radar_ids': radar_ids
         })
+        
+        # 🔧 防止缓冲区无限增长 - 保留最近500条记录
+        MAX_CAMERA_RESULTS = 500
+        if len(self.camera_results[camera_id]) > MAX_CAMERA_RESULTS:
+            self.camera_results[camera_id] = self.camera_results[camera_id][-MAX_CAMERA_RESULTS:]
     
     def can_match_targets(self, target1: LocalTarget, target2: LocalTarget, spatial_threshold: float = 5.0) -> bool:
         """
@@ -889,25 +1012,95 @@ class CrossCameraFusion:
         if self.frame_count % 100 == 0:
             self._flush_logs()
 
+    def init_json_stream(self, output_file: str):
+        """初始化JSON流式输出"""
+        try:
+            import os
+            self.json_stream_file = output_file
+            # 创建输出目录（如果不存在）
+            os.makedirs(os.path.dirname(os.path.abspath(output_file)) or '.', exist_ok=True)
+            logger.info(f"📝 JSON流式输出已初始化: {output_file}")
+        except Exception as e:
+            logger.error(f"初始化JSON流式输出失败: {e}")
+    
+    def _flush_json_buffer(self):
+        """将JSON缓冲区写入文件"""
+        if not self.json_buffer or not self.json_stream_file:
+            return
+        
+        try:
+            import os
+            # 检查文件是否存在（判断是否是第一次写入）
+            file_exists = os.path.exists(self.json_stream_file)
+            
+            if not file_exists:
+                # 第一次写入：创建JSON数组
+                with open(self.json_stream_file, 'w', encoding='utf-8') as f:
+                    f.write('[\n')
+                    for i, item in enumerate(self.json_buffer):
+                        json_str = json.dumps(item, ensure_ascii=False, cls=NumpyJSONEncoder)
+                        if i < len(self.json_buffer) - 1:
+                            f.write('  ' + json_str + ',\n')
+                        else:
+                            f.write('  ' + json_str + '\n')
+            else:
+                # 后续写入：追加到数组（在末尾的]之前）
+                with open(self.json_stream_file, 'r+', encoding='utf-8') as f:
+                    # 移到文件末尾
+                    f.seek(0, 2)
+                    file_size = f.tell()
+                    
+                    # 回退一个字符（]）
+                    if file_size > 0:
+                        f.seek(file_size - 1)
+                        # 写入逗号和新数据
+                        for item in self.json_buffer:
+                            json_str = json.dumps(item, ensure_ascii=False, cls=NumpyJSONEncoder)
+                            f.write(',\n  ' + json_str)
+                    
+                    # 写入结束的]
+                    f.write('\n]')
+            
+            self.json_output_count += len(self.json_buffer)
+            logger.debug(f"📝 JSON缓冲区已写入文件 (本次: {len(self.json_buffer)} 条, 累计: {self.json_output_count} 条)")
+            self.json_buffer.clear()
+            
+        except Exception as e:
+            logger.error(f"写入JSON缓冲区失败: {e}")
+    
+    def add_json_output(self, json_data: dict):
+        """添加JSON数据到输出流"""
+        # 🔧 改进：直接添加到缓冲区，而不是json_output_data
+        self.json_buffer.append(json_data)
+        
+        # 检查是否需要写入文件
+        if len(self.json_buffer) >= self.json_buffer_max_size:
+            self._flush_json_buffer()
+    
     def save_json_data(self, output_file: str):
-        """保存JSON数据到文件"""
+        """保存JSON数据到文件（兼容接口）"""
         try:
             import os
             self._flush_logs()
             
-            with open(output_file, 'w', encoding='utf-8') as f:
-                json.dump(self.json_output_data, f, ensure_ascii=False, indent=2, cls=NumpyJSONEncoder)
+            # 如果还有缓冲数据，先写入
+            if self.json_buffer:
+                self.json_stream_file = output_file
+                self._flush_json_buffer()
             
             # 获取文件大小
-            file_size_kb = os.path.getsize(output_file) / 1024
-            abs_path = os.path.abspath(output_file)
-            
-            # 记录带路径的输出信息
-            logger.info("=" * 70)
-            logger.info(f"✅ JSON数据已保存")
-            logger.info(f"   文件路径: {abs_path}")
-            logger.info(f"   数据条目: {len(self.json_output_data)} 条")
-            logger.info(f"   文件大小: {file_size_kb:.2f} KB")
-            logger.info("=" * 70)
+            if os.path.exists(output_file):
+                file_size_kb = os.path.getsize(output_file) / 1024
+                abs_path = os.path.abspath(output_file)
+                
+                # 记录带路径的输出信息
+                logger.info("=" * 70)
+                logger.info(f"✅ JSON数据已保存")
+                logger.info(f"   文件路径: {abs_path}")
+                logger.info(f"   数据条目: {self.json_output_count} 条")
+                logger.info(f"   文件大小: {file_size_kb:.2f} KB")
+                logger.info("=" * 70)
+            else:
+                logger.warning(f"输出文件不存在: {output_file}")
         except Exception as e:
             logger.error(f"保存JSON文件出错: {e}")

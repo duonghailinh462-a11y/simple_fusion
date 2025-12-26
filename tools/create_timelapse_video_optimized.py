@@ -47,21 +47,6 @@ except FileNotFoundError:
     print(f"Warning: {OUTPUT_FUSION_FILE} not found, using empty fusion data")
     fusion_data = []
 
-# 加载雷达数据
-radar_by_timestamp = defaultdict(list)
-radar_timestamps_sorted = []
-try:
-    with open(RADAR_DATA_FILE, 'r') as f:
-        for line in f:
-            if line.strip():
-                data_line = json.loads(line)
-                ts = data_line.get('time', '')
-                radar_by_timestamp[ts].extend(data_line.get('locusList', []))
-    radar_timestamps_sorted = sorted(radar_by_timestamp.keys())
-    print(f"Loaded {len(radar_by_timestamp)} radar timestamps")
-except FileNotFoundError:
-    print(f"Warning: {RADAR_DATA_FILE} not found, using empty radar data")
-
 # 加载地图数据（可选）
 crosswalks = []
 try:
@@ -76,59 +61,36 @@ try:
 except FileNotFoundError:
     print(f"Warning: {HDCROSSWALK_FILE} not found, skipping crosswalks")
 
-# 按时间顺序合并融合数据和雷达数据
-# 只保留两者都有数据的时间范围
-timeline = {}  # {timestamp: {'fusion': [...], 'radar': [...]}}
+# 按时间顺序合并融合数据
+# 新的数据格式：每个 reportTime 对应一个 participant 列表
+timeline = {}  # {timestamp: {'camera': [...], 'radar': [...]}}
 
-# 添加融合数据
-fusion_timestamps = set()
+# 处理融合数据
 for r in fusion_data:
     if r.get('participant'):
-        # 使用第一个 participant 的 timestamp
-        ts = r['participant'][0].get('timestamp', '')
-        if ts:
-            if ts not in timeline:
-                timeline[ts] = {'fusion': [], 'radar': []}
-            timeline[ts]['fusion'] = r['participant']
-            fusion_timestamps.add(ts)
+        # 按 source 分类数据
+        for p in r['participant']:
+            ts = p.get('timestamp', '')
+            source = p.get('source', 'unknown')
+            
+            if ts:
+                if ts not in timeline:
+                    timeline[ts] = {'camera': [], 'radar': []}
+                
+                if source == 'camera':
+                    timeline[ts]['camera'].append(p)
+                elif source == 'radar':
+                    timeline[ts]['radar'].append(p)
 
-# 添加雷达数据
-radar_timestamps = set(radar_by_timestamp.keys())
-for ts, objs in radar_by_timestamp.items():
-    if ts not in timeline:
-        timeline[ts] = {'fusion': [], 'radar': []}
-    timeline[ts]['radar'] = objs
-
-# 只保留两者都有数据的时间戳
-if fusion_timestamps and radar_timestamps:
-    # 找到时间范围的交集
-    fusion_times = sorted([datetime.strptime(ts, '%Y-%m-%d %H:%M:%S.%f').timestamp() for ts in fusion_timestamps])
-    radar_times = sorted([datetime.strptime(ts, '%Y-%m-%d %H:%M:%S.%f').timestamp() for ts in radar_timestamps])
-    
-    time_start = max(fusion_times[0], radar_times[0])
-    time_end = min(fusion_times[-1], radar_times[-1])
-    
-    # 过滤出时间范围内的时间戳
-    valid_timestamps = []
-    for ts in timeline.keys():
-        try:
-            ts_seconds = datetime.strptime(ts, '%Y-%m-%d %H:%M:%S.%f').timestamp()
-            if time_start <= ts_seconds <= time_end:
-                valid_timestamps.append(ts)
-        except:
-            pass
-    
-    sorted_timestamps = sorted(valid_timestamps)
-    print(f"Time range: {datetime.fromtimestamp(time_start)} ~ {datetime.fromtimestamp(time_end)}")
-else:
-    sorted_timestamps = sorted(timeline.keys())
-
-print(f"Total timestamps: {len(sorted_timestamps)} (fusion: {len([t for t in sorted_timestamps if timeline[t]['fusion']])}, radar: {len([t for t in sorted_timestamps if timeline[t]['radar']])})")
+sorted_timestamps = sorted(timeline.keys())
+print(f"Total timestamps: {len(sorted_timestamps)}")
+print(f"Camera frames: {len([t for t in sorted_timestamps if timeline[t]['camera']])}")
+print(f"Radar frames: {len([t for t in sorted_timestamps if timeline[t]['radar']])}")
 
 # --- 3. 计算范围 ---
 all_pts = [p for coords in crosswalks for p in coords] + \
-          [[p['lon'], p['lat']] for ts in sorted_timestamps for p in timeline[ts]['fusion']] + \
-          [[obj['longitude'], obj['latitude']] for ts in sorted_timestamps for obj in timeline[ts]['radar']]
+          [[p['lng'], p['lat']] for ts in sorted_timestamps for p in timeline[ts]['camera']] + \
+          [[obj['lng'], obj['lat']] for ts in sorted_timestamps for obj in timeline[ts]['radar']]
 
 if all_pts:
     lons, lats = zip(*all_pts)
@@ -163,8 +125,8 @@ fusion_colors = {}
 radar_colors = {}
 
 # --- 5. 辅助函数 ---
-def draw_fusion_object(ax, p, color):
-    """绘制融合对象"""
+def draw_camera_object(ax, p, color):
+    """绘制摄像头检测对象"""
     marker_map = {'car': 'o', 'truck': 's', 'bus': 'D', 'motorcycle': '^', 'bicycle': 'v'}
     size_map = {'car': 80, 'truck': 100, 'bus': 120, 'motorcycle': 60, 'bicycle': 50}
     
@@ -172,14 +134,12 @@ def draw_fusion_object(ax, p, color):
     marker = marker_map.get(obj_type, 'o')
     size = size_map.get(obj_type, 80)
     
-    scatter = ax.scatter(p['lon'], p['lat'], color=color, marker=marker, s=size, alpha=0.8,
+    scatter = ax.scatter(p['lng'], p['lat'], color=color, marker=marker, s=size, alpha=0.8,
                         edgecolors='white', linewidth=1, zorder=8)
     
-    label_text = f"T{p.get('track_id', -1)}"
-    if p.get('confidence', 0) > 0:
-        label_text += f"|c:{p['confidence']:.2f}"
+    label_text = f"C{p.get('pid', -1)}"
     
-    annot = ax.annotate(label_text, (p['lon'], p['lat']), xytext=(6, -6),
+    annot = ax.annotate(label_text, (p['lng'], p['lat']), xytext=(6, -6),
                        textcoords='offset points', fontsize=6, color='white', fontweight='bold',
                        bbox=dict(boxstyle='round,pad=0.2', facecolor=color, alpha=0.8, edgecolor='white', linewidth=0.5))
     
@@ -187,17 +147,12 @@ def draw_fusion_object(ax, p, color):
 
 def draw_radar_object(ax, obj, color):
     """绘制雷达对象"""
-    type_map = {1: 'car', 2: 'truck', 3: 'bus', 4: 'motorcycle', 5: 'bicycle'}
-    obj_type = type_map.get(obj.get('objType', 1), 'unknown')
-    
-    scatter = ax.scatter(obj['longitude'], obj['latitude'], color=color, marker='x', s=100, 
+    scatter = ax.scatter(obj['lng'], obj['lat'], color=color, marker='x', s=100, 
                         alpha=0.9, linewidth=2, zorder=9)
     
-    label_text = f"R{obj.get('id', '')[:6]}"
-    if obj.get('speed', 0) > 0:
-        label_text += f"|v:{obj['speed']:.1f}"
+    label_text = f"R{obj.get('pid', '')}"
     
-    annot = ax.annotate(label_text, (obj['longitude'], obj['latitude']), xytext=(6, -6),
+    annot = ax.annotate(label_text, (obj['lng'], obj['lat']), xytext=(6, -6),
                        textcoords='offset points', fontsize=6, color='white', fontweight='bold',
                        bbox=dict(boxstyle='round,pad=0.2', facecolor=color, alpha=0.8, edgecolor='white', linewidth=0.5))
     
@@ -220,23 +175,23 @@ for i, ts in enumerate(sorted_timestamps):
     title.set_text(f'Time: {ts}')
     
     # 获取当前时间点的数据
-    detection_objects = timeline[ts]['fusion']
+    camera_objects = timeline[ts]['camera']
     radar_objects = timeline[ts]['radar']
     
-    # 绘制检测数据
+    # 绘制摄像头检测数据
     if args.show_fusion:
-        for p in detection_objects:
-            track_id = p.get('track_id', -1)
-            if track_id not in fusion_colors:
-                fusion_colors[track_id] = COLORS_FUSION[len(fusion_colors) % len(COLORS_FUSION)]
+        for p in camera_objects:
+            pid = p.get('pid', -1)
+            if pid not in fusion_colors:
+                fusion_colors[pid] = COLORS_FUSION[len(fusion_colors) % len(COLORS_FUSION)]
             
-            scatter, annot = draw_fusion_object(ax, p, fusion_colors[track_id])
+            scatter, annot = draw_camera_object(ax, p, fusion_colors[pid])
             artists.extend([scatter, annot])
     
     # 绘制雷达数据
     if args.show_radar:
         for obj in radar_objects:
-            radar_id = obj.get('id', '')
+            radar_id = obj.get('pid', '')
             if radar_id not in radar_colors:
                 radar_colors[radar_id] = COLORS_RADAR[len(radar_colors) % len(COLORS_RADAR)]
             
@@ -244,9 +199,9 @@ for i, ts in enumerate(sorted_timestamps):
             artists.extend([scatter, annot])
     
     # 更新统计信息（只显示当前时间点的数据）
-    detection_count = len(timeline[ts]['fusion'])
+    camera_count = len(timeline[ts]['camera'])
     radar_count = len(timeline[ts]['radar'])
-    info_text.set_text(f'Detection: {detection_count} | Radar: {radar_count} | Frame: {i+1}/{len(sorted_timestamps)}')
+    info_text.set_text(f'Camera: {camera_count} | Radar: {radar_count} | Frame: {i+1}/{len(sorted_timestamps)}')
     
     # 绘制并写入视频
     canvas.draw()

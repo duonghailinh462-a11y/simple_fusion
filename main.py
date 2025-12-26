@@ -36,6 +36,7 @@ disable_module_logs('core.ResultBuffer')
 disable_module_logs('radar.RadarDataFilter')
 disable_module_logs('core.FusionComponents')
 disable_module_logs('core.Fusion')
+#disable_module_logs('RadarDataSource')
 
 import numpy as np
 import cv2
@@ -314,6 +315,9 @@ if __name__ == "__main__":
     
     # 初始化结果输出管理器（三路缓冲和时间对齐）
     fusion_system = CrossCameraFusion()
+    output_json_file = "output_fusion_refactored.json"
+    fusion_system.init_json_stream(output_json_file)
+    logger.info(f"📝 JSON流式输出已启用: {output_json_file}")
     result_output_manager = ResultOutputManager(
         fusion_system=fusion_system,
         mqtt_publisher=mqtt_publisher,
